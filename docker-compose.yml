@@ -18,16 +18,12 @@ services:
     build: ./backend
     container_name: nest_backend
     restart: always
+    env_file:
+      - ./backend/.env
     ports:
       - "3001:3001"
     depends_on:
       - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASS: 123456
-      DB_NAME: VNADatabase
 
   frontend:
     build: ./client
