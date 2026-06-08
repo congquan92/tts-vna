@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import Link from "next/link";
 import { ReactNode } from "react";
 
 type ButtonProps = {
@@ -14,11 +13,11 @@ type ButtonProps = {
 
 export default function Button({ children, variant = "primary", onClick, type = "button", className, disabled = false, loading = false }: ButtonProps) {
     const style = clsx(
-        "font-medium cursor-pointer rounded py-2 px-2 text-center transition-opacity",
+        "font-medium cursor-pointer rounded-lg py-3 px-4 text-center text-[15px] transition-all duration-200",
         {
-            "bg-primary text-white hover:opacity-90": variant === "primary",
-            "border border-primary text-primary hover:bg-primary hover:text-white": variant === "outline",
-            "opacity-50 cursor-not-allowed": disabled || loading,
+            "bg-blue-600 text-white hover:bg-blue-700": variant === "primary",
+            "border border-blue-600 text-blue-600 bg-transparent hover:bg-blue-50": variant === "outline",
+            "opacity-60 cursor-not-allowed": disabled || loading,
         },
         className,
     );

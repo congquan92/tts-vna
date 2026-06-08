@@ -3,11 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { mockLoginAPI, TIMERS } from "@/src/mocks";
+
 import TextInput from "@/components/form/TextInput";
 import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import { AuthApi } from "@/api/auth";
 
 type FormErrors = {
     account?: string;
@@ -49,16 +50,14 @@ export default function LoginPage() {
 
         setLoading(true);
         try {
-            // Mock API call
-            const isValid = await mockLoginAPI(account, password);
-
-            // Mock validation
+            const isValid = await AuthApi.login(account, password);
+            console.log("Login successful, token:", isValid);
             if (isValid) {
                 setAlert({
                     type: "success",
                     message: "Đăng nhập thành công!",
                 });
-                // Clear form
+
                 setAccount("");
                 setPassword("");
             } else {
@@ -78,29 +77,31 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="shadow-lg p-8 flex flex-col justify-center items-center rounded-2xl w-full max-w-md">
-                {/* logo */}
-                <div className="h-20 w-20">
-                    <Image src="/quochuy.png" alt="quochuy" width={80} height={80} />
+        <div className="flex min-h-screen items-center justify-center bg-white p-4">
+            <div className="flex w-full max-w-[500px] flex-col items-center justify-center">
+                {/* Logo to hơn để giống bản design */}
+                <div className="mb-6 h-32 w-32">
+                    <Image src="/quochuy.png" alt="quochuy" width={128} height={128} className="object-contain" />
                 </div>
 
-                {/* title */}
-                <div className="flex flex-col items-center font-bold py-3 text-2xl">
-                    <h1 className="text-center">Phần Mềm Quản Lý - Tạo Lập Cơ Sở Dữ Liệu</h1>
+                {/* Title */}
+                <div className="mb-10 flex flex-col items-center text-center text-[22px] font-bold leading-snug text-black">
+                    <h1>Phần Mềm Quản Lý - Tạo Lập Cơ Sở Dữ Liệu</h1>
                     <h1>An Toàn Vệ Sinh Lao Động</h1>
                 </div>
 
-                {/* alerts */}
-                <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
+                {/* Alerts */}
+                <div className="mb-4 w-full">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
 
-                {/* form login */}
-                <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
-                    <h2 className="text-primary font-bold text-xl">ĐĂNG NHẬP</h2>
+                {/* Form login */}
+                <form onSubmit={handleLogin} className="flex w-full flex-col gap-5">
+                    {/* ĐĂNG NHẬP text màu xanh */}
+                    <h2 className="text-xl font-bold text-blue-600">ĐĂNG NHẬP</h2>
 
+                    {/* Đổi label có dấu * giống design */}
                     <TextInput
-                        label="Tài khoản"
-                        placeholder="Nhập tài khoản"
+                        label="Tên tài khoản *"
+                        placeholder="nguyenvanb.stttt"
                         required={true}
                         value={account}
                         onChange={(e) => {
@@ -113,7 +114,7 @@ export default function LoginPage() {
                     />
 
                     <PasswordInput
-                        label="Mật khẩu"
+                        label="Mật khẩu *"
                         required={true}
                         value={password}
                         onChange={(e) => {
@@ -125,21 +126,22 @@ export default function LoginPage() {
                         error={errors.password}
                     />
 
-                    <div className="flex justify-between items-center">
-                        <div className="flex gap-2 items-center">
-                            <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="cursor-pointer" />
-                            <label htmlFor="rememberMe" className="text-sm cursor-pointer">
+                    <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2">
+                            <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 cursor-pointer accent-blue-600 rounded border-gray-300" />
+                            <label htmlFor="rememberMe" className="cursor-pointer text-[15px] text-gray-700">
                                 Nhớ đăng nhập
                             </label>
                         </div>
 
-                        <Link className="text-primary font-medium text-sm hover:underline" href={"/forgot-password"}>
-                            Quên mật khẩu?
+                        {/* Bỏ dấu "?" ở chữ Quên mật khẩu */}
+                        <Link className="text-[15px] font-medium text-blue-600 hover:underline" href={"/forgot-password"}>
+                            Quên mật khẩu
                         </Link>
                     </div>
 
-                    {/* buttons */}
-                    <div className="flex flex-col gap-2 py-3">
+                    {/* Buttons */}
+                    <div className="mt-4 flex flex-col gap-4">
                         <Button variant="primary" type="submit" loading={loading}>
                             Đăng nhập
                         </Button>
