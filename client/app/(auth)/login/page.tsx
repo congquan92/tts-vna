@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import TextInput from "@/components/form/TextInput";
 import PasswordInput from "@/components/form/PasswordInput";
@@ -16,6 +17,7 @@ type FormErrors = {
 };
 
 export default function LoginPage() {
+    const router = useRouter();
     const [account, setAccount] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
@@ -50,26 +52,26 @@ export default function LoginPage() {
 
         setLoading(true);
         try {
-            const isValid = await AuthApi.login(account, password);
-            console.log("Login successful, token:", isValid);
-            if (isValid) {
+            const res = await AuthApi.login(account, password);
+            
+            if (res && res.accessToken) {
+                // Lưu token vào localStorage
+                localStorage.setItem("auth_token", res.accessToken);
+                
                 setAlert({
                     type: "success",
-                    message: "Đăng nhập thành công!",
+                    message: "Đăng nhập thành công! Đang chuyển hướng...",
                 });
 
-                setAccount("");
-                setPassword("");
-            } else {
-                setAlert({
-                    type: "error",
-                    message: "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
-                });
+                // Chuyển hướng sau 1.5 giây
+                setTimeout(() => {
+                    router.push("/");
+                }, 1500);
             }
-        } catch (error) {
+        } catch (error: any) {
             setAlert({
                 type: "error",
-                message: "Có lỗi xảy ra. Vui lòng thử lại sau",
+                message: error.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
             });
         } finally {
             setLoading(false);
