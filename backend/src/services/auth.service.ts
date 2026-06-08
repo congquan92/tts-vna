@@ -1,4 +1,11 @@
-import { Injectable, UnauthorizedException, NotFoundException, BadRequestException, InternalServerErrorException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  ConflictException,
+} from '@nestjs/common';
 import { AuthRepository } from '../repositories/auth.repository';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -17,23 +24,27 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const { username, password, fullName, email, role } = registerDto;
     const existingUser = await this.authRepository.findUserByEmail(email);
     if (existingUser) {
-      throw new ConflictException('Email đã được đăng ký, vui lòng sử dụng email khác.');
+      throw new ConflictException(
+        'Email đã được đăng ký, vui lòng sử dụng email khác.',
+      );
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     try {
       return await this.authRepository.createFullUser(
         { fullName, email },
-        { username, password: hashedPassword, role }
+        { username, password: hashedPassword, role },
       );
     } catch (error) {
-      console.error("Lỗi khi lưu user vào database:", error);
-      throw new InternalServerErrorException('Có lỗi xảy ra, vui lòng thử lại sau.');
+      console.error('Lỗi khi lưu user vào database:', error);
+      throw new InternalServerErrorException(
+        'Có lỗi xảy ra, vui lòng thử lại sau.',
+      );
     }
   }
 
@@ -42,17 +53,25 @@ export class AuthService {
     const account = await this.authRepository.findAccountByUsername(username);
 
     if (!account || !(await bcrypt.compare(password, account.password))) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng. Xin vui lòng thử lại');
+      throw new UnauthorizedException(
+        'Tài khoản hoặc mật khẩu không đúng. Xin vui lòng thử lại',
+      );
     }
 
-    const payload = { sub: account.userId, username: account.username, role: account.role };
+    const payload = {
+      sub: account.userId,
+      username: account.username,
+      role: account.role,
+    };
     return { accessToken: this.jwtService.sign(payload) };
   }
 
   async getProfile(userId: number) {
     const user = await this.authRepository.findUserById(userId);
     if (!user) throw new NotFoundException('Người dùng không tồn tại');
-    return user;
+
+    const account = await this.authRepository.findAccountByUserId(userId);
+    return { ...user, account };
   }
 
   async updateProfile(userId: number, updateDto: UpdateProfileDto) {
@@ -77,13 +96,14 @@ export class AuthService {
     account.password = await bcrypt.hash(dto.newPass, 10);
     await this.authRepository.updateAccount(account);
     return {
-      message: 'Đổi mật khẩu thành công'
+      message: 'Đổi mật khẩu thành công',
     };
   }
 
   async requestPasswordReset(forgotDto: ForgotPasswordDto) {
     const user = await this.authRepository.findUserByEmail(forgotDto.email);
-    if (!user) throw new NotFoundException('Email không tồn tại trong hệ thống');
+    if (!user)
+      throw new NotFoundException('Email không tồn tại trong hệ thống');
 
     const account = await this.authRepository.findAccountByUserId(user.id);
     if (!account) throw new NotFoundException('Tài khoản không tồn tại');
@@ -103,18 +123,38 @@ export class AuthService {
           username: account.username,
           otp: otp,
         },
-        attachments: [{
-          filename: 'logo-VNA.png',
-          path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'), // Đường dẫn tuyệt đối tới file
-          cid: 'vna-logo' // ID này phải trùng với src trong HTML
-        }],
+        attachments: [
+          {
+            filename: 'logo-VNA.png',
+            path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'), // Đường dẫn tuyệt đối tới file
+            cid: 'vna-logo', // ID này phải trùng với src trong HTML
+          },
+        ],
       });
     } catch (error) {
       console.error('Lỗi khi gửi email:', error);
-      throw new InternalServerErrorException('Không thể gửi email xác thực, vui lòng kiểm tra lại cấu hình hệ thống');
+      throw new InternalServerErrorException(
+        'Không thể gửi email xác thực, vui lòng kiểm tra lại cấu hình hệ thống',
+      );
     }
 
     return { message: 'Mã OTP đã được gửi đến email của bạn' };
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    const user = await this.authRepository.findUserByEmail(email);
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+
+    const otpRecord = await this.authRepository.findOtp(user.id);
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
+      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+
+    return { message: 'Mã OTP hợp lệ' };
   }
 
   async verifyOtpAndReset(forgotDto: ForgotPasswordDto) {
@@ -132,7 +172,11 @@ export class AuthService {
     if (!user) throw new NotFoundException('Người dùng không tồn tại');
 
     const otpRecord = await this.authRepository.findOtp(user.id);
-    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < new Date()) {
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
       throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
     }
 
@@ -161,14 +205,17 @@ export class AuthService {
       subject: 'Xác thực thay đổi email',
       template: 'change-email-otp',
       context: { otp },
-      attachments: [{
-        filename: 'logo-VNA.png',
-        path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'),
-        cid: 'vna-logo'
-      }],
+      attachments: [
+        {
+          filename: 'logo-VNA.png',
+          path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'),
+          cid: 'vna-logo',
+        },
+      ],
     });
     return { message: 'Mã OTP đã được gửi tới email hiện tại của bạn' };
-  } catch(error) {
+  }
+  catch(error) {
     console.error('Lỗi gửi email thay đổi email:', error);
     throw new InternalServerErrorException('Không thể gửi email xác thực');
   }
@@ -177,7 +224,11 @@ export class AuthService {
     const { newEmail, otp } = dto;
 
     const otpRecord = await this.authRepository.findOtp(userId);
-    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < new Date()) {
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
       throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
     }
 
