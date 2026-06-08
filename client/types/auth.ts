@@ -12,6 +12,7 @@ export interface User {
     address?: string;
     createdAt?: string;
     updatedAt?: string;
+    account?: Account;
 }
 
 export interface Account {
