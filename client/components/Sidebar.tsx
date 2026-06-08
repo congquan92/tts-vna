@@ -1,215 +1,188 @@
-// "use client";
+"use client";
 
-// import Link from "next/link";
-// import { usePathname, useRouter, useSearchParams } from "next/navigation";
-// import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, MouseEvent } from "react";
+import Image from "next/image";
 
-// type SidebarChildItem = {
-//     id: string;
-//     label: string;
-//     path: string;
-// };
+// Import đồ chơi của MUI
+import Box from "@mui/material/Box";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Collapse from "@mui/material/Collapse";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import { menuData } from "@/components/data-sidebar";
+import { Menu as MenuIcon, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import AccountPopup from "@/components/popup/account-popup";
 
-// type SidebarMenuItem = {
-//     id: number;
-//     label: string;
-//     isOpen: boolean;
-//     items: SidebarChildItem[];
-// };
+export default function SidebarMUI() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-// const initialSidebarMenus: SidebarMenuItem[] = [
-//     {
-//         id: 1,
-//         label: "Hệ thống",
-//         isOpen: true,
-//         items: [
-//             {
-//                 id: "permissions",
-//                 label: "Phân quyền",
-//                 path: "/permissions",
-//             },
-//             {
-//                 id: "roles",
-//                 label: "Vai trò",
-//                 path: "/roles",
-//             },
-//             {
-//                 id: "accounts",
-//                 label: "Tài khoản",
-//                 path: "/accounts",
-//             },
-//             {
-//                 id: "business-types",
-//                 label: "Loại hình doanh nghiệp",
-//                 path: "/business-types",
-//             },
-//             {
-//                 id: "business-industries",
-//                 label: "Ngành nghề kinh doanh",
-//                 path: "/business-industries",
-//             },
-//             {
-//                 id: "business-managements",
-//                 label: "Quản lý doanh nghiệp",
-//                 path: "/business-managements",
-//             },
-//             {
-//                 id: "report-periods",
-//                 label: "Kỳ báo cáo",
-//                 path: "/report-periods",
-//             },
-//         ],
-//     },
-//     {
-//         id: 2,
-//         label: "Tai nạn lao động",
-//         isOpen: true,
-//         items: [
-//             {
-//                 id: "categories",
-//                 label: "Danh mục chung",
-//                 path: "/categories",
-//             },
-//             {
-//                 id: "aggreements",
-//                 label: "TNLD theo HĐLĐ",
-//                 path: "/aggreements",
-//             },
-//         ],
-//     },
-// ];
+    // State cho MUI Menu (Popup user)
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const isMenuOpen = Boolean(anchorEl);
 
-// export default function Sidebar() {
-//     const router = useRouter();
-//     const pathname = usePathname();
-//     const searchParams = useSearchParams();
+    const activeMenu = pathname;
 
-//     const [sidebarMenus, setSidebarMenus] = useState<SidebarMenuItem[]>(initialSidebarMenus);
-//     const [activeMenu, setActiveMenu] = useState<string>("permissions");
+    const sidebarMenus = menuData.map((menu) => {
+        if (!menu.items) return menu;
+        const menuStateFromUrl = searchParams.get(menu.id);
+        return {
+            ...menu,
+            isOpen: menuStateFromUrl === null ? menu.isOpen : menuStateFromUrl === "true",
+        };
+    });
 
-//     useEffect(() => {
-//         const validPaths = initialSidebarMenus.flatMap((menu) => menu.items.map((item) => item.path));
+    const handleToggleMenu = (menuId: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        const currentMenu = sidebarMenus.find((m) => m.id === menuId);
 
-//         if (pathname === "/" || !validPaths.includes(pathname)) {
-//             router.replace("/permissions");
-//             return;
-//         }
+        if (!currentMenu || !currentMenu.items) return;
 
-//         setActiveMenu(pathname.replace("/", ""));
+        const nextIsOpen = !currentMenu.isOpen;
+        params.set(menuId, String(nextIsOpen));
 
-//         setSidebarMenus((prevMenus) =>
-//             prevMenus.map((menu) => {
-//                 const menuStateFromUrl = searchParams.get(String(menu.id));
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    };
 
-//                 return {
-//                     ...menu,
-//                     isOpen: menuStateFromUrl === null ? menu.isOpen : menuStateFromUrl === "true",
-//                 };
-//             }),
-//         );
-//     }, [pathname, searchParams, router]);
+    const getMenuPath = (path: string) => {
+        const queryString = searchParams.toString();
+        return queryString ? `${path}?${queryString}` : path;
+    };
 
-//     const handleToggleMenu = (menuId: number) => {
-//         const params = new URLSearchParams(searchParams.toString());
+    const handleProfileClick = (event: MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
 
-//         const currentMenu = sidebarMenus.find((menu) => menu.id === menuId);
+    const handleProfileClose = () => {
+        setAnchorEl(null);
+    };
 
-//         if (!currentMenu) return;
+    return (
+        <Box
+            sx={{
+                width: 350,
+                bgcolor: "#1b2b65",
+                color: "white",
+                height: "100vh",
+                display: "flex",
+                flexDirection: "column",
+                borderRight: "1px solid #2a3c7d",
+            }}
+        >
+            {/* --- Header --- */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 2, borderBottom: "1px solid #2a3c7d" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, marginRight: 1 }}>
+                    <Box sx={{ position: "relative", width: 40, height: 40 }}>
+                        <Image src="/quochuy.png" alt="Logo" fill className="object-contain" sizes="40px" />
+                    </Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                        Uỷ ban nhân dân tỉnh ABC
+                    </Typography>
+                </Box>
+                <MenuIcon size={24} className="opacity-80 cursor-pointer hover:opacity-100 transition-opacity" />
+            </Box>
 
-//         const nextIsOpen = !currentMenu.isOpen;
+            {/* --- Body (Menu List) --- */}
+            <List sx={{ flex: 1, overflowY: "auto", pt: 2, pb: 2, px: 0 }} className="custom-scrollbar">
+                {sidebarMenus.map((menu) => {
+                    const isParentActive = menu.items?.some((item) => item.path === activeMenu);
+                    const isSingleActive = !menu.items && activeMenu === menu.path;
 
-//         params.set(String(menuId), String(nextIsOpen));
+                    return (
+                        <Box key={menu.id}>
+                            {/* Link đơn hoặc Menu Cha */}
+                            <ListItemButton
+                                component={menu.items ? "div" : Link}
+                                href={menu.items ? undefined : getMenuPath(menu.path!)}
+                                onClick={() => (menu.items ? handleToggleMenu(menu.id) : null)}
+                                sx={{
+                                    px: 3,
+                                    py: 1.5,
+                                    bgcolor: isSingleActive || isParentActive ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.1)" },
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>{menu.icon}</ListItemIcon>
+                                <ListItemText
+                                    primary={
+                                        <Typography sx={{ fontSize: "14px", fontWeight: isSingleActive || isParentActive ? 600 : 400 }}>{menu.label}</Typography>
+                                    }
+                                />
+                                {menu.items && <Box sx={{ display: "flex", alignItems: "center", transition: "transform 0.2s" }}>{menu.isOpen ? <ChevronDown size={16} /> : <ChevronLeft size={16} />}</Box>}
+                            </ListItemButton>
 
-//         setSidebarMenus((prevMenus) =>
-//             prevMenus.map((menu) =>
-//                 menu.id === menuId
-//                     ? {
-//                           ...menu,
-//                           isOpen: nextIsOpen,
-//                       }
-//                     : menu,
-//             ),
-//         );
+                            {/* Menu Con (Collapse) */}
+                            {menu.items && (
+                                <Collapse in={menu.isOpen} timeout="auto" unmountOnExit>
+                                    <List component="div" disablePadding sx={{ py: 0 }}>
+                                        {menu.items.map((item) => {
+                                            const isChildActive = activeMenu === item.path;
+                                            return (
+                                                <ListItemButton
+                                                    key={item.id}
+                                                    component={Link}
+                                                    href={getMenuPath(item.path)}
+                                                    sx={{
+                                                        pl: 7,
+                                                        py: 1.2,
+                                                        color: isChildActive ? "white" : "#d1d5db",
+                                                        "&:hover": { color: "white", bgcolor: "rgba(255, 255, 255, 0.05)" },
+                                                    }}
+                                                >
+                                                    <ListItemIcon sx={{ minWidth: 24, color: "inherit" }}>
+                                                        <Box sx={{ width: 4, height: 4, bgcolor: "currentColor", borderRadius: "50%" }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText
+                                                        primary={
+                                                            <Typography sx={{ fontSize: "13px", fontWeight: isChildActive ? 500 : 400 }}>{item.label}</Typography>
+                                                        }
+                                                    />
+                                                </ListItemButton>
+                                            );
+                                        })}
+                                    </List>
+                                </Collapse>
+                            )}
+                        </Box>
+                    );
+                })}
+            </List>
 
-//         router.replace(`${pathname}?${params.toString()}`, {
-//             scroll: false,
-//         });
-//     };
+            {/* (Profile & Popup)*/}
+            <Box sx={{ px: 2, pb: 2 }}>
+                {/* Profile Item */}
+                <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.7)", borderBottom: "1px solid rgba(255,255,255,0.7)", py: 0.5 }}>
+                    <ListItemButton
+                        onClick={handleProfileClick}
+                        sx={{
+                            borderRadius: 1,
+                            px: 1,
+                            "&:hover": { bgcolor: "rgba(255, 255, 255, 0.1)" },
+                        }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 52 }}>
+                            <Avatar src="/avatar.jpg" alt="Avatar" sx={{ width: 44, height: 44 }} />
+                        </ListItemIcon>
 
-//     const getMenuPath = (path: string) => {
-//         const queryString = searchParams.toString();
+                        <ListItemText
+                            primary={
+                                <Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>Phan Thanh Tùng</Typography>
+                            }
+                        />
 
-//         return queryString ? `${path}?${queryString}` : path;
-//     };
+                        <ChevronRight size={22} strokeWidth={2.5} className="text-white" />
+                    </ListItemButton>
+                </Box>
 
-//     return (
-//         <div className="py-3 space-y-5 bg-[#14317F] text-white h-screen flex flex-col">
-//             {/* Header */}
-//             <div className="flex items-center gap-5 px-5">
-//                 <div className="w-15 h-15">
-//                     <img src="quochuy.png" alt="" />
-//                 </div>
-
-//                 <h1 className="text-center font-semibold">
-//                     Ủy ban nhân dân thành phố
-//                     <br />
-//                     Hồ Chí Minh
-//                 </h1>
-
-//                 <button className="text-2xl font-semibold">
-//                     <i className="fa-solid fa-bars"></i>
-//                 </button>
-//             </div>
-
-//             {/* Body */}
-//             <div className="flex-1 border-b border-t border-[#FFFFFF] py-3 space-y-6">
-//                 {sidebarMenus.map((menu) => (
-//                     <nav key={menu.id} className="space-y-4">
-//                         <div className="flex items-center justify-between px-5">
-//                             <div className="flex items-center">
-//                                 <div className="w-5 flex justify-center">
-//                                     <i className="fa-solid fa-gear w-10 overflow-hidden"></i>
-//                                 </div>
-
-//                                 <span className="flex-1 ps-6">{menu.label}</span>
-//                             </div>
-
-//                             <button onClick={() => handleToggleMenu(menu.id)}>
-//                                 <i className={`fa-solid ${menu.isOpen ? "fa-angle-down" : "fa-angle-right"}`}></i>
-//                             </button>
-//                         </div>
-
-//                         {menu.isOpen && (
-//                             <ul>
-//                                 {menu.items.map((item) => (
-//                                     <li key={item.id} className={`button menu-hover px-5 ${activeMenu === item.id ? "menu-active" : ""}`}>
-//                                         <Link href={getMenuPath(item.path)} className="flex items-center py-3">
-//                                             <div className="w-5 flex justify-center">
-//                                                 <i className="fa-solid fa-circle text-[5px] w-10 overflow-hidden"></i>
-//                                             </div>
-
-//                                             <span className="flex-1 ps-6">{item.label}</span>
-//                                         </Link>
-//                                     </li>
-//                                 ))}
-//                             </ul>
-//                         )}
-//                     </nav>
-//                 ))}
-//             </div>
-
-//             {/* Footer */}
-//             <div className="flex items-center gap-5 px-5">
-//                 <div className="w-10 h-10 rounded-full bg-black"></div>
-
-//                 <div className="flex-1 flex justify-between">
-//                     <h1>Tài khoản A</h1>
-
-//                     <button>
-//                         <i className="fa-solid fa-chevron-right"></i>
-//                     </button>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// }
+                {/* Account Popup */}
+                <AccountPopup anchorEl={anchorEl} open={isMenuOpen} onClose={handleProfileClose} />
+            </Box>
+        </Box>
+    );
+}
