@@ -17,6 +17,11 @@ export const AuthApi = {
         return res.data;
     },
 
+    verifyOtp: async (email: string, otp: string): Promise<{ message: string }> => {
+        const res = await axiosInstance.post<{ message: string }>("/auth/verify-otp", { email, otp });
+        return res.data;
+    },
+
     resetPassword: async (payload: ForgotPasswordPayload): Promise<{ message: string }> => {
         const res = await axiosInstance.post<{ message: string }>("/auth/reset-password", payload);
         return res.data;

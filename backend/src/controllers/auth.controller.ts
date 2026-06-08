@@ -38,6 +38,13 @@ export class AuthController {
     return await this.authService.requestPasswordReset(forgotPasswordDto);
   }
 
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'Xác thực OTP' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' }, otp: { type: 'string' } } } })
+  async verifyOtp(@Body() body: { email: string, otp: string }) {
+    return await this.authService.verifyOtp(body.email, body.otp);
+  }
+
   @Post('reset-password')
   @ApiOperation({ summary: 'Xác thực OTP và đặt lại mật khẩu mới' })
   @ApiResponse({ status: 200, description: 'Đặt lại mật khẩu thành công' })

@@ -2,8 +2,10 @@
 
 import TextInput from "@/components/form/TextInput";
 import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { AuthApi } from "@/api/auth";
 
 type Step = "email" | "otp" | "newPassword";
 type FormErrors = {
@@ -11,6 +13,19 @@ type FormErrors = {
     otp?: string;
     newPassword?: string;
     confirmPassword?: string;
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OTP_CONSTRAINTS = {
+    LENGTH: 6,
+};
+const PASSWORD_CONSTRAINTS = {
+    MIN_LENGTH: 6,
+};
+const TIMERS = {
+    RESEND_OTP: 60,
+    LOGIN_SUCCESS_DELAY: 1500,
+    OTP_VERIFY_DELAY: 1000,
 };
 
 export default function ForgotPasswordPage() {
@@ -22,19 +37,14 @@ export default function ForgotPasswordPage() {
     const [errors, setErrors] = useState<FormErrors>({});
     const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
     const [loading, setLoading] = useState(false);
-    const [resendTimer, setResendTimer] = useState(0); // Countdown để gửi lại
+    const [resendTimer, setResendTimer] = useState(0);
 
-    // Countdown timer effect cho gửi lại
+    // Countdown timer effect for resending OTP
     useEffect(() => {
         if (step !== "otp" || resendTimer === 0) return;
 
         const interval = setInterval(() => {
-            setResendTimer((prev) => {
-                if (prev <= 1) {
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setResendTimer((prev) => (prev <= 1 ? 0 : prev - 1));
         }, 1000);
 
         return () => clearInterval(interval);
@@ -98,29 +108,20 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            // Mock API call
-            const emailExists = await mockSendForgotPasswordEmailAPI(email);
-
-            if (emailExists) {
-                setAlert({
-                    type: "success",
-                    message: "Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP",
-                });
-                setTimeout(() => {
-                    setStep("otp");
-                    setResendTimer(TIMERS.RESEND_OTP);
-                    setAlert(null);
-                }, TIMERS.LOGIN_SUCCESS_DELAY);
-            } else {
-                setAlert({
-                    type: "error",
-                    message: "Email chưa đăng ký trong hệ thống",
-                });
-            }
-        } catch (error) {
+            await AuthApi.forgotPassword({ email });
+            setAlert({
+                type: "success",
+                message: "Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP",
+            });
+            setTimeout(() => {
+                setStep("otp");
+                setResendTimer(TIMERS.RESEND_OTP);
+                setAlert(null);
+            }, TIMERS.LOGIN_SUCCESS_DELAY);
+        } catch (error: any) {
             setAlert({
                 type: "error",
-                message: "Có lỗi xảy ra. Vui lòng thử lại sau",
+                message: error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra",
             });
         } finally {
             setLoading(false);
@@ -140,28 +141,19 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            // Mock API call
-            const isValidOTP = await mockVerifyOTPAPI(otp);
-
-            if (isValidOTP) {
-                setAlert({
-                    type: "success",
-                    message: "Xác nhận OTP thành công!",
-                });
-                setTimeout(() => {
-                    setStep("newPassword");
-                    setAlert(null);
-                }, TIMERS.OTP_VERIFY_DELAY);
-            } else {
-                setAlert({
-                    type: "error",
-                    message: "Mã OTP không chính xác. Vui lòng thử lại",
-                });
-            }
-        } catch (error) {
+            await AuthApi.verifyOtp(email, otp);
+            setAlert({
+                type: "success",
+                message: "Xác nhận OTP thành công!",
+            });
+            setTimeout(() => {
+                setStep("newPassword");
+                setAlert(null);
+            }, TIMERS.OTP_VERIFY_DELAY);
+        } catch (error: any) {
             setAlert({
                 type: "error",
-                message: "Có lỗi xảy ra. Vui lòng thử lại sau",
+                message: error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn",
             });
         } finally {
             setLoading(false);
@@ -169,27 +161,21 @@ export default function ForgotPasswordPage() {
     };
 
     const handleResendOTP = async () => {
+        if (resendTimer > 0) return;
+        
         setLoading(true);
         try {
-            // Simulate API call
-            const success = await mockResendOTPAPI(email);
-
-            if (success) {
-                setAlert({
-                    type: "success",
-                    message: "Gửi lại mã OTP thành công! Vui lòng kiểm tra email",
-                });
-                setOtp("");
-                setResendTimer(TIMERS.RESEND_OTP);
-            } else {
-                setAlert({
-                    type: "error",
-                    message: "Không thể gửi lại mã OTP. Vui lòng thử lại sau",
-                });
-            }
+            await AuthApi.forgotPassword({ email });
+            setAlert({
+                type: "success",
+                message: "Gửi lại mã OTP thành công! Vui lòng kiểm tra email",
+            });
+            setOtp("");
+            setResendTimer(TIMERS.RESEND_OTP);
+        } catch (error: any) {
             setAlert({
                 type: "error",
-                message: "Có lỗi xảy ra. Vui lòng thử lại sau",
+                message: error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau",
             });
         } finally {
             setLoading(false);
@@ -215,8 +201,12 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await AuthApi.resetPassword({
+                email,
+                otp,
+                newPassword,
+                confirmNewPassword: confirmPassword,
+            });
 
             setAlert({
                 type: "success",
@@ -226,10 +216,10 @@ export default function ForgotPasswordPage() {
             setTimeout(() => {
                 window.location.href = "/login";
             }, 2000);
-        } catch (error) {
+        } catch (error: any) {
             setAlert({
                 type: "error",
-                message: "Có lỗi xảy ra. Vui lòng thử lại sau",
+                message: error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau",
             });
         } finally {
             setLoading(false);
@@ -241,7 +231,7 @@ export default function ForgotPasswordPage() {
             <div className="shadow-lg p-8 flex flex-col justify-center items-center rounded-2xl w-full max-w-md">
                 {/* logo */}
                 <div className="h-20 w-20">
-                    <img className="h-full w-full" src="quochuy.png" alt="quochuy" />
+                    <img className="h-full w-full" src="/quochuy.png" alt="quochuy" />
                 </div>
 
                 {/* title */}
@@ -309,20 +299,20 @@ export default function ForgotPasswordPage() {
                             <div className="flex flex-col justify-center items-center text-xs text-gray-500 text-center">
                                 <p>Mã xác thực có hiệu lực trong 5 phút.</p>
 
-                                <p>
+                                <div className="mt-1">
                                     {resendTimer > 0 ? (
-                                        <>
+                                        <p>
                                             Chưa nhận được mã? Gửi lại trong <span className="text-primary font-medium">{formatTime(resendTimer)}</span>
-                                        </>
+                                        </p>
                                     ) : (
-                                        <>
+                                        <p>
                                             Chưa nhận được mã?{" "}
                                             <button type="button" onClick={handleResendOTP} disabled={loading} className="text-primary font-medium hover:underline cursor-pointer">
                                                 Gửi lại
                                             </button>
-                                        </>
+                                        </p>
                                     )}
-                                </p>
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-2">

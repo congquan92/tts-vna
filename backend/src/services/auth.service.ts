@@ -117,6 +117,18 @@ export class AuthService {
     return { message: 'Mã OTP đã được gửi đến email của bạn' };
   }
 
+  async verifyOtp(email: string, otp: string) {
+    const user = await this.authRepository.findUserByEmail(email);
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+
+    const otpRecord = await this.authRepository.findOtp(user.id);
+    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+
+    return { message: 'Mã OTP hợp lệ' };
+  }
+
   async verifyOtpAndReset(forgotDto: ForgotPasswordDto) {
     const { email, otp, newPassword, confirmNewPassword } = forgotDto;
 
