@@ -77,11 +77,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white p-4">
-            <div className="flex w-full max-w-[500px] flex-col items-center justify-center">
-                {/* Logo to hơn để giống bản design */}
+        <div className="flex min-h-screen items-center justify-center bg-white">
+            <div className="flex w-full max-w-[550px] flex-col items-center justify-center rounded-lg shadow-lg p-5">
+                {/* Logo  */}
                 <div className="mb-6 h-32 w-32">
-                    <Image src="/quochuy.png" alt="quochuy" width={128} height={128} className="object-contain" />
+                    <Image src="/quochuy.png" alt="quochuy" width={128} height={128} className="object-contain w-auto h-auto" />
                 </div>
 
                 {/* Title */}
@@ -141,7 +141,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* Buttons */}
-                    <div className="mt-4 flex flex-col gap-4">
+                    <div className="mt-4 flex flex-col gap-4 mb-4">
                         <Button variant="primary" type="submit" loading={loading}>
                             Đăng nhập
                         </Button>
