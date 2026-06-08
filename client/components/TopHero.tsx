@@ -5,7 +5,7 @@ type TopHeroProps = {
 
 const TopHero: React.FC<TopHeroProps> = (props: TopHeroProps) => {
     return (
-        <div className={`bg-white top-hero px-5 py-3 text-lg font-semibold rounded-b-lg ${props.component && "flex items-center justify-between"}`}>
+        <div className={`bg-white top-hero px-6 py-5 text-lg font-semibold rounded-b-lg ${props.component && "flex items-center justify-between"} shadow-lg rounded-lg`}>
             <h1>{props.lable}</h1>
             {props.component && <>{props.component}</>}
         </div>
