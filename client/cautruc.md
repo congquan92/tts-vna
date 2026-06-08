@@ -5,7 +5,7 @@
 │ ├── features/ # ❤️ TRÁI TIM CỦA APP: Chia theo Domain/Chức năng.
 │ ├── lib/ # ⚙️ CONFIG THƯ VIỆN: Setup bên thứ 3 (prisma, axios, auth.ts, queryClient).
 │ ├── hooks/ # 🎣 GLOBAL HOOKS: Mấy hook xài chung như useDebounce, useClickOutside.
-│ ├── services/ # 🌐 API CALLS: Nơi chứa các hàm gọi API (REST/GraphQL), tách biệt hoàn toàn khỏi UI.
+│ ├── api/ # 🌐 API CALLS: Nơi chứa các hàm gọi API (REST/GraphQL), tách biệt hoàn toàn khỏi UI.
 │ ├── store/ # 📦 GLOBAL STATE: Zustand, Redux, Jotai...
 │ ├── types/ # 🏷️ TYPESCRIPT: Khai báo interface, type dùng chung.
 │ ├── utils/ # 🛠️ HELPER: Các pure functions như format tiền, format ngày tháng.
@@ -19,8 +19,6 @@
 ```-Ví dụ bên trong features/auth/:
 features/auth/
 ├── components/ # (LoginForm, RegisterForm)
-├── hooks/ # (useAuth)
-├── services/ # (login(), logout())
 └── types/ # (AuthResponse, UserData)
 ```
 
