@@ -53,11 +53,11 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const res = await AuthApi.login(account, password);
-            
+
             if (res && res.accessToken) {
                 // Lưu token vào localStorage
                 localStorage.setItem("auth_token", res.accessToken);
-                
+
                 setAlert({
                     type: "success",
                     message: "Đăng nhập thành công! Đang chuyển hướng...",
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
                 // Chuyển hướng sau 1.5 giây
                 setTimeout(() => {
-                    router.push("/");
+                    router.push("/accounts");
                 }, 1500);
             }
         } catch (error: any) {
