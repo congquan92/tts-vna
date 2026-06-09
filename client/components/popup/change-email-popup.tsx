@@ -28,7 +28,7 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
         setLoading(true);
         setAlert(null);
         try {
-            // await AuthApi.requestChangeEmail();
+            await AuthApi.requestChangeEmail();
             setTimeLeft(60);
             setAlert({ type: "success", message: "Mã OTP đã được gửi tới email của bạn" });
         } catch (error: unknown) {
