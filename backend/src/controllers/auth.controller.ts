@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Patch, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Patch, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -7,7 +7,9 @@ import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { ChangeEmailDto } from '../dto/change-email.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
+import { diskStorage } from 'multer';
 
 @ApiTags('Authentication & Profile')
 @Controller('auth')
@@ -84,7 +86,7 @@ export class AuthController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Post('request-change-email') 
+  @Post('request-change-email')
   @ApiOperation({ summary: 'Gửi OTP tới email hiện tại để xác thực' })
   async requestOtp(@Req() req: any) {
     return await this.authService.requestOtpToCurrentEmail(req.user.id);
@@ -92,9 +94,43 @@ export class AuthController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Post('verify-and-change-email') 
+  @Post('verify-and-change-email')
   @ApiOperation({ summary: 'Xác thực OTP và hoàn tất đổi email' })
   async verifyAndChangeEmail(@Req() req: any, @Body() dto: ChangeEmailDto) {
     return await this.authService.verifyAndChangeEmail(req.user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-avatar')
+  @ApiOperation({ summary: 'Upload ảnh đại diện' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (req, file, cb) => {
+          cb(null, `${Date.now()}-${file.originalname}`);
+        },
+      }),
+    }),
+  )
+  uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
+
+    return {
+      avatarUrl: `/uploads/avatars/${file.filename}`,
+    };
   }
 }
