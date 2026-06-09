@@ -23,8 +23,11 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
     // Reset form data when modal closes
     useEffect(() => {
         if (!isOpen) {
-            setFormData({ oldPass: "", newPass: "", confirmPass: "" });
-            setAlert(null);
+            const timer = setTimeout(() => {
+                setFormData({ oldPass: "", newPass: "", confirmPass: "" });
+                setAlert(null);
+            }, 200); // Wait for transition if any
+            return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
@@ -70,11 +73,12 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
             setTimeout(() => {
                 onClose();
             }, 2000);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error changing password:", error);
+            const errorMessage = (error as any).response?.data?.message || "Mật khẩu cũ không chính xác hoặc có lỗi xảy ra";
             setAlert({
                 type: "error",
-                message: error.response?.data?.message || "Mật khẩu cũ không chính xác hoặc có lỗi xảy ra",
+                message: errorMessage,
             });
         } finally {
             setLoading(false);
@@ -82,8 +86,8 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-9999 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-105 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="bg-[#2f6ced] py-4 text-center">
                     <h2 className="text-white font-bold text-lg tracking-wide">ĐỔI MẬT KHẨU</h2>
