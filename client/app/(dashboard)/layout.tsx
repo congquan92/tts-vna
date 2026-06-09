@@ -1,11 +1,13 @@
 import Sidebar from "@/components/Sidebar";
-import React from "react";
+import React, { Suspense } from "react";
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <div className="flex">
             {/* sidebar */}
-            <Sidebar />
+            <Suspense fallback={<div>Đang tải menu...</div>}>
+                <Sidebar />
+            </Suspense>
 
             {/* pages */}
             <div className="flex-1 px-2">{children}</div>
