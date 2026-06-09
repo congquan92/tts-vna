@@ -86,7 +86,8 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
     };
 
     return (
-        <div className="fixed inset-0 z-9999 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+        // backdrop-blur-sm
+        <div className="fixed inset-0 z-9999 bg-black/40 flex items-center justify-center p-4 ">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-105 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="bg-[#2f6ced] py-4 text-center">
@@ -104,10 +105,10 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
 
                         {/* Footer Buttons */}
                         <div className="flex justify-end gap-3 items-center mt-2">
-                            <button type="button" onClick={onClose} disabled={loading} className="text-gray-500 font-semibold text-[15px] hover:bg-gray-100 px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50">
-                                Huỷ bỏ
-                            </button>
-                            <Button variant="primary" type="submit" loading={loading} className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
+                            <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="text-gray-500 border-none ">
+                                <strong>Huỷ bỏ</strong>
+                            </Button>
+                            <Button variant="primary" size="sm" loading={loading} className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
                                 Lưu
                             </Button>
                         </div>
