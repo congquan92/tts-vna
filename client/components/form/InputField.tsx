@@ -8,6 +8,7 @@ export const InputField = ({
     type = "text", 
     icon: Icon, 
     isSelect = false, 
+    options = [],
     placeholder = "",
     readOnly = false,
     disabled = false
@@ -19,6 +20,7 @@ export const InputField = ({
     type?: string; 
     icon?: any; 
     isSelect?: boolean; 
+    options?: { label: string; value: string }[];
     placeholder?: string;
     readOnly?: boolean;
     disabled?: boolean;
@@ -29,12 +31,21 @@ export const InputField = ({
             {isSelect ? (
                 <select 
                     name={name}
-                    value={value}
+                    value={value || ""}
                     onChange={onChange}
                     disabled={disabled || readOnly}
                     className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-transparent appearance-none cursor-pointer disabled:bg-gray-50"
                 >
-                    <option value={value}>{value}</option>
+                    <option value="" disabled hidden>{placeholder || "Chưa chọn"}</option>
+                    {options.length > 0 ? (
+                        options.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))
+                    ) : (
+                        value && <option value={value}>{value}</option>
+                    )}
                 </select>
             ) : (
                 <input 
@@ -45,7 +56,12 @@ export const InputField = ({
                     readOnly={readOnly}
                     disabled={disabled}
                     placeholder={placeholder} 
-                    className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-transparent read-only:bg-gray-50 disabled:bg-gray-50" 
+                    onClick={(e) => {
+                        if (type === "date" && !readOnly && !disabled) {
+                            (e.target as any).showPicker?.();
+                        }
+                    }}
+                    className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text" 
                 />
             )}
             {/* Render Icon nếu có */}

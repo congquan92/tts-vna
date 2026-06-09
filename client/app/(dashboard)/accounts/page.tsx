@@ -18,12 +18,22 @@ const AccountPage = () => {
     const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
 
+    // Dữ liệu hành chính
+    const [provincesData, setProvincesData] = useState<any[]>([]);
+    const [availableWards, setAvailableWards] = useState<{ label: string; value: string }[]>([]);
+
     useEffect(() => {
-        const fetchProfile = async () => {
+        const initData = async () => {
             try {
+                // Fetch provinces data
+                const geoRes = await fetch("/vietnam-provinces.json");
+                const geoData = await geoRes.json();
+                setProvincesData(geoData);
+
+                // Fetch profile
                 const data = await AuthApi.getProfile();
                 setProfile(data);
-                // Initialize form data with current profile values
+
                 setFormData({
                     fullName: data.fullName,
                     email: data.email,
@@ -36,20 +46,42 @@ const AccountPage = () => {
                     ward: data.ward,
                     address: data.address,
                 });
+
+                // Nếu đã có tỉnh thành, load xã phường tương ứng
+                if (data.province) {
+                    const province = geoData.find((p: any) => p.name === data.province);
+                    if (province) {
+                        const wards = province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name })));
+                        setAvailableWards(wards);
+                    }
+                }
             } catch (error) {
-                console.error("Error fetching profile:", error);
-                setAlert({ type: "error", message: "Không thể tải thông tin người dùng" });
+                console.error("Error fetching data:", error);
+                setAlert({ type: "error", message: "Không thể tải thông tin hệ thống" });
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProfile();
+        initData();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+
+        // Nếu thay đổi tỉnh thành, cần reset và cập nhật xã phường
+        if (name === "province") {
+            if (value) {
+                const province = provincesData.find((p: any) => p.name === value);
+                const wards = province ? province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name }))) : [];
+                setAvailableWards(wards);
+                setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
+            } else {
+                setAvailableWards([]);
+                setFormData((prev) => ({ ...prev, ward: "" }));
+            }
+        }
     };
 
     const handleToggleActive = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,9 +125,6 @@ const AccountPage = () => {
     };
 
     const handleEmailChanged = () => {
-        // After email is changed via popup, we might want to refresh profile
-        // or just let the user know they need to re-login if that's the flow.
-        // For now, let's just refresh the profile data.
         AuthApi.getProfile().then((data) => {
             setProfile(data);
             setFormData((prev) => ({ ...prev, email: data.email }));
@@ -162,7 +191,19 @@ const AccountPage = () => {
                         <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName || ""} onChange={handleChange} />
 
                         <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob ? new Date(formData.dob).toISOString().split("T")[0] : ""} type="date" icon={Calendar} onChange={handleChange} />
-                        <InputField name="gender" label="Giới tính" value={formData.gender || ""} isSelect onChange={handleChange} />
+                        <InputField
+                            name="gender"
+                            label="Giới tính"
+                            value={formData.gender ?? ""}
+                            isSelect
+                            placeholder="Chọn giới tính"
+                            options={[
+                                { label: "Nam", value: "MALE" },
+                                { label: "Nữ", value: "FEMALE" },
+                                { label: "Gay", value: "GAY" },
+                            ]}
+                            onChange={handleChange}
+                        />
 
                         <InputField name="position" label="Chức danh" value={formData.position || ""} placeholder="Nhập chức danh" onChange={handleChange} />
                         <InputField label="Vai trò *" value={profile?.account?.role || "User"} isSelect readOnly />
@@ -182,8 +223,25 @@ const AccountPage = () => {
                         <h2 className="text-[15px] font-bold text-gray-800 mb-6">Thông tin liên hệ</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 mb-6">
-                            <InputField name="province" label="Tỉnh/ thành phố" value={formData.province || ""} isSelect onChange={handleChange} />
-                            <InputField name="ward" label="Phường xã" value={formData.ward || ""} isSelect onChange={handleChange} />
+                            <InputField 
+                                name="province" 
+                                label="Tỉnh/ thành phố" 
+                                value={formData.province ?? ""} 
+                                isSelect 
+                                placeholder="Chọn tỉnh/ thành phố"
+                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))} 
+                                onChange={handleChange} 
+                            />
+                            <InputField 
+                                name="ward" 
+                                label="Phường xã" 
+                                value={formData.ward ?? ""} 
+                                isSelect 
+                                placeholder="Chọn phường/ xã"
+                                options={availableWards} 
+                                disabled={!formData.province}
+                                onChange={handleChange} 
+                            />
                         </div>
 
                         <InputField name="address" label="Địa chỉ" value={formData.address || ""} placeholder="Nhập địa chỉ chi tiết" onChange={handleChange} />
@@ -193,6 +251,7 @@ const AccountPage = () => {
 
             <ChangeEmailPopup
                 open={isChangeEmailOpen}
+                currentEmail={profile?.email}
                 onClose={() => {
                     setIsChangeEmailOpen(false);
                     handleEmailChanged();
