@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { BookOpen, Home, Settings, ShieldHalf, Users, UserCog, BarChart } from "lucide-react";
+import { Settings, ShieldHalf } from "lucide-react";
 
 export type SidebarMenuItem = {
     id: string;
@@ -11,39 +11,25 @@ export type SidebarMenuItem = {
 };
 
 export const menuData: SidebarMenuItem[] = [
-    { id: "guide", label: "Hướng dẫn sử dụng", icon: <BookOpen size={20} className="opacity-90" />, path: "/guide" },
-    { id: "home", label: "Trang chủ", icon: <Home size={20} className="opacity-90" />, path: "/" },
     {
         id: "system",
-        label: "Hệ thống",
+        label: "Quản trị phần mềm",
         icon: <Settings size={20} className="opacity-90" />,
         isOpen: true,
         items: [
             { id: "users", label: "Quản lý người dùng", path: "/users" },
-            { id: "roles", label: "Vai trò người dùng", path: "/roles" },
-            { id: "receive", label: "Tiếp nhận", path: "/receive" },
+            { id: "roles", label: "Quản lý doanh nghiệp", path: "/roles" },
+            { id: "reports", label: "Kỳ báo cáo", path: "/reports" },
         ],
     },
     {
-        id: "admin",
-        label: "Quản trị phần mềm",
-        icon: <ShieldHalf size={20} className="opacity-90" />,
-        isOpen: false,
-        items: [{ id: "settings", label: "Cài đặt chung", path: "/settings" }],
+        id: "accidents",
+        label: "Tai nạn lao động",
+        icon: <Settings size={20} className="opacity-90" />,
+        isOpen: true,
+        items: [
+            { id: "category", label: "Danh mục chung", path: "/category" },
+            { id: "accident-types", label: "TNLĐ theo HĐLĐ", path: "/accident-types" },
+        ],
     },
-    {
-        id: "teacher-standards",
-        label: "Chuẩn nghề nghiệp giáo viên",
-        icon: <Users size={20} className="opacity-90" />,
-        isOpen: false,
-        items: [{ id: "list-1", label: "Danh sách chuẩn", path: "/teacher-standards" }],
-    },
-    {
-        id: "ht-hp-standards",
-        label: "Chuẩn nghề nghiệp HT - HP",
-        icon: <UserCog size={20} className="opacity-90" />,
-        isOpen: false,
-        items: [{ id: "list-2", label: "Danh sách chuẩn", path: "/ht-hp-standards" }],
-    },
-    { id: "reports", label: "Báo cáo thống kê", icon: <BarChart size={20} className="opacity-90" />, path: "/reports" },
 ];

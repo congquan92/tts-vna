@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthApi } from "@/api/auth";
 import type { User } from "@/types/auth";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
     user: User | null;
@@ -19,7 +19,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-    const pathname = usePathname();
 
     const refreshProfile = useCallback(async () => {
         try {
@@ -35,11 +34,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const token = localStorage.getItem("auth_token");
-        if (token) {
-            refreshProfile();
-        } else {
-            setLoading(false);
-        }
+
+        const timer = setTimeout(() => {
+            if (token) {
+                refreshProfile();
+            } else {
+                setLoading(false);
+            }
+        }, 0);
+
+        return () => clearTimeout(timer);
     }, [refreshProfile]);
 
     const login = async (username: string, password: string) => {

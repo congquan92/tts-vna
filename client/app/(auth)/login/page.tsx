@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import TextInput from "@/components/form/TextInput";
@@ -24,6 +24,24 @@ export default function LoginPage() {
     const [errors, setErrors] = useState<FormErrors>({});
     const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Load saved credentials on mount
+    useEffect(() => {
+        const savedAccount = localStorage.getItem("remembered_account");
+        const savedPassword = localStorage.getItem("remembered_password");
+
+        const timer = setTimeout(() => {
+            if (savedAccount) {
+                setAccount(savedAccount);
+                setRememberMe(true);
+            }
+            if (savedPassword) {
+                setPassword(savedPassword);
+            }
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const validateForm = () => {
         const newErrors: FormErrors = {};
@@ -58,6 +76,15 @@ export default function LoginPage() {
                 // Lưu token vào localStorage
                 localStorage.setItem("auth_token", res.accessToken);
 
+                // Xử lý Ghi nhớ đăng nhập
+                if (rememberMe) {
+                    localStorage.setItem("remembered_account", account);
+                    localStorage.setItem("remembered_password", password);
+                } else {
+                    localStorage.removeItem("remembered_account");
+                    localStorage.removeItem("remembered_password");
+                }
+
                 setAlert({
                     type: "success",
                     message: "Đăng nhập thành công! Đang chuyển hướng...",
@@ -68,10 +95,11 @@ export default function LoginPage() {
                     router.push("/accounts");
                 }, 1500);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             setAlert({
                 type: "error",
-                message: error.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
+                message: axiosError.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
             });
         } finally {
             setLoading(false);

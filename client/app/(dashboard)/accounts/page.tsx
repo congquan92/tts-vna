@@ -11,6 +11,21 @@ import { User, UpdateProfilePayload } from "@/types/auth";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
 
+interface Ward {
+    ward_code: string;
+    name: string;
+    province_code: string;
+}
+
+interface Province {
+    province_code: string;
+    name: string;
+    short_name: string;
+    code: string;
+    place_type: string;
+    wards: Ward[];
+}
+
 const AccountPage = () => {
     const [profile, setProfile] = useState<User | null>(null);
     const [formData, setFormData] = useState<UpdateProfilePayload>({});
@@ -24,15 +39,15 @@ const AccountPage = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     // Dữ liệu hành chính
-    const [provincesData, setProvincesData] = useState<any[]>([]);
+    const [provincesData, setProvincesData] = useState<Province[]>([]);
     const [availableWards, setAvailableWards] = useState<{ label: string; value: string }[]>([]);
 
     useEffect(() => {
         const initData = async () => {
             try {
                 // Fetch provinces data
-                const geoRes = await fetch("/vietnam-provinces.json");
-                const geoData = await geoRes.json();
+                const geoRes = await fetch("/address.json");
+                const geoData: Province[] = await geoRes.json();
                 setProvincesData(geoData);
 
                 // Fetch profile
@@ -54,14 +69,12 @@ const AccountPage = () => {
 
                 // Nếu đã có tỉnh thành, load xã phường tương ứng
                 if (data.province) {
-                    const province = geoData.find((p: any) => p.name === data.province);
-                    if (province) {
-                        const wards = province.districts.flatMap((d: any) =>
-                            d.wards.map((w: any) => ({
-                                label: `${w.name} - ${d.name}`,
-                                value: `${w.name} - ${d.name}`,
-                            })),
-                        );
+                    const province = geoData.find((p: Province) => p.name === data.province);
+                    if (province && province.wards) {
+                        const wards = province.wards.map((w: Ward) => ({
+                            label: w.name,
+                            value: w.name,
+                        }));
                         setAvailableWards(wards);
                     }
                 }
@@ -83,15 +96,14 @@ const AccountPage = () => {
         // Nếu thay đổi tỉnh thành, cần reset và cập nhật xã phường
         if (name === "province") {
             if (value) {
-                const province = provincesData.find((p: any) => p.name === value);
-                const wards = province
-                    ? province.districts.flatMap((d: any) =>
-                          d.wards.map((w: any) => ({
-                              label: `${w.name} - ${d.name}`,
-                              value: `${w.name} - ${d.name}`,
-                          })),
-                      )
-                    : [];
+                const province = provincesData.find((p: Province) => p.name === value);
+                const wards =
+                    province && province.wards
+                        ? province.wards.map((w: Ward) => ({
+                              label: w.name,
+                              value: w.name,
+                          }))
+                        : [];
                 setAvailableWards(wards);
                 setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
             } else {
@@ -126,11 +138,12 @@ const AccountPage = () => {
             setPreviewUrl(null);
 
             setAlert({ type: "success", message: "Cập nhật thông tin thành công" });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error updating profile:", error);
+            const axiosError = error as { response?: { data?: { message?: string } } };
             setAlert({
                 type: "error",
-                message: error.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin",
+                message: axiosError.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin",
             });
         } finally {
             setSaving(false);
