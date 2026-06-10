@@ -1,5 +1,5 @@
 import { axiosInstance } from "@/lib/axios";
-import type { LoginResponse, RegisterPayload, RegisterResponse, ForgotPasswordPayload, ChangePasswordPayload, UpdateProfilePayload, ChangeEmailPayload, User } from "@/types/auth";
+import type { LoginResponse, RegisterPayload, RegisterResponse, ForgotPasswordPayload, ChangePasswordPayload, UpdateProfilePayload, ChangeEmailPayload, User, UploadAvatarResponse } from "@/types/auth";
 
 export const AuthApi = {
     login: async (username: string, password: string): Promise<LoginResponse> => {
@@ -49,6 +49,17 @@ export const AuthApi = {
 
     verifyAndChangeEmail: async (payload: ChangeEmailPayload): Promise<{ message: string }> => {
         const res = await axiosInstance.post<{ message: string }>("/auth/verify-and-change-email", payload);
+        return res.data;
+    },
+
+    uploadAvatar: async (file: File): Promise<UploadAvatarResponse> => {
+        const formData = new FormData();
+        formData.append("avatar", file);
+        const res = await axiosInstance.post<UploadAvatarResponse>("/auth/upload-avatar", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
         return res.data;
     },
 };
