@@ -27,7 +27,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
