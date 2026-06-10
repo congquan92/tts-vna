@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
+import Image from "next/image";
 
 const AccountPage = () => {
     const [profile, setProfile] = useState<User | null>(null);
@@ -17,6 +18,10 @@ const AccountPage = () => {
     const [saving, setSaving] = useState(false);
     const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
+
+    // Image preview states
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     // Dữ liệu hành chính
     const [provincesData, setProvincesData] = useState<any[]>([]);
@@ -51,7 +56,12 @@ const AccountPage = () => {
                 if (data.province) {
                     const province = geoData.find((p: any) => p.name === data.province);
                     if (province) {
-                        const wards = province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name })));
+                        const wards = province.districts.flatMap((d: any) =>
+                            d.wards.map((w: any) => ({
+                                label: `${w.name} - ${d.name}`,
+                                value: `${w.name} - ${d.name}`,
+                            })),
+                        );
                         setAvailableWards(wards);
                     }
                 }
@@ -74,7 +84,14 @@ const AccountPage = () => {
         if (name === "province") {
             if (value) {
                 const province = provincesData.find((p: any) => p.name === value);
-                const wards = province ? province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name }))) : [];
+                const wards = province
+                    ? province.districts.flatMap((d: any) =>
+                          d.wards.map((w: any) => ({
+                              label: `${w.name} - ${d.name}`,
+                              value: `${w.name} - ${d.name}`,
+                          })),
+                      )
+                    : [];
                 setAvailableWards(wards);
                 setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
             } else {
@@ -92,8 +109,22 @@ const AccountPage = () => {
         setSaving(true);
         setAlert(null);
         try {
-            const updatedProfile = await AuthApi.updateProfile(formData);
+            let currentAvatarUrl = formData.avatarUrl;
+
+            // Nếu có file mới được chọn, upload lên Cloudinary trước
+            if (selectedFile) {
+                const res = await AuthApi.uploadAvatar(selectedFile);
+                currentAvatarUrl = res.avatarUrl;
+            }
+
+            const payload = { ...formData, avatarUrl: currentAvatarUrl };
+            const updatedProfile = await AuthApi.updateProfile(payload);
+
             setProfile({ ...updatedProfile, account: profile?.account });
+            setFormData((prev) => ({ ...prev, avatarUrl: updatedProfile.avatarUrl }));
+            setSelectedFile(null);
+            setPreviewUrl(null);
+
             setAlert({ type: "success", message: "Cập nhật thông tin thành công" });
         } catch (error: any) {
             console.error("Error updating profile:", error);
@@ -120,6 +151,8 @@ const AccountPage = () => {
                 ward: profile.ward,
                 address: profile.address,
             });
+            setSelectedFile(null);
+            setPreviewUrl(null);
         }
         setAlert(null);
     };
@@ -129,6 +162,31 @@ const AccountPage = () => {
             setProfile(data);
             setFormData((prev) => ({ ...prev, email: data.email }));
         });
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setAlert({ type: "error", message: "Kích thước ảnh không được vượt quá 5MB" });
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+        if (!allowedTypes.includes(file.type)) {
+            setAlert({ type: "error", message: "Chỉ chấp nhận định dạng .jpeg, .jpg, .png" });
+            return;
+        }
+
+        setSelectedFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        // Cleanup previous object URL if any
+        return () => URL.revokeObjectURL(objectUrl);
     };
 
     if (loading) {
@@ -156,9 +214,20 @@ const AccountPage = () => {
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}
                 <div className="w-full md:w-[280px] bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center shrink-0">
-                    <div className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors">
-                        {formData.avatarUrl ? (
-                            <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    <input type="file" id="avatarInput" className="hidden" accept=".jpeg,.jpg,.png" onChange={handleAvatarChange} />
+                    <div
+                        className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
+                        onClick={() => document.getElementById("avatarInput")?.click()}
+                    >
+                        {previewUrl || formData.avatarUrl ? (
+                            <Image
+                                src={previewUrl || (formData.avatarUrl?.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl?.replace(/^\//, "")}`)}
+                                alt="Avatar"
+                                width={144}
+                                height={144}
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={!!previewUrl}
+                            />
                         ) : (
                             <>
                                 <Camera className="text-gray-500 mb-1 size-6" />
@@ -200,7 +269,6 @@ const AccountPage = () => {
                             options={[
                                 { label: "Nam", value: "MALE" },
                                 { label: "Nữ", value: "FEMALE" },
-                                { label: "Gay", value: "GAY" },
                             ]}
                             onChange={handleChange}
                         />
@@ -223,25 +291,16 @@ const AccountPage = () => {
                         <h2 className="text-[15px] font-bold text-gray-800 mb-6">Thông tin liên hệ</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 mb-6">
-                            <InputField 
-                                name="province" 
-                                label="Tỉnh/ thành phố" 
-                                value={formData.province ?? ""} 
-                                isSelect 
+                            <InputField
+                                name="province"
+                                label="Tỉnh/ thành phố"
+                                value={formData.province ?? ""}
+                                isSelect
                                 placeholder="Chọn tỉnh/ thành phố"
-                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))} 
-                                onChange={handleChange} 
+                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
+                                onChange={handleChange}
                             />
-                            <InputField 
-                                name="ward" 
-                                label="Phường xã" 
-                                value={formData.ward ?? ""} 
-                                isSelect 
-                                placeholder="Chọn phường/ xã"
-                                options={availableWards} 
-                                disabled={!formData.province}
-                                onChange={handleChange} 
-                            />
+                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
                         </div>
 
                         <InputField name="address" label="Địa chỉ" value={formData.address || ""} placeholder="Nhập địa chỉ chi tiết" onChange={handleChange} />

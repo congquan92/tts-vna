@@ -18,10 +18,21 @@ import { menuData } from "@/components/data-sidebar";
 import { Menu as MenuIcon, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import AccountPopup from "@/components/popup/account-popup";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function SidebarMUI() {
+    const { user } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+
+    // Helper for avatar URL
+    const getAvatarUrl = (url?: string) => {
+        if (!url) return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+        if (url.startsWith("http")) return url;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+        return `${apiUrl}/${url.replace(/^\//, "")}`;
+    };
 
     // State cho MUI Menu (Popup user)
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -167,12 +178,12 @@ export default function SidebarMUI() {
                         }}
                     >
                         <ListItemIcon sx={{ minWidth: 52 }}>
-                            <Avatar src="/avatar.jpg" alt="Avatar" sx={{ width: 44, height: 44 }} />
+                            <Avatar src={getAvatarUrl(user?.avatarUrl)} alt="Avatar" sx={{ width: 44, height: 44 }} />
                         </ListItemIcon>
 
                         <ListItemText
                             primary={
-                                <Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>Phan Thanh Tùng</Typography>
+                                <Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>{user?.fullName || "Người dùng"}</Typography>
                             }
                         />
 

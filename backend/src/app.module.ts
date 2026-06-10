@@ -14,10 +14,12 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthRepository } from './repositories/auth.repository';
 import { AuthService } from './services/auth.service';
 import { Account } from './entities/account.entity.js';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    CloudinaryModule,
 
     JwtModule.registerAsync({
       imports: [ConfigModule],

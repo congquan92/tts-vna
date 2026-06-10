@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
+import { AuthProvider } from "@/contexts/AuthContext";
 // import { ThemeProvider } from "@mui/material/styles";
 // import theme from "@/lib/theme"; // Nhớ check lại đường dẫn file theme
 
@@ -29,8 +30,10 @@ export default function RootLayout({
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
             <body className="min-h-full flex flex-col">
                 <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                    {/* <ThemeProvider theme={theme}>{children}</ThemeProvider> */}
-                    {children}
+                    <AuthProvider>
+                        {/* <ThemeProvider theme={theme}>{children}</ThemeProvider> */}
+                        {children}
+                    </AuthProvider>
                 </AppRouterCacheProvider>
             </body>
         </html>
