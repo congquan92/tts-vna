@@ -131,6 +131,39 @@ const AccountPage = () => {
         });
     };
 
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setAlert({ type: "error", message: "Kích thước ảnh không được vượt quá 5MB" });
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+        if (!allowedTypes.includes(file.type)) {
+            setAlert({ type: "error", message: "Chỉ chấp nhận định dạng .jpeg, .jpg, .png" });
+            return;
+        }
+
+        try {
+            setSaving(true);
+            const res = await AuthApi.uploadAvatar(file);
+            setFormData((prev) => ({ ...prev, avatarUrl: res.avatarUrl }));
+            setAlert({ type: "success", message: "Tải ảnh đại diện thành công. Nhấn Lưu để cập nhật." });
+        } catch (error: any) {
+            console.error("Error uploading avatar:", error);
+            setAlert({
+                type: "error",
+                message: error.response?.data?.message || "Có lỗi xảy ra khi tải ảnh đại diện",
+            });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return <div className="p-10 text-center">Đang tải thông tin...</div>;
     }
@@ -156,9 +189,20 @@ const AccountPage = () => {
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}
                 <div className="w-full md:w-[280px] bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center shrink-0">
-                    <div className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="file" id="avatarInput" className="hidden" accept=".jpeg,.jpg,.png" onChange={handleAvatarChange} />
+                    <div
+                        className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
+                        onClick={() => document.getElementById("avatarInput")?.click()}
+                    >
                         {formData.avatarUrl ? (
-                            <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                            <img
+                                src={formData.avatarUrl.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl.replace(/^\//, "")}`}
+                                alt="Avatar"
+                                className="w-full h-full rounded-full object-cover"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+                                }}
+                            />
                         ) : (
                             <>
                                 <Camera className="text-gray-500 mb-1 size-6" />
@@ -223,25 +267,16 @@ const AccountPage = () => {
                         <h2 className="text-[15px] font-bold text-gray-800 mb-6">Thông tin liên hệ</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 mb-6">
-                            <InputField 
-                                name="province" 
-                                label="Tỉnh/ thành phố" 
-                                value={formData.province ?? ""} 
-                                isSelect 
+                            <InputField
+                                name="province"
+                                label="Tỉnh/ thành phố"
+                                value={formData.province ?? ""}
+                                isSelect
                                 placeholder="Chọn tỉnh/ thành phố"
-                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))} 
-                                onChange={handleChange} 
+                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
+                                onChange={handleChange}
                             />
-                            <InputField 
-                                name="ward" 
-                                label="Phường xã" 
-                                value={formData.ward ?? ""} 
-                                isSelect 
-                                placeholder="Chọn phường/ xã"
-                                options={availableWards} 
-                                disabled={!formData.province}
-                                onChange={handleChange} 
-                            />
+                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
                         </div>
 
                         <InputField name="address" label="Địa chỉ" value={formData.address || ""} placeholder="Nhập địa chỉ chi tiết" onChange={handleChange} />
