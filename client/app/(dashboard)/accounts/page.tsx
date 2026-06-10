@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
+import Image from "next/image";
 
 const AccountPage = () => {
     const [profile, setProfile] = useState<User | null>(null);
@@ -17,6 +18,10 @@ const AccountPage = () => {
     const [saving, setSaving] = useState(false);
     const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
+
+    // Image preview states
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     // Dữ liệu hành chính
     const [provincesData, setProvincesData] = useState<any[]>([]);
@@ -51,7 +56,12 @@ const AccountPage = () => {
                 if (data.province) {
                     const province = geoData.find((p: any) => p.name === data.province);
                     if (province) {
-                        const wards = province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name })));
+                        const wards = province.districts.flatMap((d: any) =>
+                            d.wards.map((w: any) => ({
+                                label: `${w.name} - ${d.name}`,
+                                value: `${w.name} - ${d.name}`,
+                            })),
+                        );
                         setAvailableWards(wards);
                     }
                 }
@@ -74,7 +84,14 @@ const AccountPage = () => {
         if (name === "province") {
             if (value) {
                 const province = provincesData.find((p: any) => p.name === value);
-                const wards = province ? province.districts.flatMap((d: any) => d.wards.map((w: any) => ({ label: w.name, value: w.name }))) : [];
+                const wards = province
+                    ? province.districts.flatMap((d: any) =>
+                          d.wards.map((w: any) => ({
+                              label: `${w.name} - ${d.name}`,
+                              value: `${w.name} - ${d.name}`,
+                          })),
+                      )
+                    : [];
                 setAvailableWards(wards);
                 setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
             } else {
@@ -92,8 +109,22 @@ const AccountPage = () => {
         setSaving(true);
         setAlert(null);
         try {
-            const updatedProfile = await AuthApi.updateProfile(formData);
+            let currentAvatarUrl = formData.avatarUrl;
+
+            // Nếu có file mới được chọn, upload lên Cloudinary trước
+            if (selectedFile) {
+                const res = await AuthApi.uploadAvatar(selectedFile);
+                currentAvatarUrl = res.avatarUrl;
+            }
+
+            const payload = { ...formData, avatarUrl: currentAvatarUrl };
+            const updatedProfile = await AuthApi.updateProfile(payload);
+
             setProfile({ ...updatedProfile, account: profile?.account });
+            setFormData((prev) => ({ ...prev, avatarUrl: updatedProfile.avatarUrl }));
+            setSelectedFile(null);
+            setPreviewUrl(null);
+
             setAlert({ type: "success", message: "Cập nhật thông tin thành công" });
         } catch (error: any) {
             console.error("Error updating profile:", error);
@@ -120,6 +151,8 @@ const AccountPage = () => {
                 ward: profile.ward,
                 address: profile.address,
             });
+            setSelectedFile(null);
+            setPreviewUrl(null);
         }
         setAlert(null);
     };
@@ -131,7 +164,7 @@ const AccountPage = () => {
         });
     };
 
-    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -148,20 +181,12 @@ const AccountPage = () => {
             return;
         }
 
-        try {
-            setSaving(true);
-            const res = await AuthApi.uploadAvatar(file);
-            setFormData((prev) => ({ ...prev, avatarUrl: res.avatarUrl }));
-            setAlert({ type: "success", message: "Tải ảnh đại diện thành công. Nhấn Lưu để cập nhật." });
-        } catch (error: any) {
-            console.error("Error uploading avatar:", error);
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Có lỗi xảy ra khi tải ảnh đại diện",
-            });
-        } finally {
-            setSaving(false);
-        }
+        setSelectedFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        // Cleanup previous object URL if any
+        return () => URL.revokeObjectURL(objectUrl);
     };
 
     if (loading) {
@@ -194,14 +219,14 @@ const AccountPage = () => {
                         className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
                         onClick={() => document.getElementById("avatarInput")?.click()}
                     >
-                        {formData.avatarUrl ? (
-                            <img
-                                src={formData.avatarUrl.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl.replace(/^\//, "")}`}
+                        {previewUrl || formData.avatarUrl ? (
+                            <Image
+                                src={previewUrl || (formData.avatarUrl?.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl?.replace(/^\//, "")}`)}
                                 alt="Avatar"
+                                width={144}
+                                height={144}
                                 className="w-full h-full rounded-full object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
-                                }}
+                                unoptimized={!!previewUrl}
                             />
                         ) : (
                             <>
@@ -244,7 +269,6 @@ const AccountPage = () => {
                             options={[
                                 { label: "Nam", value: "MALE" },
                                 { label: "Nữ", value: "FEMALE" },
-                                { label: "Gay", value: "GAY" },
                             ]}
                             onChange={handleChange}
                         />

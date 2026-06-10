@@ -17,21 +17,17 @@ import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { ChangeEmailDto } from '../dto/change-email.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
-import { diskStorage } from 'multer';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Authentication & Profile')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
@@ -155,21 +151,11 @@ export class AuthController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (req, file, cb) => {
-          cb(null, `${Date.now()}-${file.originalname}`);
-        },
-      }),
-    }),
-  )
-  uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
-
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    const result = await this.cloudinaryService.uploadFile(file);
     return {
-      avatarUrl: `/uploads/avatars/${file.filename}`,
+      avatarUrl: result.secure_url,
     };
   }
 }
