@@ -108,7 +108,7 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
                             <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="text-gray-500 border-none ">
                                 <strong>Huỷ bỏ</strong>
                             </Button>
-                            <Button variant="primary" size="sm" loading={loading} className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
+                            <Button variant="primary" size="sm" type="submit" loading={loading} className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
                                 Lưu
                             </Button>
                         </div>

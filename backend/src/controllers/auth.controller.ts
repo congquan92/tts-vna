@@ -1,4 +1,14 @@
-import { Controller, Post, Body, UseGuards, Get, Patch, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Patch,
+  Req,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -9,24 +19,33 @@ import { ChangeEmailDto } from '../dto/change-email.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
-import { diskStorage } from 'multer';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @ApiTags('Authentication & Profile')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
   @ApiResponse({ status: 201, description: 'Đăng ký thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ hoặc email đã tồn tại' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dữ liệu không hợp lệ hoặc email đã tồn tại',
+  })
   async register(@Body() registerDto: RegisterDto) {
     return await this.authService.register(registerDto);
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Đăng nhập để nhận Token' })
-  @ApiResponse({ status: 200, description: 'Đăng nhập thành công, trả về Access Token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Đăng nhập thành công, trả về Access Token',
+  })
   @ApiResponse({ status: 401, description: 'Sai tài khoản hoặc mật khẩu' })
   async login(@Body() loginDto: LoginDto) {
     return await this.authService.login(loginDto);
@@ -34,7 +53,12 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Gửi yêu cầu khôi phục mật khẩu' })
-  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', example: 'user@gmail.com' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { email: { type: 'string', example: 'user@gmail.com' } },
+    },
+  })
   @ApiResponse({ status: 200, description: 'OTP đã được gửi thành công' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return await this.authService.requestPasswordReset(forgotPasswordDto);
@@ -42,8 +66,13 @@ export class AuthController {
 
   @Post('verify-otp')
   @ApiOperation({ summary: 'Xác thực OTP' })
-  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' }, otp: { type: 'string' } } } })
-  async verifyOtp(@Body() body: { email: string, otp: string }) {
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { email: { type: 'string' }, otp: { type: 'string' } },
+    },
+  })
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
     return await this.authService.verifyOtp(body.email, body.otp);
   }
 
@@ -80,8 +109,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Đổi mật khẩu tài khoản' })
   @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công' })
   @ApiResponse({ status: 401, description: 'Mật khẩu cũ không chính xác' })
-  async changePassword(@Req() req: any, @Body() changePasswordDto: ChangePasswordDto) {
-    return await this.authService.changePassword(req.user.id, changePasswordDto);
+  async changePassword(
+    @Req() req: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return await this.authService.changePassword(
+      req.user.id,
+      changePasswordDto,
+    );
   }
 
   @ApiBearerAuth()
@@ -116,21 +151,11 @@ export class AuthController {
       },
     },
   })
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (req, file, cb) => {
-          cb(null, `${Date.now()}-${file.originalname}`);
-        },
-      }),
-    }),
-  )
-  uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
-
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    const result = await this.cloudinaryService.uploadFile(file);
     return {
-      avatarUrl: `/uploads/avatars/${file.filename}`,
+      avatarUrl: result.secure_url,
     };
   }
 }

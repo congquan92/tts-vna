@@ -9,8 +9,8 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ description: 'Địa chỉ email mới', example: 'nguyenvana@gmail.com' })
   @IsOptional() @IsEmail() email?: string;
 
-  @ApiPropertyOptional({ description: 'Link ảnh đại diện (URL)', example: 'https://avatar.com/me.png' })
-  @IsOptional() @IsUrl() avatarUrl?: string;
+  @ApiPropertyOptional({ description: 'Link ảnh đại diện', example: '/uploads/avatars/123.png' })
+  @IsOptional() @IsString() avatarUrl?: string;
 
   @ApiPropertyOptional({ description: 'Giới tính', example: 'Nam', enum: ['Nam', 'Nữ'] })
   @IsOptional() @IsString() gender?: string;

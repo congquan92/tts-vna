@@ -57,6 +57,10 @@ export interface ChangeEmailPayload {
     otp: string;
 }
 
+export interface UploadAvatarResponse {
+    avatarUrl: string;
+}
+
 export interface UpdateProfilePayload {
     fullName?: string;
     email?: string;
