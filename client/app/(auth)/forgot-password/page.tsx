@@ -6,6 +6,7 @@ import Alert from "@/components/ui/Alert";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { AuthApi } from "@/api/auth";
+import { toast } from "sonner";
 
 type Step = "email" | "otp" | "newPassword";
 type FormErrors = {
@@ -35,7 +36,7 @@ export default function ForgotPasswordPage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errors, setErrors] = useState<FormErrors>({});
-    const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
+    // const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
     const [loading, setLoading] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
 
@@ -99,30 +100,33 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateEmail()) {
-            setAlert({
-                type: "error",
-                message: "Vui lòng nhập đúng định dạng email",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: "Vui lòng nhập đúng định dạng email",
+            // });
+            toast.error("Vui lòng nhập đúng định dạng email");
             return;
         }
 
         setLoading(true);
         try {
             await AuthApi.forgotPassword({ email });
-            setAlert({
-                type: "success",
-                message: "Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP",
-            });
+            // setAlert({
+            //     type: "success",
+            //     message: "Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP",
+            // });
+            toast.success("Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP");
             setTimeout(() => {
                 setStep("otp");
                 setResendTimer(TIMERS.RESEND_OTP);
-                setAlert(null);
+                // setAlert(null);
             }, TIMERS.LOGIN_SUCCESS_DELAY);
         } catch (error: any) {
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra",
+            // });
+            toast.error(error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra");
         } finally {
             setLoading(false);
         }
@@ -132,29 +136,32 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateOTP()) {
-            setAlert({
-                type: "error",
-                message: "Vui lòng nhập đầy đủ thông tin",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: "Vui lòng nhập đầy đủ thông tin",
+            // });
+            toast.error("Vui lòng nhập đầy đủ thông tin");
             return;
         }
 
         setLoading(true);
         try {
             await AuthApi.verifyOtp(email, otp);
-            setAlert({
-                type: "success",
-                message: "Xác nhận OTP thành công!",
-            });
+            // setAlert({
+            //     type: "success",
+            //     message: "Xác nhận OTP thành công!",
+            // });
+            toast.success("Xác nhận OTP thành công!");
             setTimeout(() => {
                 setStep("newPassword");
-                setAlert(null);
+                // setAlert(null);
             }, TIMERS.OTP_VERIFY_DELAY);
         } catch (error: any) {
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn",
-            });
+            // setAlert({
+            // //     type: "error",
+            // //     message: error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn",
+            // });
+            toast.error(error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn");
         } finally {
             setLoading(false);
         }
@@ -162,21 +169,23 @@ export default function ForgotPasswordPage() {
 
     const handleResendOTP = async () => {
         if (resendTimer > 0) return;
-        
+
         setLoading(true);
         try {
             await AuthApi.forgotPassword({ email });
-            setAlert({
-                type: "success",
-                message: "Gửi lại mã OTP thành công! Vui lòng kiểm tra email",
-            });
+            // setAlert({
+            //     type: "success",
+            //     message: "Gửi lại mã OTP thành công! Vui lòng kiểm tra email",
+            // });
+            toast.success("Gửi lại mã OTP thành công! Vui lòng kiểm tra email");
             setOtp("");
             setResendTimer(TIMERS.RESEND_OTP);
         } catch (error: any) {
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau",
+            // });
+            toast.error(error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau");
         } finally {
             setLoading(false);
         }
@@ -192,10 +201,11 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateNewPassword()) {
-            setAlert({
-                type: "error",
-                message: "Vui lòng nhập đầy đủ thông tin hợp lệ",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: "Vui lòng nhập đầy đủ thông tin hợp lệ",
+            // });
+            toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ");
             return;
         }
 
@@ -208,19 +218,21 @@ export default function ForgotPasswordPage() {
                 confirmNewPassword: confirmPassword,
             });
 
-            setAlert({
-                type: "success",
-                message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới",
-            });
+            // setAlert({
+            //     type: "success",
+            //     message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới",
+            // });
+            toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới");
 
             setTimeout(() => {
                 window.location.href = "/login";
             }, 2000);
         } catch (error: any) {
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau",
+            // });
+            toast.error(error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau");
         } finally {
             setLoading(false);
         }
@@ -238,7 +250,7 @@ export default function ForgotPasswordPage() {
                 <h1 className="font-bold py-3 text-xl text-primary">QUÊN MẬT KHẨU</h1>
 
                 {/* alerts */}
-                <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
+                {/* <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div> */}
 
                 {/* Step 1: Email */}
                 {step === "email" && (

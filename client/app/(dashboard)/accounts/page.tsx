@@ -10,6 +10,7 @@ import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface Ward {
     ward_code: string;
@@ -137,14 +138,11 @@ const AccountPage = () => {
             setSelectedFile(null);
             setPreviewUrl(null);
 
-            setAlert({ type: "success", message: "Cập nhật thông tin thành công" });
+            toast.success("Cập nhật thông tin thành công");
         } catch (error: unknown) {
             console.error("Error updating profile:", error);
             const axiosError = error as { response?: { data?: { message?: string } } };
-            setAlert({
-                type: "error",
-                message: axiosError.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin",
-            });
+            toast.error(axiosError.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin");
         } finally {
             setSaving(false);
         }
@@ -167,7 +165,6 @@ const AccountPage = () => {
             setSelectedFile(null);
             setPreviewUrl(null);
         }
-        setAlert(null);
     };
 
     const handleEmailChanged = () => {
@@ -183,14 +180,14 @@ const AccountPage = () => {
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            setAlert({ type: "error", message: "Kích thước ảnh không được vượt quá 5MB" });
+            toast.error("Kích thước file vượt quá 5 MB. Vui lòng chọn file khác.");
             return;
         }
 
         // Validate file type
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
         if (!allowedTypes.includes(file.type)) {
-            setAlert({ type: "error", message: "Chỉ chấp nhận định dạng .jpeg, .jpg, .png" });
+            toast.error("Chỉ chấp nhận định dạng .jpeg, .jpg, .png");
             return;
         }
 
@@ -222,7 +219,7 @@ const AccountPage = () => {
                 }
             />
 
-            <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
+            {/* <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div> */}
 
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}
