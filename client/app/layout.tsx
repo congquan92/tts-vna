@@ -36,13 +36,17 @@ export default function RootLayout({
                         {children}
                         <Toaster
                             position="top-right"
+                            duration={5000}
+                            closeButton={true}
+                            richColors
                             toastOptions={{
                                 classNames: {
-                                    toast: "flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm shadow-lg border",
-                                    success: "bg-green-50 text-green-800 border-green-200",
-                                    error: "bg-red-50 text-red-800 border-red-200",
-                                    warning: "bg-yellow-50 text-yellow-800 border-yellow-200",
-                                    info: "bg-blue-50 text-blue-800 border-blue-200",
+                                    toast: "flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm",
+                                    success: "bg-green-50 text-green-800 border border-green-200",
+                                    error: "bg-red-50 text-red-800 border border-red-200",
+                                    warning: "bg-yellow-50 text-yellow-800 border border-yellow-200",
+                                    info: "bg-blue-50 text-blue-800 border border-blue-200",
+                                    closeButton: "!absolute !left-auto !right-3 !top-5  !bg-transparent hover:!bg-black/10 !border-none !text-inherit cursor-pointer transition-colors !w-6 !h-6 flex items-center justify-center rounded-md",
                                 },
                             }}
                         />

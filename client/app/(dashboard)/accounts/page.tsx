@@ -27,12 +27,18 @@ interface Province {
     wards: Ward[];
 }
 
+type FormErrors = {
+    fullName?: string;
+    email?: string;
+    dob?: string;
+};
+
 const AccountPage = () => {
     const [profile, setProfile] = useState<User | null>(null);
     const [formData, setFormData] = useState<UpdateProfilePayload>({});
+    const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
 
     // Image preview states
@@ -81,7 +87,7 @@ const AccountPage = () => {
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                setAlert({ type: "error", message: "Không thể tải thông tin hệ thống" });
+                toast.error("Không thể tải thông tin hệ thống");
             } finally {
                 setLoading(false);
             }
@@ -90,9 +96,44 @@ const AccountPage = () => {
         initData();
     }, []);
 
+    const validateForm = () => {
+        const newErrors: FormErrors = {};
+
+        if (!formData.fullName?.trim()) {
+            newErrors.fullName = "Vui lòng nhập họ và tên";
+        }
+
+        if (formData.dob) {
+            const birthDate = new Date(formData.dob);
+            const today = new Date();
+
+            if (birthDate > today) {
+                newErrors.dob = "Ngày sinh không thể là tương lai";
+            } else {
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+
+                if (age < 18) {
+                    newErrors.dob = "Bạn phải từ 18 tuổi trở lên";
+                }
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+
+        // Clear error when typing
+        if (errors[name as keyof FormErrors]) {
+            setErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
 
         // Nếu thay đổi tỉnh thành, cần reset và cập nhật xã phường
         if (name === "province") {
@@ -119,8 +160,12 @@ const AccountPage = () => {
     };
 
     const handleSave = async () => {
+        if (!validateForm()) {
+            toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc");
+            return;
+        }
+
         setSaving(true);
-        setAlert(null);
         try {
             let currentAvatarUrl = formData.avatarUrl;
 
@@ -134,7 +179,11 @@ const AccountPage = () => {
             const updatedProfile = await AuthApi.updateProfile(payload);
 
             setProfile({ ...updatedProfile, account: profile?.account });
-            setFormData((prev) => ({ ...prev, avatarUrl: updatedProfile.avatarUrl }));
+            setFormData((prev) => ({
+                ...prev,
+                avatarUrl: updatedProfile.avatarUrl,
+                dob: updatedProfile.dob ? new Date(updatedProfile.dob).toISOString().split("T")[0] : "",
+            }));
             setSelectedFile(null);
             setPreviewUrl(null);
 
@@ -267,9 +316,9 @@ const AccountPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 mb-6">
                         <InputField label="Tên đăng nhập(*)" value={profile?.account?.username || ""} placeholder="Tên đăng nhập" readOnly />
-                        <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName || ""} onChange={handleChange} />
+                        <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName || ""} onChange={handleChange} error={errors.fullName} />
 
-                        <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob ? new Date(formData.dob).toISOString().split("T")[0] : ""} type="date" icon={Calendar} onChange={handleChange} />
+                        <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob ? new Date(formData.dob).toISOString().split("T")[0] : ""} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} />
                         <InputField
                             name="gender"
                             label="Giới tính"

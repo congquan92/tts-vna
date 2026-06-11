@@ -11,7 +11,8 @@ export const InputField = ({
     options = [],
     placeholder = "",
     readOnly = false,
-    disabled = false
+    disabled = false,
+    error
 }: { 
     label?: string; 
     value?: string; 
@@ -24,9 +25,14 @@ export const InputField = ({
     placeholder?: string;
     readOnly?: boolean;
     disabled?: boolean;
+    error?: string;
 }) => (
     <div className="relative w-full">
-        {label && <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-400 font-medium z-10">{label}</label>}
+        {label && (
+            <label className={`absolute -top-2 left-3 bg-white px-1 text-xs font-medium z-10 ${error ? "text-red-500" : "text-gray-400"}`}>
+                {label}
+            </label>
+        )}
         <div className="relative">
             {isSelect ? (
                 <select 
@@ -34,7 +40,9 @@ export const InputField = ({
                     value={value || ""}
                     onChange={onChange}
                     disabled={disabled || readOnly}
-                    className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-transparent appearance-none cursor-pointer disabled:bg-gray-50"
+                    className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent appearance-none cursor-pointer disabled:bg-gray-50 ${
+                        error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                    }`}
                 >
                     <option value="" disabled hidden>{placeholder || "Chưa chọn"}</option>
                     {options.length > 0 ? (
@@ -61,12 +69,15 @@ export const InputField = ({
                             (e.target as any).showPicker?.();
                         }
                     }}
-                    className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-blue-500 bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text" 
+                    className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text ${
+                        error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                    }`} 
                 />
             )}
             {/* Render Icon nếu có */}
-            {Icon && !isSelect && <Icon className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 size-5" />}
-            {isSelect && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 size-4 pointer-events-none" />}
+            {Icon && !isSelect && <Icon className={`absolute right-3 top-1/2 -translate-y-1/2 size-5 ${error ? "text-red-500" : "text-gray-400"}`} />}
+            {isSelect && <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 size-4 pointer-events-none ${error ? "text-red-500" : "text-gray-500"}`} />}
         </div>
+        {error && <p className="text-red-500 text-[11px] mt-1 ml-1">{error}</p>}
     </div>
 );

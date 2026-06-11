@@ -132,6 +132,7 @@ export default function LoginPage() {
                     {/* Đổi label có dấu * giống design */}
                     <TextInput
                         label="Tên tài khoản *"
+                        placeholder="Nhập tên tài khoản"
                         required={true}
                         value={account}
                         onChange={(e) => {
