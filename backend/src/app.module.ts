@@ -11,12 +11,16 @@ import configuration from './configurations/app.config';
 import { User } from './entities/user.entity';
 import { Otp } from './entities/otp.entity';
 import { TypeOfBusiness } from './entities/typeOfBusiness.entity';
+import { BusinessIndustry } from './entities/BusinessIndustry.entity';
 import { AuthController } from './controllers/auth.controller';
 import { TypeOfBusinessController } from './controllers/typeOfBusiness.controller';
+import { BusinessIndustryController } from './controllers/businessIndustry.controller';
 import { AuthRepository } from './repositories/auth.repository';
 import { TypeOfBusinessRepository } from './repositories/typeOfBusiness.repository';
+import { BusinessIndustryRepository } from './repositories/businessIndustry.repository';
 import { AuthService } from './services/auth.service';
 import { TypeOfBusinessService } from './services/typeOfBusiness.service';
+import { BusinessIndustryService } from './services/businessIndustry.service';
 import { Account } from './entities/account.entity.js';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
@@ -70,9 +74,9 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry]),
   ],
-  controllers: [AuthController, TypeOfBusinessController],
-  providers: [AuthService, AuthRepository, TypeOfBusinessService, TypeOfBusinessRepository, JwtStrategy],
+  controllers: [AuthController, TypeOfBusinessController, BusinessIndustryController],
+  providers: [AuthService, AuthRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, JwtStrategy],
 })
 export class AppModule { }
