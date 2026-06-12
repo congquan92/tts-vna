@@ -5,13 +5,14 @@ import {
   BusinessIndustry,
   BusinessStatus,
 } from '../entities/BusinessIndustry.entity';
+import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusinessIndustry.dto';
 
 @Injectable()
 export class BusinessIndustryRepository {
   constructor(
     @InjectRepository(BusinessIndustry)
     private readonly repo: Repository<BusinessIndustry>,
-  ) {}
+  ) { }
 
   createAndSave(data: Partial<BusinessIndustry>): Promise<BusinessIndustry> {
     const e = this.repo.create(data as BusinessIndustry);
@@ -72,5 +73,48 @@ export class BusinessIndustryRepository {
       }
     }
     // Nếu là con, không cập nhật cha (chỉ cập nhật item hiện tại trong service)
+  }
+
+  async search(query: SearchBusinessIndustryDto) {
+    const page = Math.max(Number(query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const qb = this.repo.createQueryBuilder('industry');
+
+    if (query.code) {
+      qb.andWhere('industry.code ILIKE :code', {
+        code: `%${query.code}%`,
+      });
+    }
+
+    if (query.name) {
+      qb.andWhere('industry.name ILIKE :name', {
+        name: `%${query.name}%`,
+      });
+    }
+
+    if (query.level !== undefined && query.level !== null) {
+      const level = Number(query.level);
+      if (!isNaN(level)) {
+        qb.andWhere('industry.level = :level', { level });
+      }
+    }
+
+    qb.orderBy('industry.id', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

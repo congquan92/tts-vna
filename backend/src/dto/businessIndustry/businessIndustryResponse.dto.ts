@@ -1,4 +1,4 @@
-import { BusinessStatus } from '../entities/BusinessIndustry.entity';
+import { BusinessStatus } from '../../entities/BusinessIndustry.entity';
 
 export class BusinessIndustryResponseDto {
   id!: number;

@@ -1,5 +1,5 @@
 import { IsString, MaxLength, IsEnum } from 'class-validator';
-import { BusinessStatus } from '../entities/BusinessIndustry.entity';
+import { BusinessStatus } from '../../entities/BusinessIndustry.entity';
 
 export class UpdateBusinessIndustryDto {
   @IsString()

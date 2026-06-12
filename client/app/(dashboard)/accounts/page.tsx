@@ -274,7 +274,7 @@ const AccountPage = () => {
                         />
 
                         <InputField name="position" label="Chức danh" value={formData.position || ""} placeholder="Nhập chức danh" onChange={handleChange} />
-                        <InputField label="Vai trò *" value={profile?.account?.role || "User"} isSelect readOnly />
+                        <InputField label="Vai trò *" value={profile?.account?.role?.name || "User"} isSelect readOnly />
                     </div>
 
                     <div className="flex items-center gap-4 mb-8 w-full md:w-[calc(50%-10px)]">

@@ -55,19 +55,19 @@ docker compose up -d --build
 ```
 
 Các service chính:
-- `api`: service backend
-- `db`: Postgres
+- `nest_backend`: service backend
+- `postgres_db`: Postgres
 
-Xem log của service `api`:
+Xem log của service `nest_backend`:
 
 ```bash
-docker compose logs -f api
+docker compose logs -f nest_backend
 ```
 
 Dừng và gỡ:
 
 ```bash
-docker compose down
+docker compose down -v
 ```
 
 ## 5) Kiểm thử API

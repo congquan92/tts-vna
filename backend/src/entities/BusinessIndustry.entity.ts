@@ -9,6 +9,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import { Business } from './business.entity';
 
 /**
  * Enum trạng thái
@@ -83,4 +84,10 @@ export class BusinessIndustry {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @OneToMany(
+    () => Business,
+    (business) => business.businessIndustry,
+  )
+  businesses!: Business[];
 }

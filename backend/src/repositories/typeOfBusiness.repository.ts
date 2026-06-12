@@ -52,4 +52,8 @@ export class TypeOfBusinessRepository {
   async deleteTypeOfBusiness(id: number): Promise<void> {
     await this.typeOfBusinessRepository.delete({ id });
   }
+
+  async save(typeOfBusiness: TypeOfBusiness){
+    return await this.typeOfBusinessRepository.save(typeOfBusiness);
+  }
 }

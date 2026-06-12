@@ -11,18 +11,35 @@ import configuration from './configurations/app.config';
 import { User } from './entities/user.entity';
 import { Otp } from './entities/otp.entity';
 import { TypeOfBusiness } from './entities/typeOfBusiness.entity';
-import { BusinessIndustry } from './entities/BusinessIndustry.entity';
 import { AuthController } from './controllers/auth.controller';
-import { TypeOfBusinessController } from './controllers/typeOfBusiness.controller';
-import { BusinessIndustryController } from './controllers/businessIndustry.controller';
 import { AuthRepository } from './repositories/auth.repository';
 import { TypeOfBusinessRepository } from './repositories/typeOfBusiness.repository';
-import { BusinessIndustryRepository } from './repositories/businessIndustry.repository';
 import { AuthService } from './services/auth.service';
+import { UserController } from './controllers/user.controller';
+import { UserService } from './services/user.service';
+import { UserRepository } from './repositories/user.repository';
+import { SeedService } from './database/seed';
+import { Permission } from './entities/permission.entity';
+import { RolePermission } from './entities/role-permission.entity';
+import { TypeOfBusinessController } from './controllers/typeOfBusiness.controller';
 import { TypeOfBusinessService } from './services/typeOfBusiness.service';
-import { BusinessIndustryService } from './services/businessIndustry.service';
 import { Account } from './entities/account.entity.js';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { BusinessIndustry } from './entities/BusinessIndustry.entity';
+import { Business } from './entities/business.entity';
+import { BusinessFile } from './entities/business-file.entity';
+import { BusinessIndustryController } from './controllers/businessIndustry.controller';
+import { BusinessController } from './controllers/business.controller';
+import { BusinessIndustryService } from './services/businessIndustry.service';
+import { BusinessIndustryRepository } from './repositories/businessIndustry.repository';
+import { BusinessService } from './services/business.service';
+import { BusinessRepository } from './repositories/business.repository';
+import { Role } from './entities/role.entity';
+import { RoleRepository } from './repositories/role.repository';
+import { AccountRepository } from './repositories/account.repository';
+import { BusinessFileRepository } from './repositories/businessFile.repository';
+import { BusinessFileController } from './controllers/businessFile.controller';
+import { BusinessFileService } from './services/businessFile.service';
 
 @Module({
   imports: [
@@ -33,7 +50,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '7d' },
+        signOptions: { expiresIn: '1h' },
       }),
       inject: [ConfigService],
     }),
@@ -74,9 +91,9 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission]),
   ],
-  controllers: [AuthController, TypeOfBusinessController, BusinessIndustryController],
-  providers: [AuthService, AuthRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, JwtStrategy],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService],
 })
 export class AppModule { }

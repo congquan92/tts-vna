@@ -16,16 +16,17 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { TypeOfBusinessService } from '../services/typeOfBusiness.service';
-import { CreateTypeOfBusinessDto } from '../dto/createTypeOfBusiness.dto';
-import { UpdateTypeOfBusinessDto } from '../dto/updateTypeOfBusiness.dto';
+import { CreateTypeOfBusinessDto } from '../dto/typeOfBusiness/createTypeOfBusiness.dto';
+import { UpdateTypeOfBusinessDto } from '../dto/typeOfBusiness/updateTypeOfBusiness.dto';
 
 @ApiTags('TypeOfBusiness')
 @Controller('TypeOfBusiness')
 export class TypeOfBusinessController {
-  constructor(private readonly typeOfBusinessService: TypeOfBusinessService) {}
+  constructor(private readonly typeOfBusinessService: TypeOfBusinessService) { }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -94,5 +95,37 @@ export class TypeOfBusinessController {
   @ApiResponse({ status: 200, description: 'Xóa thành công' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return await this.typeOfBusinessService.remove(id);
+  }
+
+  @Patch(':id/toggle-status')
+  @ApiOperation({
+    summary: 'Bật/Tắt trạng thái loại hình kinh doanh',
+    description: 'Đổi trạng thái status của loại hình kinh doanh (true/false)',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'ID của loại hình kinh doanh',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Toggle trạng thái thành công',
+    schema: {
+      example: {
+        message: 'Cập nhật trạng thái thành công',
+        data: {
+          id: 1,
+          status: false,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy loại hình kinh doanh',
+  })
+  toggleStatus(@Param('id') id: string) {
+    return this.typeOfBusinessService.toggleTypeOfBusinessStatus(Number(id));
   }
 }

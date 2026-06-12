@@ -4,7 +4,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Business } from './business.entity';
 
 /**
  * Enum cho trạng thái loại hình kinh doanh
@@ -46,6 +48,12 @@ export class TypeOfBusiness {
     default: BusinessStatus.ACTIVE,
   })
   status!: BusinessStatus; // Trạng thái: active hoặc inactive
+
+  @OneToMany(
+    () => Business,
+    (business) => business.typeOfBusiness,
+  )
+  businesses!: Business[];
 
   @CreateDateColumn()
   createdAt!: Date; // Thời gian tạo (tự động)

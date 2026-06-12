@@ -13,7 +13,7 @@ export class LoginDto {
 
   @ApiProperty({ 
     description: 'Mật khẩu tài khoản (ít nhất 6 ký tự)', 
-    example: 'password123',
+    example: '123456',
     required: true,
     format: 'password' 
   })

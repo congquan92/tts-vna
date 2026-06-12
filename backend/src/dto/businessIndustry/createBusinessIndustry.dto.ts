@@ -6,7 +6,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
-import { BusinessStatus } from '../entities/BusinessIndustry.entity';
+import { BusinessStatus } from '../../entities/BusinessIndustry.entity';
 
 const CODE_PATTERN =
   /^(?:[A-U]|(?:0[1-9]|[1-9][0-9])|[0-9]{3}|[0-9]{4}|[0-9]{5})$/;

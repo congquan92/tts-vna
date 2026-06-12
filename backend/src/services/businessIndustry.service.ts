@@ -4,15 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BusinessIndustryRepository } from '../repositories/businessIndustry.repository';
-import { CreateBusinessIndustryDto } from '../dto/createBusinessIndustry.dto';
-import { UpdateBusinessIndustryDto } from '../dto/updateBusinessIndustry.dto';
-import { BusinessIndustryListDto } from '../dto/businessIndustryList.dto';
-import { BusinessIndustryResponseDto } from '../dto/businessIndustryResponse.dto';
+import { CreateBusinessIndustryDto } from '../dto/businessIndustry/createBusinessIndustry.dto';
+import { UpdateBusinessIndustryDto } from '../dto/businessIndustry/updateBusinessIndustry.dto';
+import { BusinessIndustryListDto } from '../dto/businessIndustry/businessIndustryList.dto';
+import { BusinessIndustryResponseDto } from '../dto/businessIndustry/businessIndustryResponse.dto';
 import { BusinessIndustry } from '../entities/BusinessIndustry.entity';
+import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusinessIndustry.dto';
 
 @Injectable()
 export class BusinessIndustryService {
-  constructor(private readonly repo: BusinessIndustryRepository) {}
+  constructor(private readonly repo: BusinessIndustryRepository) { }
 
   async create(dto: CreateBusinessIndustryDto): Promise<BusinessIndustryResponseDto> {
     const level = this.calculateLevel(dto.code);
@@ -66,7 +67,7 @@ export class BusinessIndustryService {
       status: item.status,
     };
   }
-// Cập nhật một BusinessIndustry, nếu status thay đổi và là cha thì cập nhật tất cả children theo status mới
+  // Cập nhật một BusinessIndustry, nếu status thay đổi và là cha thì cập nhật tất cả children theo status mới
   async update(
     idOrCode: string,
     dto: UpdateBusinessIndustryDto,
@@ -139,5 +140,9 @@ export class BusinessIndustryService {
     throw new BadRequestException(
       'code không hợp lệ. Quy tắc: cấp 1=A-U, cấp 2=01-99, cấp 3-5=3-5 chữ số',
     );
+  }
+
+  async searchBusinessIndustries(query: SearchBusinessIndustryDto) {
+    return this.repo.search(query);
   }
 }

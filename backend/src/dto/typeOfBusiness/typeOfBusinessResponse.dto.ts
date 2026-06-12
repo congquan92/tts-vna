@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BusinessStatus } from '../entities/typeOfBusiness.entity';
+import { BusinessStatus } from '../../entities/typeOfBusiness.entity';
 
 export class TypeOfBusinessResponseDto {
   @ApiProperty()

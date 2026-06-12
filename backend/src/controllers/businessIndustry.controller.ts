@@ -6,14 +6,21 @@ import {
   Param,
   Patch,
   NotFoundException,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { BusinessIndustryService } from '../services/businessIndustry.service';
-import { CreateBusinessIndustryDto } from '../dto/createBusinessIndustry.dto';
-import { UpdateBusinessIndustryDto } from '../dto/updateBusinessIndustry.dto';
+import { CreateBusinessIndustryDto } from '../dto/businessIndustry/createBusinessIndustry.dto';
+import { UpdateBusinessIndustryDto } from '../dto/businessIndustry/updateBusinessIndustry.dto';
+import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusinessIndustry.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('businessIndustries')
 export class BusinessIndustryController {
-  constructor(private readonly service: BusinessIndustryService) {}
+  constructor(private readonly service: BusinessIndustryService) { }
 
   @Post()
   async create(@Body() dto: CreateBusinessIndustryDto) {
@@ -42,6 +49,12 @@ export class BusinessIndustryController {
   async findAll() {
     return this.service.findAll();
   }
+
+  @Get('search')
+  async search(@Query() query: SearchBusinessIndustryDto) {
+    return this.service.searchBusinessIndustries(query);
+  }
+
 
   @Get(':idOrCode')
   async findOne(@Param('idOrCode') idOrCode: string) {
