@@ -8,18 +8,21 @@ import {
   Req,
   UploadedFile,
   UseInterceptors,
+  BadRequestException
 } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
-import { RegisterDto } from '../dto/register.dto';
-import { LoginDto } from '../dto/login.dto';
-import { ChangePasswordDto } from '../dto/change-password.dto';
-import { ForgotPasswordDto } from '../dto/forgot-password.dto';
-import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { ChangeEmailDto } from '../dto/change-email.dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RegisterDto } from '../dto/auth/register.dto';
+import { LoginDto } from '../dto/auth/login.dto';
+import { ChangePasswordDto } from '../dto/auth/change-password.dto';
+import { ForgotPasswordDto } from '../dto/auth/forgot-password.dto';
+import { UpdateProfileDto } from '../dto/auth/update-profile.dto';
+import { ChangeEmailDto } from '../dto/auth/change-email.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import type { Multer } from 'multer';
+import { JwtService } from '@nestjs/jwt';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Authentication & Profile')
 @Controller('auth')
@@ -27,7 +30,8 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+    private readonly jwtService: JwtService,
+  ) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
@@ -51,12 +55,21 @@ export class AuthController {
     return await this.authService.login(loginDto);
   }
 
+  @Post('refresh')
+  @ApiOperation({ summary: 'Làm mới Access Token bằng Refresh Token' })
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    const payload = this.jwtService.verify(refreshToken);
+    const userId = payload.sub;
+
+    return await this.authService.refresh(userId, refreshToken);
+  }
+
   @Post('forgot-password')
   @ApiOperation({ summary: 'Gửi yêu cầu khôi phục mật khẩu' })
   @ApiBody({
     schema: {
       type: 'object',
-      properties: { email: { type: 'string', example: 'user@gmail.com' } },
+      properties: { email: { type: 'string', example: 'admin@gmail.com' } },
     },
   })
   @ApiResponse({ status: 200, description: 'OTP đã được gửi thành công' })
@@ -135,27 +148,42 @@ export class AuthController {
     return await this.authService.verifyAndChangeEmail(req.user.id, dto);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post('upload-avatar')
-  @ApiOperation({ summary: 'Upload ảnh đại diện' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật ảnh đại diện' })
+  async uploadAvatar(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn ảnh');
+    }
+
+    return this.authService.updateUserAvatar(req.user.id, file);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Đăng xuất',
+    description: 'Xóa Refresh Token của người dùng hiện tại',
+  })
+  @ApiResponse({
+    status: 200,
     schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          type: 'string',
-          format: 'binary',
-        },
+      example: {
+        message: 'Đăng xuất thành công',
       },
     },
   })
-  @UseInterceptors(FileInterceptor('avatar'))
-  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    const result = await this.cloudinaryService.uploadFile(file);
-    return {
-      avatarUrl: result.secure_url,
-    };
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Req() req: any) {
+    return this.authService.logout(req.user.id);
   }
 }

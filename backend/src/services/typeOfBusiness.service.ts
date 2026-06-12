@@ -2,19 +2,20 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { TypeOfBusinessRepository } from '../repositories/typeOfBusiness.repository';
-import { CreateTypeOfBusinessDto } from '../dto/createTypeOfBusiness.dto';
-import { UpdateTypeOfBusinessDto } from '../dto/updateTypeOfBusiness.dto';
+import { CreateTypeOfBusinessDto } from '../dto/typeOfBusiness/createTypeOfBusiness.dto';
+import { UpdateTypeOfBusinessDto } from '../dto/typeOfBusiness/updateTypeOfBusiness.dto';
 import { TypeOfBusiness } from '../entities/typeOfBusiness.entity';
-import { TypeOfBusinessResponseDto } from '../dto/typeOfBusinessResponse.dto';
+import { TypeOfBusinessResponseDto } from '../dto/typeOfBusiness/typeOfBusinessResponse.dto';
 import { BusinessStatus } from '../entities/typeOfBusiness.entity';
 
 @Injectable()
 export class TypeOfBusinessService {
   constructor(
     private readonly typeOfBusinessRepository: TypeOfBusinessRepository,
-  ) {}
+  ) { }
 
   private toResponse(entity: TypeOfBusiness): TypeOfBusinessResponseDto {
     const { id, code, name, status } = entity;
@@ -104,5 +105,28 @@ export class TypeOfBusinessService {
     await this.findOne(id);
     await this.typeOfBusinessRepository.deleteTypeOfBusiness(id);
     return { message: 'Xóa loại hình kinh doanh thành công' };
+  }
+
+  async toggleTypeOfBusinessStatus(id: number) {
+    const typeOfBusiness = await this.typeOfBusinessRepository.findOneById(id);
+
+    if (!typeOfBusiness) {
+      throw new BadRequestException('Không tìm thấy loại hình kinh doanh');
+    }
+
+    typeOfBusiness.status =
+      typeOfBusiness.status === BusinessStatus.ACTIVE
+        ? BusinessStatus.INACTIVE
+        : BusinessStatus.ACTIVE;
+
+    const updated = await this.typeOfBusinessRepository.save(typeOfBusiness);
+
+    return {
+      message: 'Cập nhật trạng thái thành công',
+      data: {
+        id: updated.id,
+        status: updated.status,
+      },
+    };
   }
 }

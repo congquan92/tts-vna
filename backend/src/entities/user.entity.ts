@@ -8,34 +8,46 @@ export class User {
   id!: number;
 
   @Column()
-  fullName!: string; 
+  fullName!: string;
 
   @Column({ unique: true })
-  email!: string; 
+  email!: string;
 
   @Column({ nullable: true })
   avatarUrl!: string;
 
   @Column({ type: 'date', nullable: true })
-  dob!: Date; 
+  dob!: Date;
 
   @Column({ nullable: true })
-  gender!: string; 
+  gender!: string;
 
   @Column({ nullable: true })
-  position!: string; 
+  position!: string;
 
   @Column({ default: true })
-  isActive!: boolean; 
+  isActive!: boolean;
 
   @Column({ nullable: true })
-  province!: string; 
+  province!: string;
 
   @Column({ nullable: true })
-  ward!: string; 
+  ward!: string;
 
   @Column({ nullable: true })
-  address!: string; 
+  address!: string;
+
+  @Column({ nullable: true })
+  avatarPublicId?: string; // Giúp xóa ảnh cũ trên Cloudinary
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginAt?: Date; // Theo dõi lần đăng nhập cuối
+
+  @Column({ type: 'enum', enum: ['SO', 'DOANH_NGHIEP'] })
+  orgType!: 'SO' | 'DOANH_NGHIEP';
 
   @OneToMany(() => Account, (account) => account.user)
   accounts!: Account[];

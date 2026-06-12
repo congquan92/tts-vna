@@ -15,10 +15,15 @@ export interface User {
     account?: Account;
 }
 
+export interface Role {
+    id: number;
+    name: string;
+}
+
 export interface Account {
     id: number;
     username: string;
-    role: 'Admin' | 'User' | 'Moderator';
+    role: Role;
     userId: number;
 }
 

@@ -4,6 +4,8 @@ import { Repository, DataSource } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { Account } from '../entities/account.entity';
 import { Otp } from '../entities/otp.entity';
+import { RolePermission } from '../entities/role-permission.entity';
+import { Role } from '../entities/role.entity';
 
 @Injectable()
 export class AuthRepository {
@@ -14,26 +16,22 @@ export class AuthRepository {
         private readonly accountRepository: Repository<Account>,
         @InjectRepository(Otp)
         private readonly otpRepository: Repository<Otp>,
+        @InjectRepository(Role) 
+        private roleRepository: Repository<Role>,
         private readonly dataSource: DataSource,
     ) { }
 
-    async createFullUser(userData: Partial<User>, accountData: Partial<Account>): Promise<{ user: User, account: Account }> {
+    async createFullUser(userData: Partial<User>, accountData: { username: string, password: string, roleId: number }): Promise<{ user: User, account: Account }> {
         return await this.dataSource.transaction(async (manager) => {
             const user = manager.create(User, userData);
             const savedUser = await manager.save(user);
-
-            const account = manager.create(Account, { ...accountData, userId: savedUser.id });
+            const account = manager.create(Account, {
+                ...accountData,
+                userId: savedUser.id
+            });
             const savedAccount = await manager.save(account);
 
             return { user: savedUser, account: savedAccount };
-        });
-    }
-
-    async findAccountByUsername(username: string): Promise<Account | null> {
-        return await this.accountRepository.findOne({
-            where: { username },
-            relations: ['user'],
-            select: ['id', 'username', 'password', 'role', 'userId']
         });
     }
 
@@ -52,7 +50,19 @@ export class AuthRepository {
     async findAccountByUserId(userId: number): Promise<Account | null> {
         return await this.accountRepository.findOne({
             where: { userId },
-            select: ['id', 'username', 'password', 'role', 'userId']
+            relations: ['role'],
+            select: {
+                id: true,
+                username: true,
+                password: true,
+                userId: true,
+                refreshToken: true,
+                roleId: true,
+                role: {
+                    id: true,
+                    name: true
+                }
+            }
         });
     }
 
@@ -86,6 +96,26 @@ export class AuthRepository {
         });
     }
 
+    async findAccountByUsername(username: string): Promise<Account | null> {
+        return await this.accountRepository.findOne({
+            where: { username },
+            relations: ['role', 'user'],
+            select: {
+                id: true,
+                username: true,
+                password: true,
+                userId: true,
+                refreshToken: true,
+                roleId: true,
+                role: {
+                    id: true,
+                    name: true,
+                },
+                isActive: true,
+            },
+        });
+    }
+
     async updateUserEmail(userId: number, newEmail: string): Promise<User> {
         const user = await this.userRepository.findOneBy({ id: userId });
         if (!user) throw new Error('User not found');
@@ -104,7 +134,6 @@ export class AuthRepository {
             otpRecord.otp = otp;
             otpRecord.expiresAt = expiresAt;
         } else {
-            // create new record linked to user
             otpRecord = this.otpRepository.create({ userId: user.id, otp, expiresAt });
         }
 
@@ -115,5 +144,39 @@ export class AuthRepository {
         const user = await this.userRepository.findOneBy({ email });
         if (!user) return;
         await this.otpRepository.delete({ userId: user.id });
+    }
+
+    async updateRefreshToken(userId: number, refreshToken: string): Promise<void> {
+        await this.accountRepository.update(
+            { userId },
+            { refreshToken } as any,
+        );
+    }
+
+    async updateLastLogin(userId: number): Promise<void> {
+        await this.userRepository.update(userId, { lastLoginAt: new Date() });
+    }
+
+    // Lưu avatarPublicId để sau này xóa ảnh trên Cloud
+    async updateAvatar(userId: number, avatarUrl: string, avatarPublicId: string): Promise<void> {
+        await this.userRepository.update(userId, { avatarUrl, avatarPublicId });
+    }
+
+    async findPermissionsByRole(roleId: number): Promise<string[]> {
+        const result = await this.dataSource
+            .getRepository(RolePermission)
+            .createQueryBuilder('rp')
+            .leftJoin('rp.permission', 'p')
+            .where('rp.roleId = :roleId', { roleId })
+            .select('p.code', 'code')
+            .getRawMany();
+
+        return result.map(row => row.code);
+    }
+
+    async findRoleById(id: number): Promise<Role | null> {
+        return await this.roleRepository.findOne({
+            where: { id },
+        });
     }
 }
