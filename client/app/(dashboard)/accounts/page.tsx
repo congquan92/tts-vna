@@ -355,11 +355,12 @@ const AccountPage = () => {
                                 label="Tỉnh/ thành phố"
                                 value={formData.province ?? ""}
                                 isSelect
+                                isSearchable
                                 placeholder="Chọn tỉnh/ thành phố"
                                 options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
                                 onChange={handleChange}
                             />
-                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
+                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect isSearchable placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
                         </div>
 
                         <InputField name="address" label="Địa chỉ" value={formData.address || ""} placeholder="Nhập địa chỉ chi tiết" onChange={handleChange} />
