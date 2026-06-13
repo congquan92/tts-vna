@@ -68,22 +68,27 @@ axiosInstance.interceptors.response.use(
                     throw new Error("SSR: Cannot refresh token in server-side");
                 }
 
-                const oldToken = localStorage.getItem("auth_token");
-                // Sử dụng API_URL đã khai báo
-                const refreshRes = await axios.post(`${API_URL}/auth/refresh`, { token: oldToken });
-                const newToken = refreshRes.data.data.token;
+                const refreshToken = localStorage.getItem("refresh_token");
+                if (!refreshToken) {
+                    throw new Error("No refresh token found");
+                }
 
-                localStorage.setItem("auth_token", newToken);
-                retryFailedRequests(newToken);
+                // Sử dụng API_URL đã khai báo
+                const refreshRes = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+                const { accessToken } = refreshRes.data;
+
+                localStorage.setItem("auth_token", accessToken);
+                retryFailedRequests(accessToken);
 
                 isRefreshing = false;
 
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                 return axiosInstance(originalRequest);
             } catch (err) {
                 isRefreshing = false;
                 if (typeof window !== "undefined") {
                     localStorage.removeItem("auth_token");
+                    localStorage.removeItem("refresh_token");
                     window.location.href = "/login";
                 }
                 return Promise.reject(err);

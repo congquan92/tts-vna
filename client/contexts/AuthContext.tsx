@@ -49,16 +49,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = async (username: string, password: string) => {
         const res = await AuthApi.login(username, password);
         localStorage.setItem("auth_token", res.accessToken);
+        localStorage.setItem("refresh_token", res.refreshToken);
         await refreshProfile();
         router.push("/accounts"); // Hoặc trang dashboard bất kỳ
     };
 
     const logout = async () => {
         try {
-            // Có thể gọi API logout ở đây nếu cần xóa cookie/revoke token ở backend
-            // await AuthApi.logout();
+            await AuthApi.logout();
         } finally {
             localStorage.removeItem("auth_token");
+            localStorage.removeItem("refresh_token");
             setUser(null);
             router.push("/login");
         }
