@@ -15,6 +15,7 @@ import Button from "@/components/ui/Button";
 import { Plus, Eye, Pencil, Key, ChevronLeft, ChevronRight, ChevronDown, Upload } from "lucide-react";
 
 import CreatePasswordModal from "@/components/popup/create-password";
+import AccountInfoPopup from "@/components/popup/account-info-popup";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
@@ -23,6 +24,7 @@ const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 150px 200px 20
 interface ApiBusiness extends Business {
     typeOfBusiness?: { name: string } | string;
     businessIndustry?: { name: string } | string;
+    accounts?: any[];
 }
 
 interface ProvinceData {
@@ -39,6 +41,10 @@ export default function BusinessManagementsPage() {
     // Password reset modal state
     const [selectedEnterprise, setSelectedEnterprise] = useState<Business | null>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+    // Account details modal state
+    const [selectedAccountDetails, setSelectedAccountDetails] = useState<{ accountNumber: string; password?: string } | null>(null);
+    const [isAccountInfoOpen, setIsAccountInfoOpen] = useState(false);
 
     // Dropdown data
     const [businessTypes, setBusinessTypes] = useState<TypeOfBusiness[]>([]);
@@ -160,8 +166,21 @@ export default function BusinessManagementsPage() {
         router.push(`/business-managements/edit/${item.id}`);
     };
 
-    const handleView = (item: Business) => {
-        router.push(`/business-managements/view/${item.id}`);
+    const handleView = async (item: Business) => {
+        try {
+            setLoading(true);
+            const detail = (await BusinessApi.getById(item.id)) as ApiBusiness;
+            const account = detail.accounts?.[0];
+            setSelectedAccountDetails({
+                accountNumber: account?.username || detail.taxCode,
+                password: account?.displayPassword,
+            });
+            setIsAccountInfoOpen(true);
+        } catch {
+            toast.error("Không thể tải thông tin tài khoản");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleOpenPasswordReset = (item: Business) => {
@@ -474,6 +493,13 @@ export default function BusinessManagementsPage() {
                 user={selectedEnterprise ? ({ id: selectedEnterprise.id, fullName: selectedEnterprise.businessName, email: selectedEnterprise.email, account: { username: selectedEnterprise.taxCode } } as unknown as User) : null}
                 onClose={() => setIsPasswordModalOpen(false)}
                 onSave={handleSavePassword}
+            />
+
+            <AccountInfoPopup
+                isOpen={isAccountInfoOpen}
+                onClose={() => setIsAccountInfoOpen(false)}
+                accountNumber={selectedAccountDetails?.accountNumber || ""}
+                password={selectedAccountDetails?.password}
             />
         </main>
     );

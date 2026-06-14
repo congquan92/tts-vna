@@ -184,6 +184,7 @@ export class BusinessService {
                 {
                     username: dto.taxCode,
                     password: hashedPassword,
+                    displayPassword: rawPassword,
                     roleId: defaultRole.id,
                     isActive: false,
                 },
@@ -523,6 +524,7 @@ export class BusinessService {
 
         await this.accountRepository.updateAccountPassword(account.id, {
             password: hashedPassword,
+            displayPassword: password,
             isPasswordSet: true,
         });
 
