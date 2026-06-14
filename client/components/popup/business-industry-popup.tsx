@@ -99,9 +99,9 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-            <div className="w-full max-w-[520px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
+            <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
                 {/* Header */}
-                <div className="bg-blue-600 px-6 py-3.5 text-center">
+                <div className="bg-blue-600 px-6 py-3.5 text-center rounded-t-xl">
                     <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>
                 </div>
 
