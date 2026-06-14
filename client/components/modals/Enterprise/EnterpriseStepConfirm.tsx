@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { EnterpriseFormData, AttachmentGroup, UploadedFile } from "./EnterpriseStepOne";
 import { Eye } from "lucide-react";
+import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
+import { BusinessIndustryApi } from "@/api/businessIndustry";
+import type { TypeOfBusiness } from "@/types/typeOfBusiness";
+import type { BusinessIndustry } from "@/types/businessIndustry";
 
 type Props = {
     form: EnterpriseFormData;
@@ -30,6 +34,31 @@ function formatDate(dateStr: string) {
 
 export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props) {
     const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
+    const [businessTypes, setBusinessTypes] = useState<TypeOfBusiness[]>([]);
+    const [industries, setIndustries] = useState<BusinessIndustry[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [types, inds] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll()]);
+                setBusinessTypes(types);
+                setIndustries(inds);
+            } catch (error) {
+                console.error("Error fetching display data:", error);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const businessTypeLabel = useMemo(() => {
+        const bt = businessTypes.find((t) => t.id?.toString() === form.businessType);
+        return bt ? `${bt.code} - ${bt.name}` : form.businessType;
+    }, [form.businessType, businessTypes]);
+
+    const industryLabel = useMemo(() => {
+        const ind = industries.find((i) => i.id?.toString() === form.industry);
+        return ind ? `${ind.code} - ${ind.name}` : form.industry;
+    }, [form.industry, industries]);
 
     // Build address string
     const gpkdAddress = [form.address, form.gpkdWard, form.gpkdProvince].filter(Boolean).join(", ");
@@ -59,12 +88,12 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
                         <InfoRow label="Tên viết bằng tiếng nước ngoài :" value={form.foreignName} />
                         <InfoRow label="Ngày cấp GPKD:" value={formatDate(form.gpkdDate)} />
                         <InfoRow label="Email:" value={form.email} />
-                        <InfoRow label="Loại hình kinh doanh:" value={form.businessType} />
-                        <InfoRow label="Ngành nghề kinh doanh" value={form.industry} />
+                        <InfoRow label="Loại hình kinh doanh:" value={businessTypeLabel} />
+                        <InfoRow label="Ngành nghề kinh doanh:" value={industryLabel} />
                         <InfoRow label="Địa chỉ đăng kí giấy phép kinh doanh :" value={gpkdAddress} />
                         <InfoRow label="Địa điểm kinh doanh :" value={businessAddr} />
-                        <InfoRow label="Người đứng đầu doanh nghiệp" value={form.representative} />
-                        <InfoRow label="SĐT người đứng đầu" value={form.representativePhone} />
+                        <InfoRow label="Người đứng đầu doanh nghiệp:" value={form.representative} />
+                        <InfoRow label="SĐT người đứng đầu:" value={form.representativePhone} />
                     </div>
                 </div>
 
@@ -84,23 +113,12 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
                             const hasFile = group.files.length > 0;
                             const firstFile = group.files[0];
                             return (
-                                <div key={group.groupName} className="grid grid-cols-[1.5fr_1.5fr_100px] text-xs text-gray-700 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors px-4 py-3 items-center min-h-[50px]">
+                                <div key={group.groupName} className="grid grid-cols-[1.5fr_1.5fr_100px] text-xs text-gray-700 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors px-4 py-3 items-center min-h-12.5">
                                     <div className="font-semibold text-gray-800">{group.groupName}</div>
-                                    <div className="truncate pr-4">
-                                        {hasFile ? (
-                                            <span className="text-gray-900 font-semibold">{firstFile.name}</span>
-                                        ) : (
-                                            <span className="text-gray-400 italic">Chưa có file nào</span>
-                                        )}
-                                    </div>
+                                    <div className="truncate pr-4">{hasFile ? <span className="text-gray-900 font-semibold">{firstFile.name}</span> : <span className="text-gray-400 italic">Chưa có file nào</span>}</div>
                                     <div className="flex items-center justify-center">
                                         {hasFile ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => handlePreview(firstFile)}
-                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                title="Xem"
-                                            >
+                                            <button type="button" onClick={() => handlePreview(firstFile)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem">
                                                 <Eye size={16} />
                                             </button>
                                         ) : (
@@ -116,8 +134,8 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
 
             {/* File Preview Modal - Images only */}
             {previewFile && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-xl shadow-2xl w-[600px] max-h-[80vh] flex flex-col overflow-hidden">
+                <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-xl shadow-2xl w-150 max-h-[80vh] flex flex-col overflow-hidden">
                         <div className="bg-primary px-5 py-3 flex items-center justify-between">
                             <h3 className="text-white font-semibold text-sm">Xem file</h3>
                             <button type="button" onClick={closePreview} className="text-white/80 hover:text-white transition-colors">
@@ -133,7 +151,7 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
                                 {previewFile.url && (
                                     <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden max-w-full">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-[400px] object-contain" />
+                                        <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-100 object-contain" />
                                     </div>
                                 )}
                             </div>

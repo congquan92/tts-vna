@@ -37,12 +37,19 @@ const emptyErrors: EnterpriseFormErrors = {
     gpkdProvince: "",
     gpkdWard: "",
     email: "",
+    gpkdDate: "",
 };
 
 const defaultAttachmentGroups: AttachmentGroup[] = [
     { groupName: "Giấy phép kinh doanh", files: [] },
     { groupName: "Giấy tờ khác", files: [] },
 ];
+
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function formatDateToYYYYMMDD(dateString?: string | Date) {
     if (!dateString) return "";
@@ -259,7 +266,7 @@ export default function EditBusinessPage() {
     }
 
     return (
-        <div className="h-screen flex flex-col py-2">
+        <div className="h-screen flex flex-col">
             {/* Main content */}
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
                 {/* Stepper */}
@@ -270,7 +277,7 @@ export default function EditBusinessPage() {
                                 <div className="flex items-center gap-2">
                                     <div
                                         className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors ${
-                                            currentStep > step.number ? "bg-primary text-white" : currentStep === step.number ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
+                                            currentStep > step.number ? "bg-blue-500 text-white" : currentStep === step.number ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
                                         }`}
                                     >
                                         {currentStep > step.number ? <Check size={14} /> : step.number}
@@ -278,7 +285,7 @@ export default function EditBusinessPage() {
                                     <span className={`text-sm whitespace-nowrap ${currentStep >= step.number ? "text-gray-800 font-medium" : "text-gray-400"}`}>{step.label}</span>
                                 </div>
 
-                                {idx < steps.length - 1 && <div className={`w-32 h-0.5 mx-4 transition-colors ${currentStep > step.number ? "bg-primary" : "bg-gray-200"}`} />}
+                                {idx < steps.length - 1 && <div className={`w-32 h-0.5 mx-4 transition-colors ${currentStep > step.number ? "bg-blue-500" : "bg-gray-200"}`} />}
                             </div>
                         ))}
                     </div>
@@ -297,7 +304,7 @@ export default function EditBusinessPage() {
                             <button type="button" onClick={handleCancel} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
                                 Hủy bỏ
                             </button>
-                            <button type="button" onClick={handleNext} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
+                            <button type="button" onClick={handleNext} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
                                 <ChevronRight size={14} />
                                 Tiếp tục
                             </button>
@@ -308,7 +315,7 @@ export default function EditBusinessPage() {
                             <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer" disabled={submitting}>
                                 Trở về
                             </button>
-                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer" disabled={submitting}>
+                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer" disabled={submitting}>
                                 <Check size={14} />
                                 {submitting ? "Đang xử lý..." : "Xác nhận"}
                             </button>
