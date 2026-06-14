@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import TopHero from "@/components/TopHero";
 import ToggleSwitch from "@/components/ToggleSwitch";
@@ -18,7 +18,7 @@ import CreatePasswordModal from "@/components/popup/create-password";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
-const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 180px 220px 150px 100px" };
+const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 150px 200px 200px 100px" };
 
 interface ApiBusiness extends Business {
     typeOfBusiness?: { name: string } | string;
@@ -67,6 +67,22 @@ export default function BusinessManagementsPage() {
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [total, setTotal] = useState(0);
+
+    // Searchable ward dropdown state
+    const [isWardOpen, setIsWardOpen] = useState(false);
+    const [wardSearch, setWardSearch] = useState("");
+    const wardDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wardDropdownRef.current && !wardDropdownRef.current.contains(event.target as Node)) {
+                setIsWardOpen(false);
+                setWardSearch("");
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -214,6 +230,10 @@ export default function BusinessManagementsPage() {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const allSelected = data.length > 0 && data.every((r) => selectedIds.includes(r.id));
 
+    const filteredWardOptions = useMemo(() => {
+        return wardOptions.filter((opt) => opt.label.toLowerCase().includes(wardSearch.toLowerCase()));
+    }, [wardOptions, wardSearch]);
+
     return (
         <main className="h-screen flex flex-col py-2">
             <div className="shrink-0">
@@ -300,20 +320,59 @@ export default function BusinessManagementsPage() {
                             </select>
                             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
-                        <div className="px-3 relative">
-                            <select
-                                value={filters.registeredWard}
-                                onChange={(e) => handleFilterChange("registeredWard", e.target.value)}
-                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                        <div className="px-3 relative" ref={wardDropdownRef}>
+                            <div
+                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${
+                                    isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
+                                }`}
+                                onClick={() => {
+                                    if (isWardOpen) setWardSearch("");
+                                    setIsWardOpen(!isWardOpen);
+                                }}
                             >
-                                <option value="">Phường/Xã</option>
-                                {wardOptions.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </select>
+                                <span className={filters.registeredWard ? "text-gray-700" : "text-gray-400"}>{filters.registeredWard || "Phường/Xã"}</span>
+                            </div>
                             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
+
+                            {isWardOpen && (
+                                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-60 flex flex-col overflow-hidden">
+                                    <div className="p-2 border-b border-gray-50 bg-gray-50/50">
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            value={wardSearch}
+                                            onChange={(e) => setWardSearch(e.target.value)}
+                                            placeholder="Tìm phường/xã..."
+                                            className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded outline-none focus:border-primary bg-white"
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto">
+                                        <div
+                                            className="px-2.5 py-1.5 text-xs hover:bg-blue-50 cursor-pointer text-gray-500 border-b border-gray-50 italic"
+                                            onClick={() => {
+                                                handleFilterChange("registeredWard", "");
+                                                setIsWardOpen(false);
+                                            }}
+                                        >
+                                            Tất cả
+                                        </div>
+                                        {filteredWardOptions.map((opt) => (
+                                            <div
+                                                key={opt.value}
+                                                className={`px-2.5 py-1.5 text-xs hover:bg-blue-50 cursor-pointer transition-colors ${filters.registeredWard === opt.value ? "bg-blue-50 text-primary font-medium" : "text-gray-700"}`}
+                                                onClick={() => {
+                                                    handleFilterChange("registeredWard", opt.value);
+                                                    setIsWardOpen(false);
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </div>
+                                        ))}
+                                        {filteredWardOptions.length === 0 && <div className="px-2.5 py-3 text-xs text-gray-400 text-center italic">Không tìm thấy kết quả</div>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="px-3 relative">
                             <select
