@@ -12,11 +12,23 @@ import type { TypeOfBusiness } from "@/types/typeOfBusiness";
 import type { BusinessIndustry } from "@/types/businessIndustry";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
-import { FolderUp, Plus, Eye, Pencil, Trash2, Key, ChevronLeft, ChevronRight, ChevronDown, Upload } from "lucide-react";
+import { Plus, Eye, Pencil, Key, ChevronLeft, ChevronRight, ChevronDown, Upload } from "lucide-react";
 
 import CreatePasswordModal from "@/components/popup/create-password";
+import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
+import type { User } from "@/types/auth";
 
 const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 180px 220px 150px 100px" };
+
+interface ApiBusiness extends Business {
+    typeOfBusiness?: { name: string } | string;
+    businessIndustry?: { name: string } | string;
+}
+
+interface ProvinceData {
+    name: string;
+    wards?: { name: string }[];
+}
 
 export default function BusinessManagementsPage() {
     const router = useRouter();
@@ -71,16 +83,16 @@ export default function BusinessManagementsPage() {
             });
 
             // Map API response keys to format correctly
-            const mappedData = (res.data || []).map((item: any) => ({
+            const mappedData = ((res.data as unknown as ApiBusiness[]) || []).map((item) => ({
                 ...item,
-                businessType: item.typeOfBusiness || item.businessType || "",
-                industry: item.businessIndustry || item.industry || "",
+                businessType: typeof item.typeOfBusiness === "object" ? item.typeOfBusiness.name : item.typeOfBusiness || item.businessType || "",
+                industry: typeof item.businessIndustry === "object" ? item.businessIndustry.name : item.businessIndustry || item.industry || "",
             }));
 
             setData(mappedData);
 
             // Handle metadata wrapping from NestJS backend search
-            const meta = (res as any).meta;
+            const meta = res.meta;
             if (meta) {
                 setTotal(meta.total ?? 0);
             } else {
@@ -93,31 +105,6 @@ export default function BusinessManagementsPage() {
         }
     }, [currentPage, pageSize, filters]);
 
-    const fetchDropdowns = useCallback(async () => {
-        try {
-            const [types, inds, geoRes] = await Promise.all([
-                TypeOfBusinessApi.findAll(),
-                BusinessIndustryApi.findAll(),
-                fetch("/address.json")
-            ]);
-            setBusinessTypes(types);
-            setIndustries(inds);
-            
-            const geoData = await geoRes.json();
-            // Get all unique wards
-            const allWards: string[] = [];
-            geoData.forEach((province: any) => {
-                province.wards?.forEach((ward: any) => {
-                    if (ward.name) allWards.push(ward.name);
-                });
-            });
-            const uniqueWards = Array.from(new Set(allWards)).sort();
-            setWardOptions(uniqueWards.map(name => ({ label: name, value: name })));
-        } catch {
-            console.error("Error fetching dropdowns");
-        }
-    }, []);
-
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchData();
@@ -126,8 +113,28 @@ export default function BusinessManagementsPage() {
     }, [fetchData]);
 
     useEffect(() => {
+        const fetchDropdowns = async () => {
+            try {
+                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll(), fetch("/address.json")]);
+                setBusinessTypes(types);
+                setIndustries(inds);
+
+                const geoData = (await geoRes.json()) as ProvinceData[];
+                // Get all unique wards
+                const allWards: string[] = [];
+                geoData.forEach((province) => {
+                    province.wards?.forEach((ward) => {
+                        if (ward.name) allWards.push(ward.name);
+                    });
+                });
+                const uniqueWards = Array.from(new Set(allWards)).sort();
+                setWardOptions(uniqueWards.map((name) => ({ label: name, value: name })));
+            } catch {
+                console.error("Error fetching dropdowns");
+            }
+        };
         fetchDropdowns();
-    }, [fetchDropdowns]);
+    }, []);
 
     const openNew = () => {
         router.push("/business-managements/create");
@@ -166,17 +173,6 @@ export default function BusinessManagementsPage() {
             }
         } catch {
             toast.error("Không thể cập nhật trạng thái");
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        if (!confirm("Bạn có chắc chắn muốn xóa doanh nghiệp này?")) return;
-        try {
-            await BusinessApi.delete(id);
-            toast.success("Xóa doanh nghiệp thành công");
-            fetchData();
-        } catch {
-            toast.error("Không thể xóa doanh nghiệp");
         }
     };
 
@@ -412,24 +408,14 @@ export default function BusinessManagementsPage() {
                 </div>
             </div>
 
-            {/* Selection Banner */}
-            {selectedIds.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
-                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-[40px]">{selectedIds.length}</div>
-                    <div className="px-4 text-xs font-semibold text-gray-700 select-none">dữ liệu được chọn</div>
-                    <div className="pr-3 flex items-center gap-3">
-                        <button type="button" onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors">
-                            <Trash2 className="size-3.5" />
-                            <span>Xoá</span>
-                        </button>
-                        <button type="button" onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer">
-                            <X className="size-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            <DeleteSelectionBanner selectedCount={selectedIds.length} onDelete={handleDeleteSelected} onClear={() => setSelectedIds([])} />
 
-            <CreatePasswordModal isOpen={isPasswordModalOpen} user={selectedEnterprise ? ({ username: selectedEnterprise.taxCode } as any) : null} onClose={() => setIsPasswordModalOpen(false)} onSave={handleSavePassword} />
+            <CreatePasswordModal
+                isOpen={isPasswordModalOpen}
+                user={selectedEnterprise ? ({ id: selectedEnterprise.id, fullName: selectedEnterprise.businessName, email: selectedEnterprise.email, account: { username: selectedEnterprise.taxCode } } as unknown as User) : null}
+                onClose={() => setIsPasswordModalOpen(false)}
+                onSave={handleSavePassword}
+            />
         </main>
     );
 }

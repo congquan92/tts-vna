@@ -62,7 +62,7 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
                 <div className="px-6 py-6 space-y-4">
                     {/* Text miêu tả */}
                     <p className="text-[15px] text-gray-800">
-                        Khởi tạo mật khẩu cho tài khoản <strong className="font-bold text-black">{(user as any).username || user.account?.username}</strong>
+                        Khởi tạo mật khẩu cho tài khoản <strong className="font-bold text-black">{user.account?.username || (user as any).username}</strong>
                     </p>
 
                     {/* Ô nhập mật khẩu */}
