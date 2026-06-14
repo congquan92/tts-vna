@@ -169,7 +169,8 @@ export default function CreateBusinessPage() {
                 legalRepresentative: form.representative.trim() || undefined,
                 representativePhone: form.representativePhone.trim() || undefined,
             };
-            const business = await BusinessApi.create(payload);
+            const res = await BusinessApi.create(payload);
+            const business = (res as any).data.business;
 
             // Upload files
             const uploadPromises: Promise<unknown>[] = [];

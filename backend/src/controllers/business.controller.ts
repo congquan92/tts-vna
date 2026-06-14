@@ -100,8 +100,8 @@ export class BusinessController {
     @ApiParam({ name: 'id', example: 1, description: 'ID doanh nghiêp' })
     @ApiResponse({ status: 200, description: 'Chi tiết doanh nghiêp' })
     @ApiResponse({ status: 404, description: 'Không tìm thấy doanh nghiêp' })
-    getDetailBusinessById(@Param('id') id: string) {
-        return this.businessService.getBusinessDetailById(Number(id));
+    getDetailBusinessById(@Param('id', ParseIntPipe) id: number) {
+        return this.businessService.getBusinessDetailById(id);
     }
 
     // Xóa doanh nghiệp
@@ -183,8 +183,8 @@ export class BusinessController {
         status: 404,
         description: 'Không tìm thấy doanh nghiệp',
     })
-    toggleStatus(@Param('id') id: string) {
-        return this.businessService.toggleBusinessStatus(Number(id));
+    toggleStatus(@Param('id', ParseIntPipe) id: number) {
+        return this.businessService.toggleBusinessStatus(id);
     }
 
     // Khởi tạo mật khẩu doanh nghiệp

@@ -6,6 +6,7 @@ import {
   Param,
   Get,
   Delete,
+  ParseIntPipe,
   Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -51,7 +52,7 @@ export class BusinessFileController {
     },
   })
   async upload(
-    @Param('businessId') businessId: number,
+    @Param('businessId', ParseIntPipe) businessId: number,
     @UploadedFile() file: Express.Multer.File,
     @Body('fileType') fileType: BusinessFileType,
   ) {
@@ -60,13 +61,13 @@ export class BusinessFileController {
 
   // GET LIST
   @Get(':businessId')
-  async getFiles(@Param('businessId') businessId: number) {
+  async getFiles(@Param('businessId', ParseIntPipe) businessId: number) {
     return this.businessFileService.getBusinessFiles(businessId);
   }
 
   // DELETE FILE
   @Delete(':fileId')
-  async deleteFile(@Param('fileId') fileId: number) {
+  async deleteFile(@Param('fileId', ParseIntPipe) fileId: number) {
     return this.businessFileService.deleteBusinessFile(fileId);
   }
 }
