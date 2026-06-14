@@ -3,7 +3,6 @@
 import { InputField } from "@/components/form/InputField";
 import TopHero from "@/components/TopHero";
 import Button from "@/components/ui/Button";
-import Alert from "@/components/ui/Alert";
 import { Calendar, Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
@@ -267,8 +266,6 @@ const AccountPage = () => {
                     </div>
                 }
             />
-
-            {/* <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div> */}
 
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Settings, ShieldHalf } from "lucide-react";
+import { Settings } from "lucide-react";
 
 export type SidebarMenuItem = {
     id: string;
@@ -17,8 +17,8 @@ export const menuData: SidebarMenuItem[] = [
         icon: <Settings size={20} className="opacity-90" />,
         isOpen: true,
         items: [
-            { id: "users", label: "Quản lý người dùng", path: "/users" },
-            { id: "roles", label: "Quản lý doanh nghiệp", path: "/roles" },
+            { id: "users", label: "Quản lý người dùng", path: "/accounts-managements" },
+            { id: "roles", label: "Quản lý doanh nghiệp", path: "/business-managements" },
             { id: "reports", label: "Kỳ báo cáo", path: "/reports" },
         ],
     },

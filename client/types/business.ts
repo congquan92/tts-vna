@@ -20,6 +20,8 @@ export interface Business {
     isConfirmed: boolean;
     createdAt: string;
     updatedAt: string;
+    businessType?: string;
+    industry?: string;
 }
 
 export interface CreateBusinessPayload {

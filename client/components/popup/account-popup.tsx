@@ -6,6 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { User, Key, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ChangePasswordPopup from "@/components/popup/change-password-popup";
+import Link from "next/link";
 
 interface AccountPopupProps {
     anchorEl: null | HTMLElement;
@@ -47,7 +48,9 @@ export default function AccountPopup({ anchorEl, open, onClose }: AccountPopupPr
                 }}
             >
                 <MenuItem onClick={onClose} sx={{ py: 1.5, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
-                    <User size={18} className="text-gray-500 mr-2" /> Thông tin tài khoản
+                    <Link href="/accounts" className="flex items-center">
+                        <User size={18} className="text-gray-500 mr-2" /> Thông tin tài khoản
+                    </Link>
                 </MenuItem>
 
                 {/* Gắn sự kiện mở modal vào nút này */}

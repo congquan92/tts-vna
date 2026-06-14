@@ -1,10 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { User, IUser, IUserListResponse } from "@/src/api/User";
+import { useEffect, useState, useCallback } from "react";
+import { UserApi } from "@/api/user";
+import type { User } from "@/types/auth";
+import type { CreateUserPayload, UpdateUserPayload } from "@/types/user";
+import TopHero from "@/components/TopHero";
+import Button from "@/components/ui/Button";
+import ToggleSwitch from "@/components/ToggleSwitch";
+import UserModal from "@/components/modals/UserModal";
+import CreatePasswordModal from "@/components/popup/create-password";
+import { toast } from "sonner";
+import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronRight } from "lucide-react";
+
+const GRID_COLS = "grid-cols-[40px_45px_45px_1.5fr_1fr_2fr_1.5fr_1.5fr_100px]";
+
+const getRoleDisplayName = (roleName?: string) => {
+    if (!roleName) return "-";
+    switch (roleName) {
+        case "ADMIN_SO":
+            return "Quản trị viên Sở";
+        case "MANAGER_SO":
+            return "Lãnh đạo Sở";
+        case "CHUYENVIEN_SO":
+            return "Chuyên viên";
+        case "CEO_DN":
+            return "Giám đốc Doanh nghiệp";
+        case "MANAGER_DN":
+            return "Quản lý Doanh nghiệp";
+        case "USER_DN":
+            return "Nhân viên Doanh nghiệp";
+        default:
+            return roleName;
+    }
+};
 
 const AccountPage = () => {
-    const [users, setUsers] = useState<IUser[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -18,189 +49,388 @@ const AccountPage = () => {
         email: "",
         roleId: undefined as number | undefined,
         position: "",
-        status: undefined as boolean | undefined,
+        isActive: undefined as boolean | undefined,
     });
 
-    const userApi = new User();
+    // Selection state
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-    // Fetch danh sách người dùng
-    const fetchUsers = async (page = 1, filterParams = filters) => {
-        setLoading(true);
-        try {
-            const result = await userApi.getAll({
-                page,
-                pageSize: pagination.pageSize,
-                fullName: filterParams.fullName || undefined,
-                username: filterParams.username || undefined,
-                email: filterParams.email || undefined,
-                roleId: filterParams.roleId,
-                position: filterParams.position || undefined,
-                status: filterParams.status,
-            });
+    // Modal states
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [isSetPasswordModalOpen, setIsSetPasswordModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [selectedUserForPassword, setSelectedUserForPassword] = useState<User | null>(null);
 
-            if (result.success && result.data) {
-                setUsers(result.data.items);
-                setPagination((prev) => ({
-                    ...prev,
+    // Fetch user list
+    const fetchUsers = useCallback(
+        async (page = 1, limit = pagination.pageSize, filterParams = filters) => {
+            setLoading(true);
+            try {
+                const result = await UserApi.search({
                     page,
-                    total: result.data!.count,
-                }));
+                    limit,
+                    fullName: filterParams.fullName || undefined,
+                    username: filterParams.username || undefined,
+                    email: filterParams.email || undefined,
+                    roleId: filterParams.roleId,
+                    position: filterParams.position || undefined,
+                    isActive: filterParams.isActive,
+                });
+
+                if (result.data) {
+                    setUsers(result.data);
+                    const meta = (result as any).meta || { total: result.total, page: result.page, limit: result.limit };
+                    setPagination((prev) => ({
+                        ...prev,
+                        page,
+                        pageSize: limit,
+                        total: meta.total || result.total || 0,
+                    }));
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy danh sách người dùng:", error);
+                toast.error("Không thể tải danh sách người dùng");
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách người dùng:", error);
-        } finally {
-            setLoading(false);
+        },
+        [pagination.pageSize, filters],
+    );
+
+    // Load data on mount
+    useEffect(() => {
+        fetchUsers(1);
+    }, [fetchUsers]);
+
+    // Filter handlers
+    const handleFilterChange = (field: string, value: string | number | boolean | undefined) => {
+        const newFilters = { ...filters, [field]: value };
+        setFilters(newFilters);
+        fetchUsers(1, pagination.pageSize, newFilters);
+    };
+
+    const handleStatusChange = (value: string) => {
+        const statusValue = value === "" ? undefined : value === "true";
+        handleFilterChange("isActive", statusValue);
+    };
+
+    const handleToggleStatus = async (id: number) => {
+        try {
+            const res = await UserApi.toggleStatus(id);
+            if (res) {
+                toast.success("Cập nhật trạng thái thành công");
+                // Cập nhật lại state local dựa trên kết quả trả về từ API
+                setUsers((prev) =>
+                    prev.map((u) => {
+                        if (u.id === id) {
+                            const newIsActive = res.data.isActive;
+                            return { 
+                                ...u, 
+                                isActive: newIsActive,
+                                status: newIsActive ? "Active" : "Inactive"
+                            };
+                        }
+                        return u;
+                    })
+                );
+            }
+        } catch {
+            toast.error("Không thể cập nhật trạng thái");
         }
     };
 
-    // Load danh sách khi component mount
-    useEffect(() => {
-        fetchUsers(1);
-    }, []);
-
-    // Xử lý thay đổi filter
-    const handleFilterChange = (field: string, value: any) => {
-        const newFilters = { ...filters, [field]: value };
-        setFilters(newFilters);
-        fetchUsers(1, newFilters);
+    // Selection handlers
+    const handleSelectOne = (id: number) => {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
 
-    // Xử lý thay đổi trạng thái
-    const handleStatusChange = (value: string) => {
-        const statusValue = value === "" ? undefined : value === "true";
-        handleFilterChange("status", statusValue);
+    // Open modals
+    const handleOpenCreate = () => {
+        setEditingUser(null);
+        setIsUserModalOpen(true);
     };
 
-    // Tính tổng số trang
-    const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+    const handleOpenEdit = (user: User) => {
+        setEditingUser(user);
+        setIsUserModalOpen(true);
+    };
+
+    const handleOpenSetPassword = (user: User) => {
+        setSelectedUserForPassword(user);
+        setIsSetPasswordModalOpen(true);
+    };
+
+    // Save modals handlers
+    const handleSaveUser = async (payload: CreateUserPayload | UpdateUserPayload) => {
+        try {
+            if (editingUser) {
+                const res = await UserApi.update(editingUser.id, payload as UpdateUserPayload);
+                toast.success(res.message || "Cập nhật người dùng thành công");
+                fetchUsers(pagination.page);
+            } else {
+                const res = await UserApi.create(payload as CreateUserPayload);
+                toast.success(res.message || "Thêm mới người dùng thành công");
+                fetchUsers(1);
+                // Mở popup khởi tạo mật khẩu cho user mới tạo
+                setSelectedUserForPassword(res.data);
+                setIsSetPasswordModalOpen(true);
+            }
+        } catch (error: unknown) {
+            console.error("Lỗi khi lưu người dùng:", error);
+            const message = (error as any)?.response?.data?.message || "Không thể lưu người dùng";
+            toast.error(message);
+            throw error;
+        }
+    };
+
+    const handleSavePassword = async (password: string) => {
+        if (!selectedUserForPassword) return;
+        try {
+            await UserApi.setPassword(selectedUserForPassword.id, password);
+            toast.success("Đặt lại mật khẩu thành công");
+        } catch (error: unknown) {
+            console.error("Lỗi khi đặt lại mật khẩu:", error);
+            const message = (error as any)?.response?.data?.message || "Không thể đặt lại mật khẩu";
+            toast.error(message);
+            throw error;
+        }
+    };
+
+    // Import/Export handlers
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const loadingToast = toast.loading("Đang import dữ liệu...");
+        try {
+            const res = await UserApi.importUsers(file);
+            toast.success(res.message || "Import dữ liệu thành công");
+            fetchUsers(1);
+        } catch (error: unknown) {
+            console.error("Lỗi khi import dữ liệu:", error);
+            const message = (error as any)?.response?.data?.message || "Không thể import dữ liệu";
+            toast.error(message);
+        } finally {
+            toast.dismiss(loadingToast);
+            e.target.value = "";
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const blob = await UserApi.exportUsers();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Danh_sach_nguoi_dung_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("Xuất dữ liệu thành công");
+        } catch (error: unknown) {
+            console.error("Lỗi khi export dữ liệu:", error);
+            toast.error("Không thể xuất dữ liệu");
+        }
+    };
+
+    const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
 
     return (
-        <main className="space-y-5">
-            <TopHero
-                lable="Danh sách người dùng"
-                component={
-                    <div className="flex gap-5 rounded">
-                        <Button variant="outline" className="flex gap-3 items-center">
-                            <i className="fa-solid fa-upload"></i>
-                            <span>Import</span>
-                        </Button>
-                        <Button variant="primary" className="flex gap-3 items-center">
-                            <i className="fa-solid fa-plus"></i>
-                            <span>Thêm mới</span>
-                        </Button>
-                    </div>
-                }
-            />
+        <main className="h-screen flex flex-col py-2">
+            <div className="shrink-0">
+                <TopHero
+                    lable="Danh sách người dùng"
+                    component={
+                        <div className="flex gap-3">
+                            <input type="file" id="importFileInput" className="hidden" accept=".xlsx, .xls" onChange={handleImportFile} />
+                            <Button variant="outline" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={() => document.getElementById("importFileInput")?.click()}>
+                                <Upload className="size-4" />
+                                <span>Import</span>
+                            </Button>
+                            <Button variant="primary" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={handleOpenCreate}>
+                                <Plus className="size-4" />
+                                <span>Thêm mới</span>
+                            </Button>
+                        </div>
+                    }
+                />
+            </div>
 
-            <div>
-                <div className="bg-[#F4F6F8] py-3 px-3">
-                    <div className="flex font-semibold gap-3 pb-6">
-                        <div className="flex-1"></div>
-                        <div className="flex-4">Họ và tên</div>
-                        <div className="flex-1">Tài khoản</div>
-                        <div className="flex-2">Email</div>
-                        <div className="flex-1">Vai trò</div>
-                        <div className="flex-1">Chức danh</div>
-                        <div className="flex-1">Trạng thái</div>
+            <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
+                {/* Header Row */}
+                <div className="shrink-0 border-b border-gray-200">
+                    <div className={`grid ${GRID_COLS} gap-3 px-4 py-3 bg-[#F4F6F8] font-semibold text-gray-700 text-xs`}>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div>Họ và tên</div>
+                        <div>Tài khoản</div>
+                        <div>Email</div>
+                        <div>Vai trò</div>
+                        <div>Chức danh</div>
+                        <div>Trạng thái</div>
                     </div>
 
-                    {/* Filter */}
-                    <div className="flex gap-3 pb-6">
-                        <div className="flex-1"></div>
-                        <div className="flex-4">
+                    {/* Filter Row */}
+                    <div className={`grid ${GRID_COLS} gap-3 px-4 pb-3 bg-[#F4F6F8]`}>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div>
                             <input
                                 type="text"
-                                placeholder="Tìm theo họ tên..."
                                 value={filters.fullName}
                                 onChange={(e) => handleFilterChange("fullName", e.target.value)}
-                                className="w-full remove-outline px-3 py-1.25 ring-1 ring-gray-300 rounded bg-white"
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="flex-1">
+                        <div>
                             <input
                                 type="text"
-                                placeholder="Tài khoản..."
                                 value={filters.username}
                                 onChange={(e) => handleFilterChange("username", e.target.value)}
-                                className="w-full remove-outline px-3 py-1.25 ring-1 ring-gray-300 rounded bg-white"
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="flex-2">
-                            <input type="text" placeholder="Email..." value={filters.email} onChange={(e) => handleFilterChange("email", e.target.value)} className="w-full remove-outline px-3 py-1.25 ring-1 ring-gray-300 rounded bg-white" />
+                        <div>
+                            <input
+                                type="text"
+                                value={filters.email}
+                                onChange={(e) => handleFilterChange("email", e.target.value)}
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
+                            />
                         </div>
-                        <div className="flex-1">
+                        <div className="relative">
                             <select
                                 value={filters.roleId || ""}
                                 onChange={(e) => handleFilterChange("roleId", e.target.value ? Number(e.target.value) : undefined)}
-                                className="w-full remove-outline px-3 py-1.5 h-full ring-1 ring-gray-300 rounded bg-white"
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
                                 <option value="">Vai trò</option>
+                                <option value="1">ADMIN_SO</option>
+                                <option value="2">MANAGER_SO</option>
+                                <option value="3">CHUYENVIEN_SO</option>
+                                <option value="4">CEO_DN</option>
+                                <option value="5">MANAGER_DN</option>
+                                <option value="6">USER_DN</option>
                             </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
-                        <div className="flex-1">
+                        <div>
                             <input
                                 type="text"
-                                placeholder="Chức danh..."
                                 value={filters.position}
                                 onChange={(e) => handleFilterChange("position", e.target.value)}
-                                className="w-full remove-outline px-3 py-1.25 ring-1 ring-gray-300 rounded bg-white"
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="flex-1">
+                        <div className="relative">
                             <select
-                                value={filters.status === undefined ? "" : filters.status ? "true" : "false"}
+                                value={filters.isActive === undefined ? "" : filters.isActive ? "true" : "false"}
                                 onChange={(e) => handleStatusChange(e.target.value)}
-                                className="w-full remove-outline px-3 py-1.5 h-full ring-1 ring-gray-300 rounded bg-white"
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
                                 <option value="">Trạng thái</option>
                                 <option value="true">Bật</option>
                                 <option value="false">Tắt</option>
                             </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
                     </div>
+                </div>
 
-                    {/* Danh sách */}
-                    <div className="space-y-2">
-                        {loading && <div className="text-center py-4">Đang tải...</div>}
-
-                        {!loading && users.length === 0 && <div className="text-center py-4 text-gray-500">Không có dữ liệu người dùng</div>}
-
-                        {!loading &&
-                            users.map((user) => (
-                                <div key={user.id} className="flex gap-3 py-2 hover:bg-gray-100 px-2 rounded">
-                                    <div className="flex-1 flex items-center">
-                                        <input type="checkbox" className="w-4 h-4" />
+                {/* Table Body */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                    {loading ? (
+                        <div className="text-center py-10 text-gray-500">Đang tải...</div>
+                    ) : (
+                        <>
+                            {users.map((user) => (
+                                <div key={user.id} className={`grid ${GRID_COLS} gap-3 px-4 py-2.5 hover:bg-blue-50/20 border-b border-gray-100 items-center text-xs text-gray-700 transition-colors`}>
+                                    <div className="flex items-center justify-center">
+                                        <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => handleSelectOne(user.id)} className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" />
                                     </div>
-                                    <div className="flex-4 line-clamp-1">{user.fullName}</div>
-                                    <div className="flex-1 line-clamp-1">{user.username}</div>
-                                    <div className="flex-2 line-clamp-1">{user.email}</div>
-                                    <div className="flex-1 line-clamp-1">{user.role?.name || "-"}</div>
-                                    <div className="flex-1 line-clamp-1">{user.position || "-"}</div>
-                                    <div className="flex-1">
-                                        <span className={`px-2 py-1 rounded text-xs ${user.status ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{user.status ? "Bật" : "Tắt"}</span>
+                                    <div className="flex items-center justify-center">
+                                        <button type="button" onClick={() => handleOpenEdit(user)} className="text-gray-400 hover:text-primary transition-colors" title="Chỉnh sửa">
+                                            <Pencil className="size-3.5" />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-center">
+                                        <button type="button" onClick={() => handleOpenSetPassword(user)} className="text-gray-400 hover:text-primary transition-colors" title="Đặt lại mật khẩu">
+                                            <Key className="size-3.5" />
+                                        </button>
+                                    </div>
+                                    <div className="truncate font-medium">{user.fullName}</div>
+                                    <div className="truncate">{(user as any).username || "-"}</div>
+                                    <div className="truncate text-gray-500">{user.email}</div>
+                                    <div className="truncate">{getRoleDisplayName((user as any).role)}</div>
+                                    <div className="truncate">{user.position || "-"}</div>
+                                    <div className="flex items-center">
+                                        <ToggleSwitch checked={user.isActive ?? (user as any).status === "Active"} onChange={() => handleToggleStatus(user.id)} />
                                     </div>
                                 </div>
                             ))}
-                    </div>
-
-                    {/* Phân trang */}
-                    {totalPages > 1 && (
-                        <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                            <span className="text-sm text-gray-600">
-                                Trang {pagination.page} / {totalPages} (Tổng: {pagination.total} người dùng)
-                            </span>
-                            <div className="flex gap-2">
-                                <button disabled={pagination.page === 1} onClick={() => fetchUsers(pagination.page - 1)} className="px-3 py-1 ring-1 ring-gray-300 rounded disabled:opacity-50">
-                                    Trước
-                                </button>
-                                <button disabled={pagination.page === totalPages} onClick={() => fetchUsers(pagination.page + 1)} className="px-3 py-1 ring-1 ring-gray-300 rounded disabled:opacity-50">
-                                    Sau
-                                </button>
-                            </div>
-                        </div>
+                            {users.length === 0 && <div className="flex items-center justify-center py-12 text-sm text-gray-400">Không tìm thấy người dùng nào</div>}
+                        </>
                     )}
                 </div>
+
+                {/* Footer */}
+                <div className="shrink-0 flex items-center justify-between px-5 py-3 border-t border-gray-200 text-xs text-gray-500 bg-white">
+                    {/* Left: Export */}
+                    <button type="button" onClick={handleExport} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors cursor-pointer">
+                        <Download className="size-3.5" />
+                        <span>Export Data</span>
+                    </button>
+
+                    {/* Right: Pagination */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                            <select
+                                value={pagination.pageSize}
+                                onChange={(e) => {
+                                    const newLimit = Number(e.target.value);
+                                    fetchUsers(1, newLimit);
+                                }}
+                                className="border border-gray-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
+                            >
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
+                            </select>
+                        </div>
+
+                        <span className="text-gray-500 tabular-nums">
+                            {pagination.total === 0 ? "0" : `${(pagination.page - 1) * pagination.pageSize + 1} - ${Math.min(pagination.page * pagination.pageSize, pagination.total)}`} of {pagination.total}
+                        </span>
+
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                disabled={pagination.page <= 1}
+                                onClick={() => fetchUsers(pagination.page - 1)}
+                                className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft className="size-4" />
+                            </button>
+                            <button
+                                type="button"
+                                disabled={pagination.page >= totalPages}
+                                onClick={() => fetchUsers(pagination.page + 1)}
+                                className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {/* Modals */}
+            <UserModal isOpen={isUserModalOpen} editingItem={editingUser} onClose={() => setIsUserModalOpen(false)} onSave={handleSaveUser} />
+
+            <CreatePasswordModal isOpen={isSetPasswordModalOpen} user={selectedUserForPassword} onClose={() => setIsSetPasswordModalOpen(false)} onSave={handleSavePassword} />
         </main>
     );
 };
