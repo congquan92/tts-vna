@@ -48,11 +48,9 @@ export class TypeOfBusinessController {
   }
 
   @Get('code/:code')
-  @ApiOperation({ summary: 'Tìm loại hình theo mã code' })
+  @ApiOperation({ summary: 'Tìm loại hình theo mã code (tìm gần đúng)' })
   async findByCode(@Param('code') code: string) {
-    const item = await this.typeOfBusinessService.findByCode(code);
-    if (!item) throw new NotFoundException('Loại hình không tồn tại');
-    return item;
+    return await this.typeOfBusinessService.findByCode(code);
   }
 
   @Get('name')
@@ -116,7 +114,7 @@ export class TypeOfBusinessController {
         message: 'Cập nhật trạng thái thành công',
         data: {
           id: 1,
-          status: false,
+          status: 'active',
         },
       },
     },

@@ -1,5 +1,5 @@
 import { axiosInstance } from "@/lib/axios";
-import type { TypeOfBusiness, CreateTypeOfBusinessPayload, UpdateTypeOfBusinessPayload } from "@/types/typeOfBusiness";
+import type { TypeOfBusiness, CreateTypeOfBusinessPayload, UpdateTypeOfBusinessPayload, BusinessStatus } from "@/types/typeOfBusiness";
 
 export const TypeOfBusinessApi = {
     create: async (payload: CreateTypeOfBusinessPayload): Promise<TypeOfBusiness> => {
@@ -12,8 +12,8 @@ export const TypeOfBusinessApi = {
         return res.data;
     },
 
-    findByCode: async (code: string): Promise<TypeOfBusiness> => {
-        const res = await axiosInstance.get<TypeOfBusiness>(`/TypeOfBusiness/code/${code}`);
+    findByCode: async (code: string): Promise<TypeOfBusiness[]> => {
+        const res = await axiosInstance.get<TypeOfBusiness[]>(`/TypeOfBusiness/code/${code}`);
         return res.data;
     },
 
@@ -44,8 +44,8 @@ export const TypeOfBusinessApi = {
         return res.data;
     },
 
-    toggleStatus: async (id: number): Promise<{ message: string; data: { id: number; status: boolean } }> => {
-        const res = await axiosInstance.patch<{ message: string; data: { id: number; status: boolean } }>(`/TypeOfBusiness/${id}/toggle-status`);
+    toggleStatus: async (id: number): Promise<{ message: string; data: { id: number; status: BusinessStatus } }> => {
+        const res = await axiosInstance.patch<{ message: string; data: { id: number; status: BusinessStatus } }>(`/TypeOfBusiness/${id}/toggle-status`);
         return res.data;
     },
 };

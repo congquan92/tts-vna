@@ -67,7 +67,7 @@ export class BusinessRepository {
             ward:
                 business.registeredWard,
             status:
-                business.status ? 'Active' : 'Inactive',
+                business.status === 'active',
         }));
 
         return {
@@ -150,13 +150,13 @@ export class BusinessRepository {
             }
 
             if (query.status !== undefined && query.status !== null) {
-                const status =
+                const statusBool =
                     typeof query.status === 'string'
                         ? query.status === 'true'
                         : query.status;
 
                 qb.andWhere('business.status = :status', {
-                    status,
+                    status: statusBool ? 'active' : 'inactive',
                 });
             }
 
@@ -171,7 +171,7 @@ export class BusinessRepository {
                 typeOfBusiness: b.typeOfBusiness?.name ?? '',
                 businessIndustry: b.businessIndustry?.name ?? '',
                 registeredWard: b.registeredWard,
-                status: b.status,
+                status: b.status === 'active',
             }));
 
             return {

@@ -3,11 +3,12 @@
 import { useState, useMemo, useEffect } from "react";
 import TopHero from "@/components/TopHero";
 import ToggleSwitch from "@/components/ToggleSwitch";
-import BusinessTypeModal from "@/components/modals/BusinessType/BusinessTypeModal";
+import BusinessTypePopup from "@/components/popup/business-type-popup";
 import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
 import { TypeOfBusiness, BusinessStatus } from "@/types/typeOfBusiness";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
+import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, ChevronDown, Trash2, X } from "lucide-react";
 
 const GRID_COLS = "grid-cols-[40px_40px_120px_1fr_140px]";
 
@@ -16,8 +17,6 @@ export default function BusinessTypesPage() {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<TypeOfBusiness | null>(null);
-    const [form, setForm] = useState({ code: "", name: "", status: "true" });
-    const [errors, setErrors] = useState({ code: "", name: "" });
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     // Filter states
@@ -32,7 +31,18 @@ export default function BusinessTypesPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const result = await TypeOfBusinessApi.findAll();
+            let result: TypeOfBusiness[] = [];
+            
+            if (filterCode) {
+                result = await TypeOfBusinessApi.findByCode(filterCode);
+            } else if (filterName) {
+                result = await TypeOfBusinessApi.findByName(filterName);
+            } else if (filterStatus) {
+                result = await TypeOfBusinessApi.findByStatus(filterStatus);
+            } else {
+                result = await TypeOfBusinessApi.findAll();
+            }
+            
             setData(result);
         } catch (error) {
             console.error("Error fetching business types:", error);
@@ -43,20 +53,19 @@ export default function BusinessTypesPage() {
     };
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        const timer = setTimeout(() => {
+            fetchData();
+        }, 300); // Debounce search
+        return () => clearTimeout(timer);
+    }, [filterCode, filterName, filterStatus]);
 
     const openNew = () => {
         setEditingItem(null);
-        setForm({ code: "", name: "", status: "true" });
-        setErrors({ code: "", name: "" });
         setIsModalOpen(true);
     };
 
     const openEdit = (item: TypeOfBusiness) => {
         setEditingItem(item);
-        setForm({ code: item.code, name: item.name, status: item.status ? "true" : "false" });
-        setErrors({ code: "", name: "" });
         setIsModalOpen(true);
     };
 
@@ -64,38 +73,20 @@ export default function BusinessTypesPage() {
         setIsModalOpen(false);
     };
 
-    const validate = () => {
-        const nextErrors = { code: "", name: "" };
-        if (!form.code.trim()) nextErrors.code = "Mã loại hình là bắt buộc";
-        if (!form.name.trim()) nextErrors.name = "Tên loại hình là bắt buộc";
-        setErrors(nextErrors);
-        return !nextErrors.code && !nextErrors.name;
-    };
-
-    const handleSave = async () => {
-        if (!validate()) return;
-
+    const handleSave = async (payload: { code: string; name: string; status: BusinessStatus }) => {
         try {
-            const statusVal = form.status === "true" ? BusinessStatus.ACTIVE : BusinessStatus.INACTIVE;
             if (editingItem) {
-                await TypeOfBusinessApi.update(editingItem.id, {
-                    code: form.code,
-                    name: form.name,
-                    status: statusVal,
-                });
+                await TypeOfBusinessApi.update(editingItem.id, payload);
                 toast.success("Cập nhật thành công");
             } else {
-                await TypeOfBusinessApi.create({
-                    code: form.code,
-                    name: form.name,
-                    status: statusVal,
-                });
+                await TypeOfBusinessApi.create(payload);
                 toast.success("Thêm mới thành công");
             }
             fetchData();
             closeModal();
         } catch (error) {
             toast.error("Có lỗi xảy ra khi lưu");
+            throw error;
         }
     };
 
@@ -104,33 +95,35 @@ export default function BusinessTypesPage() {
             const res = await TypeOfBusinessApi.toggleStatus(id);
             if (res) {
                 toast.success("Cập nhật trạng thái thành công");
-                setData((prev) => prev.map((item) => (item.id === id ? { ...item, status: res.data.status ? BusinessStatus.ACTIVE : BusinessStatus.INACTIVE } : item)));
+                setData((prev) => prev.map((item) => (item.id === id ? { ...item, status: res.data.status } : item)));
             }
         } catch (error) {
             toast.error("Không thể cập nhật trạng thái");
         }
     };
 
-    const handleSelectAll = (checked: boolean) => {
-        setSelectedIds(checked ? paginatedRows.map((r) => r.id) : []);
-    };
-
     const handleSelectOne = (id: number) => {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
 
-    const filteredRows = useMemo(() => {
-        return data.filter((item) => {
-            const matchCode = filterCode ? item.code.toLowerCase().includes(filterCode.toLowerCase()) : true;
-            const matchName = filterName ? item.name.toLowerCase().includes(filterName.toLowerCase()) : true;
-            const matchStatus = filterStatus === "" ? true : filterStatus === "active" ? item.status === BusinessStatus.ACTIVE : filterStatus === "inactive" ? item.status === BusinessStatus.INACTIVE : true;
-            return matchCode && matchName && matchStatus;
-        });
-    }, [data, filterCode, filterName, filterStatus]);
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} loại hình kinh doanh đã chọn?`);
+        if (!confirmDelete) return;
 
-    const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-    const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const allSelected = paginatedRows.length > 0 && paginatedRows.every((r) => selectedIds.includes(r.id));
+        try {
+            await Promise.all(selectedIds.map((id) => TypeOfBusinessApi.delete(id)));
+            toast.success("Xóa các loại hình kinh doanh thành công");
+            setSelectedIds([]);
+            fetchData();
+        } catch (error) {
+            console.error("Lỗi khi xóa loại hình kinh doanh:", error);
+            toast.error("Không thể xóa một số loại hình kinh doanh. Vui lòng thử lại.");
+        }
+    };
+
+    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const paginatedRows = data.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
         <main className="h-screen flex flex-col py-2">
@@ -139,12 +132,12 @@ export default function BusinessTypesPage() {
                     lable="Danh sách loại hình kinh doanh"
                     component={
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex items-center gap-2">
-                                <i className="fa-solid fa-upload text-xs" />
+                            <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs font-semibold">
+                                <Upload className="size-4" />
                                 <span>Thêm từ file</span>
                             </Button>
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2">
-                                <i className="fa-solid fa-plus text-xs" />
+                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
+                                <Plus className="size-4" />
                                 <span>Thêm mới</span>
                             </Button>
                         </div>
@@ -153,19 +146,21 @@ export default function BusinessTypesPage() {
             </div>
 
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
+                {/* Grid Header */}
                 <div className="shrink-0 border-b border-gray-200">
-                    <div className={`grid ${GRID_COLS} text-xs text-gray-500 font-medium`}>
+                    <div className={`grid ${GRID_COLS} text-xs text-gray-500 font-medium py-3 px-4 bg-[#F4F6F8] font-semibold text-gray-700`}>
                         <div />
                         <div />
-                        <div className="px-3 py-2">Mã loại hình</div>
-                        <div className="px-3 py-2">Tên loại hình</div>
-                        <div className="px-3 py-2 text-center">Trạng thái</div>
+                        <div>Mã loại hình</div>
+                        <div>Tên loại hình</div>
+                        <div className="text-center">Trạng thái</div>
                     </div>
 
-                    <div className={`grid ${GRID_COLS} pb-2`}>
+                    {/* Filter Row */}
+                    <div className={`grid ${GRID_COLS} pb-3 px-4 bg-[#F4F6F8] gap-3`}>
                         <div />
                         <div />
-                        <div className="px-3">
+                        <div>
                             <input
                                 type="text"
                                 value={filterCode}
@@ -173,10 +168,10 @@ export default function BusinessTypesPage() {
                                     setFilterCode(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-primary transition-colors"
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="px-3">
+                        <div>
                             <input
                                 type="text"
                                 value={filterName}
@@ -184,47 +179,49 @@ export default function BusinessTypesPage() {
                                     setFilterName(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-primary transition-colors"
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="px-3">
+                        <div className="relative">
                             <select
                                 value={filterStatus}
                                 onChange={(e) => {
                                     setFilterStatus(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-primary transition-colors bg-white"
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Tất cả</option>
+                                <option value="">Trạng thái</option>
                                 <option value="active">Sử dụng</option>
                                 <option value="inactive">Ngừng sử dụng</option>
                             </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
                     </div>
                 </div>
 
+                {/* Table Body */}
                 <div className="flex-1 overflow-y-auto min-h-0">
                     {loading ? (
                         <div className="text-center py-10 text-gray-500">Đang tải...</div>
                     ) : (
                         <>
                             {paginatedRows.map((item) => (
-                                <div key={item.id} className={`grid ${GRID_COLS} border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-sm text-gray-700`}>
-                                    <div className="flex items-center justify-center py-2.5">
-                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                <div key={item.id} className={`grid ${GRID_COLS} border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-xs text-gray-700 items-center px-4 py-2.5`}>
+                                    <div className="flex items-center justify-center">
+                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
                                     </div>
 
-                                    <div className="flex items-center justify-center py-2.5">
-                                        <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors" title="Chỉnh sửa">
-                                            <i className="fa-solid fa-pen text-xs" />
+                                    <div className="flex items-center justify-center">
+                                        <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
+                                            <Pencil className="size-3.5" />
                                         </button>
                                     </div>
 
-                                    <div className="flex items-center px-3 py-2.5">{item.code}</div>
-                                    <div className="flex items-center px-3 py-2.5">{item.name}</div>
+                                    <div className="truncate font-medium">{item.code}</div>
+                                    <div className="truncate">{item.name}</div>
 
-                                    <div className="flex items-center justify-center py-2.5">
+                                    <div className="flex items-center justify-center">
                                         <ToggleSwitch checked={item.status === BusinessStatus.ACTIVE} onChange={() => handleToggleStatus(item.id)} />
                                     </div>
                                 </div>
@@ -234,7 +231,8 @@ export default function BusinessTypesPage() {
                     )}
                 </div>
 
-                <div className="shrink-0 flex items-center justify-end gap-4 px-5 py-3 border-t border-gray-200 text-sm text-gray-500">
+                {/* Pagination Footer */}
+                <div className="shrink-0 flex items-center justify-end gap-4 px-5 py-3 border-t border-gray-200 text-xs text-gray-500 bg-white">
                     <div className="flex items-center gap-1.5">
                         <select
                             value={pageSize}
@@ -242,7 +240,7 @@ export default function BusinessTypesPage() {
                                 setPageSize(Number(e.target.value));
                                 setCurrentPage(1);
                             }}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
+                            className="border border-gray-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
                         >
                             <option value={10}>10</option>
                             <option value={20}>20</option>
@@ -251,7 +249,7 @@ export default function BusinessTypesPage() {
                     </div>
 
                     <span className="text-gray-500 tabular-nums">
-                        {filteredRows.length === 0 ? "0" : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, filteredRows.length)}`} of {filteredRows.length}
+                        {data.length === 0 ? "0" : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, data.length)}`} of {data.length}
                     </span>
 
                     <div className="flex items-center gap-1">
@@ -261,7 +259,7 @@ export default function BusinessTypesPage() {
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
-                            <i className="fa-solid fa-chevron-left text-xs" />
+                            <ChevronLeft className="size-4" />
                         </button>
                         <button
                             type="button"
@@ -269,20 +267,46 @@ export default function BusinessTypesPage() {
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
-                            <i className="fa-solid fa-chevron-right text-xs" />
+                            <ChevronRight className="size-4" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            <BusinessTypeModal 
+            {/* Selection Banner */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
+                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-[40px]">
+                        {selectedIds.length}
+                    </div>
+                    <div className="px-4 text-xs font-semibold text-gray-700 select-none">
+                        dữ liệu được chọn
+                    </div>
+                    <div className="pr-3 flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleDeleteSelected}
+                            className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
+                        >
+                            <Trash2 className="size-3.5" />
+                            <span>Xoá</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedIds([])}
+                            className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <BusinessTypePopup 
                 isOpen={isModalOpen} 
                 editingItem={editingItem} 
-                form={form} 
-                errors={errors} 
                 onClose={closeModal} 
                 onSave={handleSave} 
-                onChange={(field, value) => setForm((prev) => ({ ...prev, [field]: value }))} 
             />
         </main>
     );

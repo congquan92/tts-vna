@@ -88,7 +88,7 @@ export class BusinessService {
             message: 'Cập nhật trạng thái thành công',
             data: {
                 id: updated.id,
-                status: updated.status,
+                isActive: newStatus === BusinessStatus.ACTIVE,
             },
         };
     }

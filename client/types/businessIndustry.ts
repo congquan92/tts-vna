@@ -1,6 +1,6 @@
 export enum BusinessStatus {
-    ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
 }
 
 export interface BusinessIndustry {
