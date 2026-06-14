@@ -273,7 +273,7 @@ const AccountPage = () => {
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
                 {/* Header Row */}
                 <div className="shrink-0 border-b border-gray-200">
-                    <div className={`grid ${GRID_COLS} gap-3 px-4 py-3 bg-[#F4F6F8] font-semibold text-gray-700 text-xs`}>
+                    <div className="grid gap-3 px-4 py-3 bg-[#F4F6F8] font-semibold text-gray-700 text-xs" style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}>
                         <div></div>
                         <div></div>
                         <div></div>
@@ -286,7 +286,7 @@ const AccountPage = () => {
                     </div>
 
                     {/* Filter Row */}
-                    <div className={`grid ${GRID_COLS} gap-3 px-4 pb-3 bg-[#F4F6F8]`}>
+                    <div className="grid gap-3 px-4 pb-3 bg-[#F4F6F8]" style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}>
                         <div></div>
                         <div></div>
                         <div></div>
@@ -360,7 +360,7 @@ const AccountPage = () => {
                     ) : (
                         <>
                             {users.map((user) => (
-                                <div key={user.id} className={`grid ${GRID_COLS} gap-3 px-4 py-2.5 hover:bg-blue-50/20 border-b border-gray-100 items-center text-xs text-gray-700 transition-colors`}>
+                                <div key={user.id} className="grid gap-3 px-4 py-2.5 hover:bg-blue-50/20 border-b border-gray-100 items-center text-xs text-gray-700 transition-colors" style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}>
                                     <div className="flex items-center justify-center">
                                         <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => handleSelectOne(user.id)} className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" />
                                     </div>

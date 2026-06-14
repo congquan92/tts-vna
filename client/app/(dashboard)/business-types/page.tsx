@@ -148,7 +148,7 @@ export default function BusinessTypesPage() {
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
                 {/* Grid Header */}
                 <div className="shrink-0 border-b border-gray-200">
-                    <div className={`grid ${GRID_COLS} text-xs text-gray-500 font-medium py-3 px-4 bg-[#F4F6F8] font-semibold text-gray-700`}>
+                    <div className={`grid ${GRID_COLS} gap-3 text-xs text-gray-500 font-medium py-3 px-4 bg-[#F4F6F8] font-semibold text-gray-700`}>
                         <div />
                         <div />
                         <div>Mã loại hình</div>
@@ -207,7 +207,7 @@ export default function BusinessTypesPage() {
                     ) : (
                         <>
                             {paginatedRows.map((item) => (
-                                <div key={item.id} className={`grid ${GRID_COLS} border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-xs text-gray-700 items-center px-4 py-2.5`}>
+                                <div key={item.id} className={`grid ${GRID_COLS} gap-3 border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-xs text-gray-700 items-center px-4 py-2.5`}>
                                     <div className="flex items-center justify-center">
                                         <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
                                     </div>
