@@ -2,14 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import TopHero from "@/components/TopHero";
-import Button from "@/components/ui/Button";
 import EnterpriseStepOne from "@/components/modals/Enterprise/EnterpriseStepOne";
 import EnterpriseStepConfirm from "@/components/modals/Enterprise/EnterpriseStepConfirm";
 import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, UploadedFile } from "@/components/modals/Enterprise/EnterpriseStepOne";
 import { BusinessApi } from "@/api/business";
 import { toast } from "sonner";
-import { ChevronRight, Check, ArrowLeft } from "lucide-react";
+import { ChevronRight, Check } from "lucide-react";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
