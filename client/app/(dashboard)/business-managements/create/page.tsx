@@ -8,6 +8,7 @@ import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, Uploade
 import { BusinessApi } from "@/api/business";
 import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
+import AccountInfoPopup from "@/components/popup/account-info-popup";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -51,12 +52,12 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function generateAccountInfo(taxCode: string) {
-    return {
-        accountNumber: taxCode.replace(/-/g, "") || "0000000000",
-        password: "123456",
-    };
-}
+// function generateAccountInfo(taxCode: string) {
+//     return {
+//         accountNumber: taxCode.replace(/-/g, "") || "0000000000",
+//         password: "123456",
+//     };
+// }
 
 export default function CreateBusinessPage() {
     const router = useRouter();
@@ -66,8 +67,8 @@ export default function CreateBusinessPage() {
     const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(defaultAttachmentGroups.map((g) => ({ ...g, files: [] })));
     const nextFileIdRef = useRef(1);
 
-    const [showAccountPopup, setShowAccountPopup] = useState(false);
-    const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
+    // const [showAccountPopup, setShowAccountPopup] = useState(false);
+    // const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
     const [submitting, setSubmitting] = useState(false);
 
     const handleChange = (field: keyof EnterpriseFormData, value: string) => {
@@ -155,10 +156,10 @@ export default function CreateBusinessPage() {
             };
 
             await BusinessApi.create(payload);
-            const info = generateAccountInfo(form.taxCode);
-            setAccountInfo(info);
+            // const info = generateAccountInfo(form.taxCode);
+            // setAccountInfo(info);
             toast.success("Khai báo thành công");
-            setShowAccountPopup(true);
+            // setShowAccountPopup(true);
         } catch (error) {
             console.error("Error saving business:", error);
             toast.error("Có lỗi xảy ra khi lưu thông tin");
@@ -167,10 +168,10 @@ export default function CreateBusinessPage() {
         }
     };
 
-    const handleCloseAccountPopup = () => {
-        setShowAccountPopup(false);
-        router.push("/business-managements");
-    };
+    // const handleCloseAccountPopup = () => {
+    //     setShowAccountPopup(false);
+    //     router.push("/business-managements");
+    // };
 
     const handleCancel = () => {
         router.push("/business-managements");
@@ -256,6 +257,7 @@ export default function CreateBusinessPage() {
                         </>
                     )}
                 </div>
+                {/* <AccountInfoPopup isOpen={showAccountPopup} onClose={handleCloseAccountPopup} accountNumber={accountInfo.accountNumber} password={accountInfo.password} /> */}
             </div>
         </div>
     );
