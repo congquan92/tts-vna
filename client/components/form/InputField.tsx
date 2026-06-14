@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 
 export const InputField = ({ 
@@ -34,6 +34,8 @@ export const InputField = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const filteredOptions = useMemo(() => {
@@ -65,11 +67,27 @@ export const InputField = ({
         setSearchTerm("");
     };
 
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+
+    const hasValue = value !== undefined && value !== null && value !== "";
+    const shouldFloat = isFocused || hasValue || type === "date" || (isSelect && !!value) || isOpen;
+
+    const labelClasses = label && (
+        shouldFloat 
+            ? `absolute -top-2 left-3 bg-white px-1 text-[11px] font-medium z-10 transition-all duration-200 ${
+                error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-400"
+              }`
+            : `absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 z-10 transition-all duration-200 pointer-events-none`
+    );
+
+    const inputType = type === "password" ? (showPassword ? "text" : "password") : type;
+
     if (!isSelect || !isSearchable) {
         return (
             <div className="relative w-full">
                 {label && (
-                    <label className={`absolute -top-2 left-3 bg-white px-1 text-xs font-medium z-10 ${error ? "text-red-500" : "text-gray-400"}`}>
+                    <label className={labelClasses}>
                         {label}
                     </label>
                 )}
@@ -79,12 +97,14 @@ export const InputField = ({
                             name={name}
                             value={value || ""}
                             onChange={onChange}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
                             disabled={disabled || readOnly}
                             className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent appearance-none cursor-pointer disabled:bg-gray-50 ${
                                 error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
                             }`}
                         >
-                            <option value="" disabled hidden>{placeholder || "Chưa chọn"}</option>
+                            <option value="" disabled hidden>{shouldFloat ? (placeholder || "Chưa chọn") : ""}</option>
                             {options.length > 0 ? (
                                 options.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -98,12 +118,14 @@ export const InputField = ({
                     ) : (
                         <input 
                             name={name}
-                            type={type} 
+                            type={inputType} 
                             value={value} 
                             onChange={onChange}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
                             readOnly={readOnly}
                             disabled={disabled}
-                            placeholder={placeholder} 
+                            placeholder={shouldFloat ? placeholder : ""} 
                             onClick={(e) => {
                                 if (type === "date" && !readOnly && !disabled) {
                                     (e.target as any).showPicker?.();
@@ -114,8 +136,20 @@ export const InputField = ({
                             }`} 
                         />
                     )}
-                    {/* Render Icon nếu có */}
-                    {Icon && !isSelect && <Icon className={`absolute right-3 top-1/2 -translate-y-1/2 size-5 ${error ? "text-red-500" : "text-gray-400"}`} />}
+                    
+                    {/* Render Icon/Eye Toggle */}
+                    {type === "password" ? (
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer z-10"
+                        >
+                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                    ) : Icon && !isSelect ? (
+                        <Icon className={`absolute right-3 top-1/2 -translate-y-1/2 size-5 ${error ? "text-red-500" : "text-gray-400"}`} />
+                    ) : null}
+                    
                     {isSelect && <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 size-4 pointer-events-none ${error ? "text-red-500" : "text-gray-500"}`} />}
                 </div>
                 {error && <p className="text-red-500 text-[11px] mt-1 ml-1">{error}</p>}
@@ -127,19 +161,22 @@ export const InputField = ({
     return (
         <div className="relative w-full" ref={dropdownRef}>
             {label && (
-                <label className={`absolute -top-2 left-3 bg-white px-1 text-xs font-medium z-10 ${error ? "text-red-500" : "text-gray-400"}`}>
+                <label className={labelClasses}>
                     {label}
                 </label>
             )}
             <div className="relative">
                 <div
                     onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    tabIndex={disabled || readOnly ? -1 : 0}
                     className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer flex justify-between items-center min-h-[42px] ${
                         disabled || readOnly ? "bg-gray-50 cursor-not-allowed" : "hover:border-blue-500"
                     } ${error ? "border-red-500" : "border-gray-200"}`}
                 >
                     <span className={selectedOption ? "text-gray-700" : "text-gray-400"}>
-                        {selectedOption ? selectedOption.label : placeholder || "Chưa chọn"}
+                        {selectedOption ? selectedOption.label : (shouldFloat ? (placeholder || "Chưa chọn") : "")}
                     </span>
                     <ChevronDown className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""} ${error ? "text-red-500" : "text-gray-500"}`} />
                 </div>

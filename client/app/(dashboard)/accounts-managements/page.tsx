@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { UserApi } from "@/api/user";
 import type { User } from "@/types/auth";
-import type { CreateUserPayload, UpdateUserPayload } from "@/types/user";
 import TopHero from "@/components/TopHero";
 import Button from "@/components/ui/Button";
 import ToggleSwitch from "@/components/ToggleSwitch";
-import UserModal from "@/components/modals/UserModal";
 import CreatePasswordModal from "@/components/popup/create-password";
 import { toast } from "sonner";
 import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronRight } from "lucide-react";
@@ -35,6 +34,8 @@ const getRoleDisplayName = (roleName?: string) => {
 };
 
 const AccountPage = () => {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({
@@ -56,9 +57,7 @@ const AccountPage = () => {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     // Modal states
-    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [isSetPasswordModalOpen, setIsSetPasswordModalOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
     const [selectedUserForPassword, setSelectedUserForPassword] = useState<User | null>(null);
 
     // Fetch user list
@@ -86,6 +85,28 @@ const AccountPage = () => {
                         pageSize: limit,
                         total: meta.total || result.total || 0,
                     }));
+
+                    // Check if we need to show password modal for a newly created user
+                    const newUserId = searchParams.get("newUserId");
+                    if (newUserId) {
+                        let newUser = result.data.find((u: User) => u.id === Number(newUserId));
+                        
+                        // If not found in the current page, fetch them separately
+                        if (!newUser) {
+                            try {
+                                newUser = await UserApi.getById(Number(newUserId));
+                            } catch (e) {
+                                console.error("Could not fetch new user for password setup", e);
+                            }
+                        }
+
+                        if (newUser) {
+                            setSelectedUserForPassword(newUser);
+                            setIsSetPasswordModalOpen(true);
+                            // Clear query param to avoid re-opening
+                            router.replace("/accounts-managements");
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Lỗi khi lấy danh sách người dùng:", error);
@@ -94,7 +115,7 @@ const AccountPage = () => {
                 setLoading(false);
             }
         },
-        [pagination.pageSize, filters],
+        [pagination.pageSize, filters, searchParams, router],
     );
 
     // Load data on mount
@@ -119,19 +140,18 @@ const AccountPage = () => {
             const res = await UserApi.toggleStatus(id);
             if (res) {
                 toast.success("Cập nhật trạng thái thành công");
-                // Cập nhật lại state local dựa trên kết quả trả về từ API
                 setUsers((prev) =>
                     prev.map((u) => {
                         if (u.id === id) {
                             const newIsActive = res.data.isActive;
-                            return { 
-                                ...u, 
+                            return {
+                                ...u,
                                 isActive: newIsActive,
-                                status: newIsActive ? "Active" : "Inactive"
+                                status: newIsActive ? "Active" : "Inactive",
                             };
                         }
                         return u;
-                    })
+                    }),
                 );
             }
         } catch {
@@ -144,15 +164,13 @@ const AccountPage = () => {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
 
-    // Open modals
+    // Navigation handlers
     const handleOpenCreate = () => {
-        setEditingUser(null);
-        setIsUserModalOpen(true);
+        router.push("/accounts-managements/create");
     };
 
     const handleOpenEdit = (user: User) => {
-        setEditingUser(user);
-        setIsUserModalOpen(true);
+        router.push(`/accounts-managements/edit/${user.id}`);
     };
 
     const handleOpenSetPassword = (user: User) => {
@@ -160,34 +178,12 @@ const AccountPage = () => {
         setIsSetPasswordModalOpen(true);
     };
 
-    // Save modals handlers
-    const handleSaveUser = async (payload: CreateUserPayload | UpdateUserPayload) => {
-        try {
-            if (editingUser) {
-                const res = await UserApi.update(editingUser.id, payload as UpdateUserPayload);
-                toast.success(res.message || "Cập nhật người dùng thành công");
-                fetchUsers(pagination.page);
-            } else {
-                const res = await UserApi.create(payload as CreateUserPayload);
-                toast.success(res.message || "Thêm mới người dùng thành công");
-                fetchUsers(1);
-                // Mở popup khởi tạo mật khẩu cho user mới tạo
-                setSelectedUserForPassword(res.data);
-                setIsSetPasswordModalOpen(true);
-            }
-        } catch (error: unknown) {
-            console.error("Lỗi khi lưu người dùng:", error);
-            const message = (error as any)?.response?.data?.message || "Không thể lưu người dùng";
-            toast.error(message);
-            throw error;
-        }
-    };
-
     const handleSavePassword = async (password: string) => {
         if (!selectedUserForPassword) return;
         try {
             await UserApi.setPassword(selectedUserForPassword.id, password);
             toast.success("Đặt lại mật khẩu thành công");
+            setIsSetPasswordModalOpen(false);
         } catch (error: unknown) {
             console.error("Lỗi khi đặt lại mật khẩu:", error);
             const message = (error as any)?.response?.data?.message || "Không thể đặt lại mật khẩu";
@@ -428,8 +424,6 @@ const AccountPage = () => {
             </div>
 
             {/* Modals */}
-            <UserModal isOpen={isUserModalOpen} editingItem={editingUser} onClose={() => setIsUserModalOpen(false)} onSave={handleSaveUser} />
-
             <CreatePasswordModal isOpen={isSetPasswordModalOpen} user={selectedUserForPassword} onClose={() => setIsSetPasswordModalOpen(false)} onSave={handleSavePassword} />
         </main>
     );

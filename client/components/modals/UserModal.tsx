@@ -2,95 +2,217 @@
 
 import { useState, useEffect } from "react";
 import type { User } from "@/types/auth";
-import InputLegend from "@/components/InputLegend";
-import SelectLegend from "@/components/SelectLegend";
-import { Save } from "lucide-react";
+import { InputField } from "@/components/form/InputField";
+import Button from "@/components/ui/Button";
+import TopHero from "@/components/TopHero";
+import { Camera, Save, Calendar } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
+import type { CreateUserPayload, UpdateUserPayload } from "@/types/user";
 
-type UserModalProps = {
-    isOpen: boolean;
+interface Ward {
+    ward_code: string;
+    name: string;
+    province_code: string;
+}
+
+interface Province {
+    province_code: string;
+    name: string;
+    short_name: string;
+    code: string;
+    place_type: string;
+    wards: Ward[];
+}
+
+type UserFormProps = {
     editingItem: User | null;
     onClose: () => void;
     onSave: (payload: any) => Promise<void>;
 };
 
-export default function UserModal({ isOpen, editingItem, onClose, onSave }: UserModalProps) {
-    const [form, setForm] = useState({
+const roleNameToId: Record<string, string> = {
+    "ADMIN_SO": "1",
+    "MANAGER_SO": "2",
+    "CHUYENVIEN_SO": "3",
+    "CEO_DN": "4",
+    "MANAGER_DN": "5",
+    "USER_DN": "6"
+};
+
+const formatDateToYYYYMMDD = (dateVal: any) => {
+    if (!dateVal) return "";
+    const date = new Date(dateVal);
+    if (isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+export default function UserForm({ editingItem, onClose, onSave }: UserFormProps) {
+    const [formData, setFormData] = useState<any>({
         username: "",
+        password: "",
         fullName: "",
         email: "",
         roleId: "",
         position: "",
-        isActive: "true",
+        isActive: true,
+        gender: "",
+        dob: "",
+        province: "",
+        ward: "",
+        address: "",
+        avatarUrl: "",
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+    
+    // Image preview states
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    // Dữ liệu hành chính
+    const [provincesData, setProvincesData] = useState<Province[]>([]);
+    const [availableWards, setAvailableWards] = useState<{ label: string; value: string }[]>([]);
 
     useEffect(() => {
-        if (isOpen) {
+        const fetchGeoData = async () => {
+            try {
+                const geoRes = await fetch("/address.json");
+                const geoData: Province[] = await geoRes.json();
+                setProvincesData(geoData);
+                return geoData;
+            } catch (error) {
+                console.error("Error fetching geo data:", error);
+                return [];
+            }
+        };
+
+        fetchGeoData().then((geoData) => {
             if (editingItem) {
-                setForm({
-                    username: editingItem.account?.username || "",
+                // Determine account data from API (plural 'accounts' array)
+                const account = editingItem.account || (editingItem as any).accounts?.[0];
+                
+                // Determine role ID
+                let rId = account?.role?.id?.toString() || account?.roleId?.toString() || "";
+                if (!rId && account?.role?.name) {
+                    rId = roleNameToId[account.role.name] || "";
+                } else if (!rId && (editingItem as any).role) {
+                    rId = roleNameToId[(editingItem as any).role] || "";
+                }
+
+                setFormData({
+                    username: account?.username || (editingItem as any).username || "",
+                    password: "************",
                     fullName: editingItem.fullName || "",
                     email: editingItem.email || "",
-                    roleId: editingItem.account?.role?.id?.toString() || "",
+                    roleId: rId,
                     position: editingItem.position || "",
-                    isActive: editingItem.isActive ? "true" : "false",
+                    isActive: editingItem.isActive ?? ((editingItem as any).status === "Active"),
+                    gender: editingItem.gender || "",
+                    dob: formatDateToYYYYMMDD(editingItem.dob),
+                    province: editingItem.province || "",
+                    ward: editingItem.ward || "",
+                    address: editingItem.address || "",
+                    avatarUrl: editingItem.avatarUrl || "",
                 });
-            } else {
-                setForm({
-                    username: "",
-                    fullName: "",
-                    email: "",
-                    roleId: "",
-                    position: "",
-                    isActive: "true",
-                });
+
+                if (editingItem.province) {
+                    const province = geoData.find((p: Province) => p.name === editingItem.province);
+                    if (province && province.wards) {
+                        setAvailableWards(province.wards.map((w: Ward) => ({ label: w.name, value: w.name })));
+                    }
+                }
             }
-            setErrors({});
-        }
-    }, [editingItem, isOpen]);
+        });
+        setErrors({});
+        setPreviewUrl(null);
+    }, [editingItem]);
 
-    if (!isOpen) return null;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev: any) => ({ ...prev, [name]: value }));
 
-    const handleChange = (field: string, value: string) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: "" }));
+        if (errors[name]) {
+            setErrors((prev) => ({ ...prev, [name]: "" }));
         }
+
+        if (name === "province") {
+            if (value) {
+                const province = provincesData.find((p: Province) => p.name === value);
+                const wards = province?.wards?.map((w: Ward) => ({ label: w.name, value: w.name })) || [];
+                setAvailableWards(wards);
+                setFormData((prev: any) => ({ ...prev, ward: "" }));
+            } else {
+                setAvailableWards([]);
+                setFormData((prev: any) => ({ ...prev, ward: "" }));
+            }
+        }
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Kích thước file vượt quá 5 MB");
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
     };
 
     const validate = () => {
         const nextErrors: Record<string, string> = {};
-        if (!form.username.trim()) nextErrors.username = "Tên đăng nhập là bắt buộc";
-        if (!form.fullName.trim()) nextErrors.fullName = "Họ và tên là bắt buộc";
-        if (!form.email.trim()) {
+        if (!formData.username.trim()) nextErrors.username = "Tên đăng nhập là bắt buộc";
+        if (!formData.fullName.trim()) nextErrors.fullName = "Họ và tên là bắt buộc";
+        if (!formData.email.trim()) {
             nextErrors.email = "Email là bắt buộc";
-        } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             nextErrors.email = "Email không hợp lệ";
         }
-        if (!form.roleId) nextErrors.roleId = "Vai trò là bắt buộc";
+        if (!formData.roleId) nextErrors.roleId = "Vai trò là bắt buộc";
+
+        if (!editingItem) {
+            if (!formData.password || !formData.password.trim()) {
+                nextErrors.password = "Mật khẩu là bắt buộc";
+            } else if (formData.password.length < 6) {
+                nextErrors.password = "Mật khẩu phải từ 6 ký tự trở lên";
+            }
+        } else {
+            if (formData.password && formData.password !== "************" && formData.password.trim().length < 6) {
+                nextErrors.password = "Mật khẩu phải từ 6 ký tự trở lên";
+            }
+        }
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     };
 
     const handleSave = async () => {
-        if (!validate()) return;
+        if (!validate()) {
+            toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc");
+            return;
+        }
 
         setSubmitting(true);
         try {
+            // Remove avatarUrl and handle password dynamically
+            const { avatarUrl, password, ...cleanData } = formData;
+            
             const payload: any = {
-                username: form.username,
-                fullName: form.fullName,
-                email: form.email,
-                roleId: Number(form.roleId),
-                position: form.position || undefined,
-                isActive: form.isActive === "true",
+                ...cleanData,
+                roleId: Number(formData.roleId),
             };
 
+            if (password && password !== "************") {
+                payload.password = password;
+            }
+
             await onSave(payload);
-            onClose();
         } catch (error) {
             console.error("Lỗi khi lưu người dùng:", error);
         } finally {
@@ -99,112 +221,281 @@ export default function UserModal({ isOpen, editingItem, onClose, onSave }: User
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8">
-            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
-                <div className="bg-primary px-6 py-4">
-                    <h2 className="text-white text-base font-semibold">
-                        {editingItem ? "Cập nhật thông tin người dùng" : "Thêm mới người dùng"}
-                    </h2>
-                </div>
+        <div className="space-y-5 pb-10">
+            <TopHero
+                lable={editingItem ? "Chi tiết người dùng" : "Thêm mới người dùng"}
+                component={
+                    <div className="flex gap-3">
+                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={onClose} disabled={submitting}>
+                            Hủy Bỏ
+                        </Button>
+                        <Button variant="primary" size="sm" className="pl-2 font-bold" onClick={handleSave} loading={submitting}>
+                            <Save className="size-5 mr-2" /> Lưu
+                        </Button>
+                    </div>
+                }
+            />
 
-                <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 gap-4">
-                        <InputLegend
-                            label="Tên đăng nhập"
-                            require={true}
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập tên đăng nhập",
-                                value: form.username,
-                                onChange: (e) => handleChange("username", e.target.value),
-                                disabled: !!editingItem,
-                            }}
-                            errorMess={errors.username}
-                        />
+            <div className="flex flex-col md:flex-row gap-5 items-start">
+                {/* Left Sidebar - Avatar & Kích hoạt */}
+                <div className="w-full md:w-[280px] bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center shrink-0">
+                    <input type="file" id="modalAvatarInput" className="hidden" accept=".jpeg,.jpg,.png" onChange={handleAvatarChange} />
+                    <div
+                        className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
+                        onClick={() => document.getElementById("modalAvatarInput")?.click()}
+                    >
+                        {previewUrl || formData.avatarUrl ? (
+                            <Image
+                                src={previewUrl || (formData.avatarUrl?.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl?.replace(/^\//, "")}`)}
+                                alt="Avatar"
+                                width={144}
+                                height={144}
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={!!previewUrl}
+                            />
+                        ) : (
+                            <>
+                                <Camera className="text-gray-500 mb-1 size-6" />
+                                <span className="text-xs text-gray-500 font-bold">Tải ảnh đại diện</span>
+                            </>
+                        )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 text-center mb-8 leading-relaxed">
+                        *.jpeg, *.jpg, *.png.
+                        <br />
+                        Kích thước tối đa 5 MB
+                    </p>
 
-                        <InputLegend
-                            label="Họ và tên"
-                            require={true}
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập họ và tên",
-                                value: form.fullName,
-                                onChange: (e) => handleChange("fullName", e.target.value),
-                            }}
-                            errorMess={errors.fullName}
-                        />
-
-                        <InputLegend
-                            label="Email"
-                            require={true}
-                            input={{
-                                type: "email",
-                                placeholder: "Nhập email",
-                                value: form.email,
-                                onChange: (e) => handleChange("email", e.target.value),
-                            }}
-                            errorMess={errors.email}
-                        />
-
-                        <SelectLegend
-                            label="Vai trò"
-                            require={true}
-                            select={{
-                                value: form.roleId,
-                                onChange: (e) => handleChange("roleId", e.target.value),
-                            }}
-                            errorMess={errors.roleId}
-                        >
-                            <option value="">Chọn vai trò</option>
-                            <option value="1">ADMIN_SO (Quản trị viên Sở)</option>
-                            <option value="2">MANAGER_SO (Lãnh đạo Sở)</option>
-                            <option value="3">CHUYENVIEN_SO (Chuyên viên)</option>
-                            <option value="4">CEO_DN (Giám đốc Doanh nghiệp)</option>
-                            <option value="5">MANAGER_DN (Quản lý Doanh nghiệp)</option>
-                            <option value="6">USER_DN (Nhân viên Doanh nghiệp)</option>
-                        </SelectLegend>
-
-                        <InputLegend
-                            label="Chức danh"
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập chức danh",
-                                value: form.position,
-                                onChange: (e) => handleChange("position", e.target.value),
-                            }}
-                        />
-
-                        <SelectLegend
-                            label="Trạng thái"
-                            select={{
-                                value: form.isActive,
-                                onChange: (e) => handleChange("isActive", e.target.value),
-                            }}
-                        >
-                            <option value="true">Sử dụng (Bật)</option>
-                            <option value="false">Ngừng sử dụng (Tắt)</option>
-                        </SelectLegend>
+                    <div className="flex items-center justify-between w-full mt-auto pt-4 border-t border-gray-50">
+                        <span className="text-sm font-bold text-gray-800">Kích hoạt</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={formData.isActive} 
+                                onChange={(e) => setFormData((prev: any) => ({ ...prev, isActive: e.target.checked }))} 
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                     </div>
                 </div>
 
-                <div className="px-6 pb-5 flex justify-end gap-3 border-t pt-4">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                        disabled={submitting}
-                    >
-                        Hủy bỏ
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSave}
-                        className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-[#4a22b8] transition-colors flex items-center gap-2"
-                        disabled={submitting}
-                    >
-                        <Save className="size-4" />
-                        {submitting ? "Đang lưu..." : "Lưu"}
-                    </button>
+                {/* Right Area - Form Inputs */}
+                <div className="flex-1 space-y-6 w-full">
+                    {/* Section 1: Thông tin cá nhân */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-[15px] font-bold text-gray-800 mb-6">Thông tin cá nhân</h2>
+                        {editingItem ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6">
+                                {/* Row 1: Tên đăng nhập(*) | Họ và tên(*) */}
+                                <InputField 
+                                    name="username"
+                                    label="Tên đăng nhập(*)" 
+                                    value={formData.username} 
+                                    placeholder="Nhập tên đăng nhập" 
+                                    onChange={handleChange}
+                                    error={errors.username}
+                                    readOnly={true}
+                                />
+                                <InputField 
+                                    name="fullName" 
+                                    label="Họ và tên(*)" 
+                                    value={formData.fullName} 
+                                    placeholder="Nhập họ và tên"
+                                    onChange={handleChange} 
+                                    error={errors.fullName} 
+                                />
+
+                                {/* Row 2: Ngày tháng năm sinh | Giới tính */}
+                                <InputField 
+                                    name="dob" 
+                                    label="Ngày tháng năm sinh" 
+                                    value={formData.dob} 
+                                    type="date" 
+                                    icon={Calendar}
+                                    onChange={handleChange} 
+                                    error={errors.dob}
+                                />
+                                <InputField
+                                    name="gender"
+                                    label="Giới tính"
+                                    value={formData.gender}
+                                    isSelect
+                                    placeholder="Chọn giới tính"
+                                    options={[
+                                        { label: "Nam", value: "MALE" },
+                                        { label: "Nữ", value: "FEMALE" },
+                                    ]}
+                                    onChange={handleChange}
+                                />
+
+                                {/* Row 3: Chức danh | Vai trò * */}
+                                <InputField 
+                                    name="position" 
+                                    label="Chức danh" 
+                                    value={formData.position} 
+                                    placeholder="Nhập chức danh" 
+                                    onChange={handleChange} 
+                                />
+                                <InputField 
+                                    name="roleId"
+                                    label="Vai trò *" 
+                                    value={formData.roleId} 
+                                    isSelect 
+                                    placeholder="Chọn vai trò"
+                                    options={[
+                                        { label: "Quản trị viên", value: "1" },
+                                        { label: "Lãnh đạo Sở", value: "2" },
+                                        { label: "Chuyên viên", value: "3" },
+                                        { label: "Giám đốc Doanh nghiệp", value: "4" },
+                                        { label: "Quản lý Doanh nghiệp", value: "5" },
+                                        { label: "Nhân viên Doanh nghiệp", value: "6" },
+                                    ]}
+                                    onChange={handleChange}
+                                    error={errors.roleId}
+                                />
+
+                                {/* Row 4: Email * | Empty Column */}
+                                <InputField 
+                                    name="email" 
+                                    type="email" 
+                                    label="Email *"
+                                    value={formData.email} 
+                                    placeholder="Nhập địa chỉ email"
+                                    onChange={handleChange}
+                                    error={errors.email}
+                                />
+                                <div className="hidden md:block"></div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6">
+                                {/* Row 1: Tên đăng nhập(*) | Mật khẩu * */}
+                                <InputField 
+                                    name="username"
+                                    label="Tên đăng nhập(*)" 
+                                    value={formData.username} 
+                                    placeholder="Nhập tên đăng nhập" 
+                                    onChange={handleChange}
+                                    error={errors.username}
+                                />
+                                <InputField 
+                                    name="password"
+                                    label="Mật khẩu *" 
+                                    type="password"
+                                    value={formData.password} 
+                                    placeholder="Nhập mật khẩu" 
+                                    onChange={handleChange}
+                                    error={errors.password}
+                                />
+
+                                {/* Row 2: Họ và tên(*) | Ngày tháng năm sinh */}
+                                <InputField 
+                                    name="fullName" 
+                                    label="Họ và tên(*)" 
+                                    value={formData.fullName} 
+                                    placeholder="Nhập họ và tên"
+                                    onChange={handleChange} 
+                                    error={errors.fullName} 
+                                />
+                                <InputField 
+                                    name="dob" 
+                                    label="Ngày tháng năm sinh" 
+                                    value={formData.dob} 
+                                    type="date" 
+                                    icon={Calendar}
+                                    onChange={handleChange} 
+                                    error={errors.dob}
+                                />
+
+                                {/* Row 3: Giới tính | Chức danh */}
+                                <InputField
+                                    name="gender"
+                                    label="Giới tính"
+                                    value={formData.gender}
+                                    isSelect
+                                    placeholder="Chọn giới tính"
+                                    options={[
+                                        { label: "Nam", value: "MALE" },
+                                        { label: "Nữ", value: "FEMALE" },
+                                    ]}
+                                    onChange={handleChange}
+                                />
+                                <InputField 
+                                    name="position" 
+                                    label="Chức danh" 
+                                    value={formData.position} 
+                                    placeholder="Nhập chức danh" 
+                                    onChange={handleChange} 
+                                />
+
+                                {/* Row 4: Vai trò * | Email * */}
+                                <InputField 
+                                    name="roleId"
+                                    label="Vai trò *" 
+                                    value={formData.roleId} 
+                                    isSelect 
+                                    placeholder="Chọn vai trò"
+                                    options={[
+                                        { label: "Quản trị viên", value: "1" },
+                                        { label: "Lãnh đạo Sở", value: "2" },
+                                        { label: "Chuyên viên", value: "3" },
+                                        { label: "Giám đốc Doanh nghiệp", value: "4" },
+                                        { label: "Quản lý Doanh nghiệp", value: "5" },
+                                        { label: "Nhân viên Doanh nghiệp", value: "6" },
+                                    ]}
+                                    onChange={handleChange}
+                                    error={errors.roleId}
+                                />
+                                <InputField 
+                                    name="email" 
+                                    type="email" 
+                                    label="Email *"
+                                    value={formData.email} 
+                                    placeholder="Nhập địa chỉ email"
+                                    onChange={handleChange}
+                                    error={errors.email}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+
+                    {/* Section 2: Thông tin liên hệ */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-[15px] font-bold text-gray-800 mb-6">Thông tin liên hệ</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6">
+                            <InputField
+                                name="province"
+                                label="Tỉnh/ thành phố"
+                                value={formData.province}
+                                isSelect
+                                isSearchable
+                                placeholder="Chọn tỉnh/ thành phố"
+                                options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
+                                onChange={handleChange}
+                            />
+                            <InputField 
+                                name="ward" 
+                                label="Phường xã" 
+                                value={formData.ward} 
+                                isSelect 
+                                isSearchable 
+                                placeholder="Chọn phường/ xã" 
+                                options={availableWards} 
+                                disabled={!formData.province} 
+                                onChange={handleChange} 
+                            />
+                            <div className="md:col-span-2">
+                                <InputField 
+                                    name="address" 
+                                    label="Địa chỉ" 
+                                    value={formData.address} 
+                                    placeholder="Nhập địa chỉ chi tiết" 
+                                    onChange={handleChange} 
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
