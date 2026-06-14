@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import InputLegend from "@/components/InputLegend";
-import SelectLegend from "@/components/SelectLegend";
-import FormField from "@/components/form/FormField";
+import { InputField } from "@/components/form/InputField";
 import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
 import { BusinessIndustryApi } from "@/api/businessIndustry";
 import type { TypeOfBusiness } from "@/types/typeOfBusiness";
@@ -74,11 +72,8 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
     useEffect(() => {
         const fetchOptions = async () => {
             try {
-                const [types, inds] = await Promise.all([
-                    TypeOfBusinessApi.findAll(),
-                    BusinessIndustryApi.findLevel4(),
-                ]);
-                setBusinessTypes(types.filter(t => t.status));
+                const [types, inds] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findLevel4()]);
+                setBusinessTypes(types.filter((t) => t.status));
                 setIndustries(inds);
             } catch (error) {
                 console.error("Error fetching options:", error);
@@ -155,128 +150,100 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                     <h3 className="text-[17px] font-bold text-gray-950 mb-4">{sectionTitle}</h3>
                     <div className="grid grid-cols-3 gap-4">
-                        <InputLegend
+                        <InputField
                             label="Tên doanh nghiệp"
-                            require
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập tên doanh nghiệp",
-                                value: form.companyName,
-                                onChange: (e) => onChange("companyName", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                            errorMess={errors.companyName}
+                            value={form.companyName}
+                            onChange={(e) => onChange("companyName", e.target.value)}
+                            placeholder="Nhập tên doanh nghiệp"
+                            disabled={isViewMode}
+                            error={errors.companyName}
                         />
-                        <InputLegend
+                        <InputField
                             label="Mã số thuế"
-                            require
-                            input={{
-                                type: "text",
-                                placeholder: "VD: 0123456789 hoặc 0123456789-001",
-                                value: form.taxCode,
-                                onChange: (e) => handleTaxCodeChange((e.target as HTMLInputElement).value),
-                                maxLength: 14,
-                                disabled: isTaxCodeDisabled,
-                            }}
-                            errorMess={errors.taxCode}
+                            value={form.taxCode}
+                            onChange={(e) => handleTaxCodeChange(e.target.value)}
+                            placeholder="VD: 0123456789 hoặc 0123456789-001"
+                            disabled={isTaxCodeDisabled}
+                            error={errors.taxCode}
                         />
-                        <SelectLegend
+                        <InputField
                             label="Loại hình kinh doanh"
-                            require
-                            select={{
-                                value: form.businessType,
-                                onChange: (e) => onChange("businessType", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                            errorMess={errors.businessType}
-                        >
-                            <option value="">Chọn loại hình</option>
-                            {businessTypes.map((bt) => (
-                                <option key={bt.id} value={bt.id?.toString() || ""}>
-                                    {bt.code} - {bt.name}
-                                </option>
-                            ))}
-                        </SelectLegend>
+                            isSelect
+                            value={form.businessType}
+                            onChange={(e) => onChange("businessType", e.target.value)}
+                            options={businessTypes.map((bt) => ({
+                                label: `${bt.code} - ${bt.name}`,
+                                value: bt.id?.toString() || "",
+                            }))}
+                            disabled={isViewMode}
+                            error={errors.businessType}
+                            placeholder="Chọn loại hình"
+                        />
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 mt-4">
-                        <SelectLegend
+                        <InputField
                             label="Ngành nghề kinh doanh chính"
-                            require
-                            select={{
-                                value: form.industry,
-                                onChange: (e) => onChange("industry", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                            errorMess={errors.industry}
-                        >
-                            <option value="">Chọn ngành nghề</option>
-                            {industries.map((ind) => (
-                                <option key={ind.id} value={ind.id?.toString() || ""}>
-                                    {ind.code} - {ind.name}
-                                </option>
-                            ))}
-                        </SelectLegend>
-                        
-                        <FormField label="Ngày cấp GPKD">
-                            <div className="relative flex items-center w-full">
-                                <input
-                                    type="text"
-                                    placeholder="dd/mm/yyyy"
-                                    value={form.gpkdDate}
-                                    onChange={(e) => handleGpkdDateChange(e.target.value)}
-                                    maxLength={10}
-                                    disabled={isViewMode}
-                                    className="outline-none px-2 py-1.5 w-full text-sm bg-transparent disabled:bg-gray-100 disabled:cursor-not-allowed pr-8"
-                                />
-                                <Calendar className="absolute right-2.5 size-4 text-gray-400 pointer-events-none" />
-                            </div>
-                        </FormField>
+                            isSelect
+                            value={form.industry}
+                            onChange={(e) => onChange("industry", e.target.value)}
+                            options={industries.map((ind) => ({
+                                label: `${ind.code} - ${ind.name}`,
+                                value: ind.id?.toString() || "",
+                            }))}
+                            disabled={isViewMode}
+                            error={errors.industry}
+                            placeholder="Chọn ngành nghề"
+                        />
 
-                        <SelectLegend
+                        <InputField
+                            label="Ngày cấp GPKD"
+                            value={form.gpkdDate}
+                            onChange={(e) => handleGpkdDateChange(e.target.value)}
+                            placeholder="dd/mm/yyyy"
+                            icon={Calendar}
+                            disabled={isViewMode}
+                        />
+
+                        <InputField
                             label="Tỉnh/Thành phố ĐKKD"
-                            require
-                            select={{
-                                value: form.gpkdProvince,
-                                onChange: (e) => onChange("gpkdProvince", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                            errorMess={errors.gpkdProvince}
-                        >
-                            <option value="">Chọn tỉnh/TP</option>
-                            <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                            <option value="Hà Nội">Hà Nội</option>
-                            <option value="Đà Nẵng">Đà Nẵng</option>
-                        </SelectLegend>
+                            isSelect
+                            value={form.gpkdProvince}
+                            onChange={(e) => onChange("gpkdProvince", e.target.value)}
+                            options={[
+                                { label: "Thành phố Hồ Chí Minh", value: "Thành phố Hồ Chí Minh" },
+                                { label: "Hà Nội", value: "Hà Nội" },
+                                { label: "Đà Nẵng", value: "Đà Nẵng" },
+                            ]}
+                            disabled={isViewMode}
+                            error={errors.gpkdProvince}
+                            placeholder="Chọn tỉnh/TP"
+                        />
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 mt-4">
-                        <SelectLegend
+                        <InputField
                             label="Phường/Xã ĐKKD"
-                            require
-                            select={{
-                                value: form.gpkdWard,
-                                onChange: (e) => onChange("gpkdWard", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                            errorMess={errors.gpkdWard}
-                        >
-                            <option value="">Chọn phường/xã</option>
-                            <option value="Phường Bình Thọ">Phường Bình Thọ</option>
-                            <option value="Phường Tân Định">Phường Tân Định</option>
-                            <option value="Phường Hiệp Bình Phước">Phường Hiệp Bình Phước</option>
-                            <option value="Phường Linh Trung">Phường Linh Trung</option>
-                        </SelectLegend>
+                            isSelect
+                            value={form.gpkdWard}
+                            onChange={(e) => onChange("gpkdWard", e.target.value)}
+                            options={[
+                                { label: "Phường Bình Thọ", value: "Phường Bình Thọ" },
+                                { label: "Phường Tân Định", value: "Phường Tân Định" },
+                                { label: "Phường Hiệp Bình Phước", value: "Phường Hiệp Bình Phước" },
+                                { label: "Phường Linh Trung", value: "Phường Linh Trung" },
+                            ]}
+                            disabled={isViewMode}
+                            error={errors.gpkdWard}
+                            placeholder="Chọn phường/xã"
+                        />
                         <div className="col-span-2">
-                            <InputLegend
+                            <InputField
                                 label="Địa chỉ"
-                                input={{
-                                    type: "text",
-                                    placeholder: "Nhập địa chỉ",
-                                    value: form.address,
-                                    onChange: (e) => onChange("address", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.address}
+                                onChange={(e) => onChange("address", e.target.value)}
+                                placeholder="Nhập địa chỉ"
+                                disabled={isViewMode}
                             />
                         </div>
                     </div>
@@ -287,97 +254,79 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                     <div>
                         <h3 className="text-[17px] font-bold text-gray-950 mb-4">Thông tin liên hệ</h3>
                         <div className="grid grid-cols-3 gap-4">
-                            <InputLegend
+                            <InputField
                                 label="Tên viết bằng tiếng nước ngoài"
-                                input={{
-                                    type: "text",
-                                    placeholder: "Tên viết bằng tiếng nước ngoài",
-                                    value: form.foreignName,
-                                    onChange: (e) => onChange("foreignName", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.foreignName}
+                                onChange={(e) => onChange("foreignName", e.target.value)}
+                                placeholder="Tên viết bằng tiếng nước ngoài"
+                                disabled={isViewMode}
                             />
-                            <InputLegend
+                            <InputField
                                 label="Email"
-                                require
-                                input={{
-                                    type: "email",
-                                    placeholder: "Nhập email",
-                                    value: form.email,
-                                    onChange: (e) => onChange("email", (e.target as HTMLInputElement).value),
-                                    disabled: isEmailDisabled,
-                                }}
-                                errorMess={errors.email}
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => onChange("email", e.target.value)}
+                                placeholder="Nhập email"
+                                disabled={isEmailDisabled}
+                                error={errors.email}
                             />
-                            <InputLegend
+                            <InputField
                                 label="Số điện thoại cơ quan"
-                                input={{
-                                    type: "text",
-                                    placeholder: "Số điện thoại cơ quan",
-                                    value: form.phone,
-                                    onChange: (e) => onChange("phone", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.phone}
+                                onChange={(e) => onChange("phone", e.target.value)}
+                                placeholder="Số điện thoại cơ quan"
+                                disabled={isViewMode}
                             />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
-                            <SelectLegend
+                            <InputField
                                 label="Tỉnh/TP hoạt động KD"
-                                select={{
-                                    value: form.businessProvince,
-                                    onChange: (e) => onChange("businessProvince", (e.target as HTMLSelectElement).value),
-                                    disabled: isViewMode,
-                                }}
-                            >
-                                <option value="">Chọn tỉnh/TP</option>
-                                <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                                <option value="Hà Nội">Hà Nội</option>
-                                <option value="Đà Nẵng">Đà Nẵng</option>
-                            </SelectLegend>
-                            <SelectLegend
+                                isSelect
+                                value={form.businessProvince}
+                                onChange={(e) => onChange("businessProvince", e.target.value)}
+                                options={[
+                                    { label: "Thành phố Hồ Chí Minh", value: "Thành phố Hồ Chí Minh" },
+                                    { label: "Hà Nội", value: "Hà Nội" },
+                                    { label: "Đà Nẵng", value: "Đà Nẵng" },
+                                ]}
+                                disabled={isViewMode}
+                                placeholder="Chọn tỉnh/TP"
+                            />
+                            <InputField
                                 label="Phường/Xã hoạt động KD"
-                                select={{
-                                    value: form.businessWard,
-                                    onChange: (e) => onChange("businessWard", (e.target as HTMLSelectElement).value),
-                                    disabled: isViewMode,
-                                }}
-                            >
-                                <option value="">Chọn phường/xã</option>
-                                <option value="Phường Bình Thọ">Phường Bình Thọ</option>
-                                <option value="Phường Tân Định">Phường Tân Định</option>
-                                <option value="Phường Hiệp Bình Phước">Phường Hiệp Bình Phước</option>
-                            </SelectLegend>
-                            <InputLegend
+                                isSelect
+                                value={form.businessWard}
+                                onChange={(e) => onChange("businessWard", e.target.value)}
+                                options={[
+                                    { label: "Phường Bình Thọ", value: "Phường Bình Thọ" },
+                                    { label: "Phường Tân Định", value: "Phường Tân Định" },
+                                    { label: "Phường Hiệp Bình Phước", value: "Phường Hiệp Bình Phước" },
+                                ]}
+                                disabled={isViewMode}
+                                placeholder="Chọn phường/xã"
+                            />
+                            <InputField
                                 label="Địa điểm kinh doanh"
-                                input={{
-                                    type: "text",
-                                    placeholder: "Địa điểm kinh doanh",
-                                    value: form.businessAddress,
-                                    onChange: (e) => onChange("businessAddress", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.businessAddress}
+                                onChange={(e) => onChange("businessAddress", e.target.value)}
+                                placeholder="Địa điểm kinh doanh"
+                                disabled={isViewMode}
                             />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
-                            <InputLegend
+                            <InputField
                                 label="Người đứng đầu doanh nghiệp"
-                                input={{
-                                    type: "text",
-                                    placeholder: "Người đứng đầu doanh nghiệp",
-                                    value: form.representative,
-                                    onChange: (e) => onChange("representative", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.representative}
+                                onChange={(e) => onChange("representative", e.target.value)}
+                                placeholder="Người đứng đầu doanh nghiệp"
+                                disabled={isViewMode}
                             />
-                            <InputLegend
+                            <InputField
                                 label="SĐT liên hệ người đứng đầu"
-                                input={{
-                                    type: "text",
-                                    placeholder: "SĐT liên hệ người đứng đầu",
-                                    value: form.representativePhone,
-                                    onChange: (e) => onChange("representativePhone", (e.target as HTMLInputElement).value),
-                                    disabled: isViewMode,
-                                }}
+                                value={form.representativePhone}
+                                onChange={(e) => onChange("representativePhone", e.target.value)}
+                                placeholder="SĐT liên hệ người đứng đầu"
+                                disabled={isViewMode}
                             />
                             <div />
                         </div>
@@ -401,41 +350,20 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 return (
                                     <div key={group.groupName} className="grid grid-cols-[1.5fr_1.5fr_120px] text-xs text-gray-700 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors px-4 py-3 items-center min-h-[50px]">
                                         <div className="font-semibold text-gray-800">{group.groupName}</div>
-                                        <div className="truncate pr-4">
-                                            {hasFile ? (
-                                                <span className="text-gray-900 font-semibold">{firstFile.name}</span>
-                                            ) : (
-                                                <span className="text-gray-400 italic">Chưa có file nào</span>
-                                            )}
-                                        </div>
+                                        <div className="truncate pr-4">{hasFile ? <span className="text-gray-900 font-semibold">{firstFile.name}</span> : <span className="text-gray-400 italic">Chưa có file nào</span>}</div>
                                         <div className="flex items-center justify-center gap-4">
                                             {hasFile && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handlePreview(firstFile)}
-                                                    className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                    title="Xem"
-                                                >
+                                                <button type="button" onClick={() => handlePreview(firstFile)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem">
                                                     <Eye size={16} />
                                                 </button>
                                             )}
                                             {!isViewMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleUploadClick(groupIdx)}
-                                                    className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                    title="Tải lên"
-                                                >
+                                                <button type="button" onClick={() => handleUploadClick(groupIdx)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Tải lên">
                                                     <Upload size={16} />
                                                 </button>
                                             )}
                                             {hasFile && !isViewMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onRemoveFile(groupIdx, firstFile.id)}
-                                                    className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                                    title="Xóa"
-                                                >
+                                                <button type="button" onClick={() => onRemoveFile(groupIdx, firstFile.id)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Xóa">
                                                     <Trash2 size={16} />
                                                 </button>
                                             )}
