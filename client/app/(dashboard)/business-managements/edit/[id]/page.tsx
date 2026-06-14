@@ -8,6 +8,7 @@ import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, Uploade
 import { BusinessApi } from "@/api/business";
 import type { Business } from "@/types/business";
 import { toast } from "sonner";
+import { ChevronRight, Check } from "lucide-react";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -97,9 +98,7 @@ export default function EditBusinessPage() {
     const [currentStep, setCurrentStep] = useState(1);
     const [form, setForm] = useState<EnterpriseFormData>({ ...emptyForm });
     const [errors, setErrors] = useState<EnterpriseFormErrors>({ ...emptyErrors });
-    const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(
-        defaultAttachmentGroups.map((g) => ({ ...g, files: [] }))
-    );
+    const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(defaultAttachmentGroups.map((g) => ({ ...g, files: [] })));
     const nextFileIdRef = useRef(1);
 
     const [loading, setLoading] = useState(true);
@@ -231,15 +230,11 @@ export default function EditBusinessPage() {
                 url: URL.createObjectURL(file),
             };
         });
-        setAttachmentGroups((prev) =>
-            prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [...group.files, ...newFiles] } : group))
-        );
+        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [...group.files, ...newFiles] } : group)));
     };
 
     const handleRemoveFile = (groupIndex: number, fileId: number) => {
-        setAttachmentGroups((prev) =>
-            prev.map((group, idx) => (idx === groupIndex ? { ...group, files: group.files.filter((f) => f.id !== fileId) } : group))
-        );
+        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: group.files.filter((f) => f.id !== fileId) } : group)));
     };
 
     const steps = [
@@ -256,11 +251,7 @@ export default function EditBusinessPage() {
             {/* Top Bar */}
             <div className="shrink-0 bg-white px-5 py-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
                 <h1 className="text-base font-bold text-gray-800">Chỉnh sửa doanh nghiệp</h1>
-                <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 rounded hover:bg-gray-50 transition-colors cursor-pointer"
-                >
+                <button type="button" onClick={handleCancel} className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 rounded hover:bg-gray-50 transition-colors cursor-pointer">
                     <i className="fa-solid fa-arrow-left text-xs" />
                     <span>Quay lại danh sách</span>
                 </button>
@@ -276,49 +267,23 @@ export default function EditBusinessPage() {
                                 <div className="flex items-center gap-2">
                                     <div
                                         className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors ${
-                                            currentStep > step.number
-                                                ? "bg-primary text-white"
-                                                : currentStep === step.number
-                                                ? "bg-primary text-white"
-                                                : "bg-gray-200 text-gray-500"
+                                            currentStep > step.number ? "bg-primary text-white" : currentStep === step.number ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
                                         }`}
                                     >
-                                        {currentStep > step.number ? <i className="fa-solid fa-check text-xs" /> : step.number}
+                                        {currentStep > step.number ? <Check size={14} /> : step.number}
                                     </div>
-                                    <span
-                                        className={`text-sm whitespace-nowrap ${
-                                            currentStep >= step.number ? "text-gray-800 font-medium" : "text-gray-400"
-                                        }`}
-                                    >
-                                        {step.label}
-                                    </span>
+                                    <span className={`text-sm whitespace-nowrap ${currentStep >= step.number ? "text-gray-800 font-medium" : "text-gray-400"}`}>{step.label}</span>
                                 </div>
 
-                                {idx < steps.length - 1 && (
-                                    <div
-                                        className={`w-32 h-0.5 mx-4 transition-colors ${
-                                            currentStep > step.number ? "bg-primary" : "bg-gray-200"
-                                        }`}
-                                    />
-                                )}
+                                {idx < steps.length - 1 && <div className={`w-32 h-0.5 mx-4 transition-colors ${currentStep > step.number ? "bg-primary" : "bg-gray-200"}`} />}
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0">
-                    {currentStep === 1 && (
-                        <EnterpriseStepOne
-                            form={form}
-                            errors={errors}
-                            attachmentGroups={attachmentGroups}
-                            onChange={handleChange}
-                            onAddFiles={handleAddFiles}
-                            onRemoveFile={handleRemoveFile}
-                            mode="edit"
-                        />
-                    )}
+                <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0 bg-[#F4F6F8]">
+                    {currentStep === 1 && <EnterpriseStepOne form={form} errors={errors} attachmentGroups={attachmentGroups} onChange={handleChange} onAddFiles={handleAddFiles} onRemoveFile={handleRemoveFile} mode="edit" />}
                     {currentStep === 2 && <EnterpriseStepConfirm form={form} attachmentGroups={attachmentGroups} />}
                 </div>
 
@@ -326,40 +291,22 @@ export default function EditBusinessPage() {
                 <div className="shrink-0 px-8 py-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-white">
                     {currentStep === 1 && (
                         <>
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
-                            >
+                            <button type="button" onClick={handleCancel} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
                                 Hủy bỏ
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleNext}
-                                className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer"
-                            >
-                                <i className="fa-solid fa-chevron-right text-xs" />
+                            <button type="button" onClick={handleNext} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
+                                <ChevronRight size={14} />
                                 Tiếp tục
                             </button>
                         </>
                     )}
                     {currentStep === 2 && (
                         <>
-                            <button
-                                type="button"
-                                onClick={handleBack}
-                                className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
-                                disabled={submitting}
-                            >
+                            <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer" disabled={submitting}>
                                 Trở về
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirm}
-                                className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer"
-                                disabled={submitting}
-                            >
-                                <i className="fa-solid fa-check text-xs" />
+                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer" disabled={submitting}>
+                                <Check size={14} />
                                 {submitting ? "Đang xử lý..." : "Xác nhận"}
                             </button>
                         </>

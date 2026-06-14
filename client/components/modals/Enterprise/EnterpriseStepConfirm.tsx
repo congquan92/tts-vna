@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { EnterpriseFormData, AttachmentGroup, UploadedFile } from "./EnterpriseStepOne";
+import { Eye } from "lucide-react";
 
 type Props = {
     form: EnterpriseFormData;
@@ -38,11 +39,11 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
 
     return (
         <>
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {/* Section: Thông tin về hồ sơ */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-4">Thông tin về hồ sơ</h3>
-                    <div className="space-y-0">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                    <h3 className="text-[17px] font-bold text-gray-950 mb-4">Thông tin về hồ sơ</h3>
+                    <div className="divide-y divide-gray-100">
                         <InfoRow label="Mã số thuế :" value={form.taxCode} />
                         <InfoRow label="Tên doanh nghiệp :" value={form.companyName} />
                         <InfoRow label="Tên viết bằng tiếng nước ngoài :" value={form.foreignName} />
@@ -58,51 +59,47 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
                 </div>
 
                 {/* Section: File đính kèm */}
-                <div>
-                    <div className="border-t border-gray-200 pt-4">
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            {/* Table header */}
-                            <div className="grid grid-cols-[40px_1fr_1fr_100px] bg-gray-50 text-xs font-medium text-gray-500 border-b border-gray-200">
-                                <div className="px-3 py-2.5 text-center">STT</div>
-                                <div className="px-4 py-2.5">Tên file</div>
-                                <div className="px-4 py-2.5">Thông tin file</div>
-                                <div className="px-4 py-2.5 text-center">Thao tác</div>
-                            </div>
-
-                            {/* Render each attachment group */}
-                            {attachmentGroups.map((group, groupIdx) => (
-                                <div key={group.groupName}>
-                                    {/* Group header row */}
-                                    <div className="grid grid-cols-[40px_1fr_1fr_100px] bg-primary/5 border-b border-gray-200">
-                                        <div className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600">{groupIdx + 1}</div>
-                                        <div className="px-4 py-2.5 text-sm font-semibold text-gray-800 col-span-3">{group.groupName}</div>
-                                    </div>
-
-                                    {/* Files */}
-                                    {group.files.length === 0 ? (
-                                        <div className="px-4 py-4 text-center text-sm text-gray-400 italic border-b border-gray-100">Chưa có file nào</div>
-                                    ) : (
-                                        group.files.map((file, fileIdx) => (
-                                            <div key={file.id} className="grid grid-cols-[40px_1fr_1fr_100px] text-sm text-gray-700 border-b border-gray-100 last:border-b-0">
-                                                <div className="px-3 py-2.5 text-center text-xs text-gray-400">
-                                                    {groupIdx + 1}.{fileIdx + 1}
-                                                </div>
-                                                <div className="px-4 py-2.5 flex items-center gap-2">
-                                                    <i className="fa-solid fa-file-lines text-primary/60 text-xs" />
-                                                    <span className="truncate">{file.name}</span>
-                                                </div>
-                                                <div className="px-4 py-2.5 text-gray-500">{file.size}</div>
-                                                <div className="px-4 py-2.5 flex items-center justify-center">
-                                                    <button type="button" onClick={() => handlePreview(file)} className="text-gray-400 hover:text-primary transition-colors" title="Xem">
-                                                        <i className="fa-solid fa-eye text-xs" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            ))}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                    <h3 className="text-[17px] font-bold text-gray-950 mb-4">File đính kèm</h3>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                        {/* Table header */}
+                        <div className="grid grid-cols-[1.5fr_1.5fr_100px] bg-[#F4F6F8] text-xs font-semibold text-gray-700 border-b border-gray-200 px-4 py-3">
+                            <div>Tên file</div>
+                            <div>Thông tin file</div>
+                            <div className="text-center">Thao tác</div>
                         </div>
+
+                        {/* Render each attachment group as flat rows */}
+                        {attachmentGroups.map((group) => {
+                            const hasFile = group.files.length > 0;
+                            const firstFile = group.files[0];
+                            return (
+                                <div key={group.groupName} className="grid grid-cols-[1.5fr_1.5fr_100px] text-xs text-gray-700 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors px-4 py-3 items-center min-h-[50px]">
+                                    <div className="font-semibold text-gray-800">{group.groupName}</div>
+                                    <div className="truncate pr-4">
+                                        {hasFile ? (
+                                            <span className="text-gray-900 font-semibold">{firstFile.name}</span>
+                                        ) : (
+                                            <span className="text-gray-400 italic">Chưa có file nào</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-center">
+                                        {hasFile ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePreview(firstFile)}
+                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                title="Xem"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                        ) : (
+                                            <span className="text-gray-300">—</span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

@@ -3,10 +3,12 @@
 import { useRef, useState, useEffect } from "react";
 import InputLegend from "@/components/InputLegend";
 import SelectLegend from "@/components/SelectLegend";
+import FormField from "@/components/form/FormField";
 import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
 import { BusinessIndustryApi } from "@/api/businessIndustry";
 import type { TypeOfBusiness } from "@/types/typeOfBusiness";
 import type { BusinessIndustry } from "@/types/businessIndustry";
+import { Eye, Upload, Trash2, Calendar } from "lucide-react";
 
 export type EnterpriseFormMode = "create" | "edit" | "view";
 
@@ -148,10 +150,10 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
 
     return (
         <>
-            <div className="space-y-6">
-                {/* Section: Thông tin doanh nghiệp */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-4">{sectionTitle}</h3>
+            <div className="space-y-4">
+                {/* Section: Thông tin doanh nghiệp (Card 1) */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                    <h3 className="text-[17px] font-bold text-gray-950 mb-4">{sectionTitle}</h3>
                     <div className="grid grid-cols-3 gap-4">
                         <InputLegend
                             label="Tên doanh nghiệp"
@@ -215,17 +217,22 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 </option>
                             ))}
                         </SelectLegend>
-                        <InputLegend
-                            label="Ngày cấp GPKD"
-                            input={{
-                                type: "text",
-                                placeholder: "dd/mm/yyyy",
-                                value: form.gpkdDate,
-                                onChange: (e) => handleGpkdDateChange((e.target as HTMLInputElement).value),
-                                maxLength: 10,
-                                disabled: isViewMode,
-                            }}
-                        />
+                        
+                        <FormField label="Ngày cấp GPKD">
+                            <div className="relative flex items-center w-full">
+                                <input
+                                    type="text"
+                                    placeholder="dd/mm/yyyy"
+                                    value={form.gpkdDate}
+                                    onChange={(e) => handleGpkdDateChange(e.target.value)}
+                                    maxLength={10}
+                                    disabled={isViewMode}
+                                    className="outline-none px-2 py-1.5 w-full text-sm bg-transparent disabled:bg-gray-100 disabled:cursor-not-allowed pr-8"
+                                />
+                                <Calendar className="absolute right-2.5 size-4 text-gray-400 pointer-events-none" />
+                            </div>
+                        </FormField>
+
                         <SelectLegend
                             label="Tỉnh/Thành phố ĐKKD"
                             require
@@ -275,177 +282,178 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                     </div>
                 </div>
 
-                {/* Section: Thông tin liên hệ */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-4">Thông tin liên hệ</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                        <InputLegend
-                            label="Tên viết bằng tiếng nước ngoài"
-                            input={{
-                                type: "text",
-                                placeholder: "Tên viết bằng tiếng nước ngoài",
-                                value: form.foreignName,
-                                onChange: (e) => onChange("foreignName", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                        />
-                        <InputLegend
-                            label="Email"
-                            require
-                            input={{
-                                type: "email",
-                                placeholder: "Nhập email",
-                                value: form.email,
-                                onChange: (e) => onChange("email", (e.target as HTMLInputElement).value),
-                                disabled: isEmailDisabled,
-                            }}
-                            errorMess={errors.email}
-                        />
-                        <InputLegend
-                            label="Số điện thoại cơ quan"
-                            input={{
-                                type: "text",
-                                placeholder: "Số điện thoại cơ quan",
-                                value: form.phone,
-                                onChange: (e) => onChange("phone", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                        />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                        <SelectLegend
-                            label="Tỉnh/TP hoạt động KD"
-                            select={{
-                                value: form.businessProvince,
-                                onChange: (e) => onChange("businessProvince", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                        >
-                            <option value="">Chọn tỉnh/TP</option>
-                            <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                            <option value="Hà Nội">Hà Nội</option>
-                            <option value="Đà Nẵng">Đà Nẵng</option>
-                        </SelectLegend>
-                        <SelectLegend
-                            label="Phường/Xã hoạt động KD"
-                            select={{
-                                value: form.businessWard,
-                                onChange: (e) => onChange("businessWard", (e.target as HTMLSelectElement).value),
-                                disabled: isViewMode,
-                            }}
-                        >
-                            <option value="">Chọn phường/xã</option>
-                            <option value="Phường Bình Thọ">Phường Bình Thọ</option>
-                            <option value="Phường Tân Định">Phường Tân Định</option>
-                            <option value="Phường Hiệp Bình Phước">Phường Hiệp Bình Phước</option>
-                        </SelectLegend>
-                        <InputLegend
-                            label="Địa điểm kinh doanh"
-                            input={{
-                                type: "text",
-                                placeholder: "Địa điểm kinh doanh",
-                                value: form.businessAddress,
-                                onChange: (e) => onChange("businessAddress", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                        />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                        <InputLegend
-                            label="Người đứng đầu doanh nghiệp"
-                            input={{
-                                type: "text",
-                                placeholder: "Người đứng đầu doanh nghiệp",
-                                value: form.representative,
-                                onChange: (e) => onChange("representative", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                        />
-                        <InputLegend
-                            label="SĐT liên hệ người đứng đầu"
-                            input={{
-                                type: "text",
-                                placeholder: "SĐT liên hệ người đứng đầu",
-                                value: form.representativePhone,
-                                onChange: (e) => onChange("representativePhone", (e.target as HTMLInputElement).value),
-                                disabled: isViewMode,
-                            }}
-                        />
-                        <div />
-                    </div>
-                </div>
-
-                {/* Section: File đính kèm */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-3">File đính kèm</h3>
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        {/* Table header */}
-                        <div className="grid grid-cols-[40px_1fr_1fr_140px] bg-gray-50 text-xs font-medium text-gray-500 border-b border-gray-200">
-                            <div className="px-3 py-2.5 text-center">STT</div>
-                            <div className="px-4 py-2.5">Tên file</div>
-                            <div className="px-4 py-2.5">Thông tin file</div>
-                            <div className="px-4 py-2.5 text-center">Thao tác</div>
+                {/* Section: Thông tin liên hệ & File đính kèm (Card 2) */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                    <div>
+                        <h3 className="text-[17px] font-bold text-gray-950 mb-4">Thông tin liên hệ</h3>
+                        <div className="grid grid-cols-3 gap-4">
+                            <InputLegend
+                                label="Tên viết bằng tiếng nước ngoài"
+                                input={{
+                                    type: "text",
+                                    placeholder: "Tên viết bằng tiếng nước ngoài",
+                                    value: form.foreignName,
+                                    onChange: (e) => onChange("foreignName", (e.target as HTMLInputElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            />
+                            <InputLegend
+                                label="Email"
+                                require
+                                input={{
+                                    type: "email",
+                                    placeholder: "Nhập email",
+                                    value: form.email,
+                                    onChange: (e) => onChange("email", (e.target as HTMLInputElement).value),
+                                    disabled: isEmailDisabled,
+                                }}
+                                errorMess={errors.email}
+                            />
+                            <InputLegend
+                                label="Số điện thoại cơ quan"
+                                input={{
+                                    type: "text",
+                                    placeholder: "Số điện thoại cơ quan",
+                                    value: form.phone,
+                                    onChange: (e) => onChange("phone", (e.target as HTMLInputElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            />
                         </div>
+                        <div className="grid grid-cols-3 gap-4 mt-4">
+                            <SelectLegend
+                                label="Tỉnh/TP hoạt động KD"
+                                select={{
+                                    value: form.businessProvince,
+                                    onChange: (e) => onChange("businessProvince", (e.target as HTMLSelectElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            >
+                                <option value="">Chọn tỉnh/TP</option>
+                                <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
+                                <option value="Hà Nội">Hà Nội</option>
+                                <option value="Đà Nẵng">Đà Nẵng</option>
+                            </SelectLegend>
+                            <SelectLegend
+                                label="Phường/Xã hoạt động KD"
+                                select={{
+                                    value: form.businessWard,
+                                    onChange: (e) => onChange("businessWard", (e.target as HTMLSelectElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            >
+                                <option value="">Chọn phường/xã</option>
+                                <option value="Phường Bình Thọ">Phường Bình Thọ</option>
+                                <option value="Phường Tân Định">Phường Tân Định</option>
+                                <option value="Phường Hiệp Bình Phước">Phường Hiệp Bình Phước</option>
+                            </SelectLegend>
+                            <InputLegend
+                                label="Địa điểm kinh doanh"
+                                input={{
+                                    type: "text",
+                                    placeholder: "Địa điểm kinh doanh",
+                                    value: form.businessAddress,
+                                    onChange: (e) => onChange("businessAddress", (e.target as HTMLInputElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 mt-4">
+                            <InputLegend
+                                label="Người đứng đầu doanh nghiệp"
+                                input={{
+                                    type: "text",
+                                    placeholder: "Người đứng đầu doanh nghiệp",
+                                    value: form.representative,
+                                    onChange: (e) => onChange("representative", (e.target as HTMLInputElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            />
+                            <InputLegend
+                                label="SĐT liên hệ người đứng đầu"
+                                input={{
+                                    type: "text",
+                                    placeholder: "SĐT liên hệ người đứng đầu",
+                                    value: form.representativePhone,
+                                    onChange: (e) => onChange("representativePhone", (e.target as HTMLInputElement).value),
+                                    disabled: isViewMode,
+                                }}
+                            />
+                            <div />
+                        </div>
+                    </div>
 
-                        {/* Render each attachment group */}
-                        {attachmentGroups.map((group, groupIdx) => (
-                            <div key={group.groupName}>
-                                {/* Group header row */}
-                                <div className="grid grid-cols-[40px_1fr_1fr_140px] bg-primary/5 border-b border-gray-200">
-                                    <div className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600">{groupIdx + 1}</div>
-                                    <div className="px-4 py-2.5 text-sm font-semibold text-gray-800 col-span-2">{group.groupName}</div>
-                                    <div className="px-4 py-2.5 flex items-center justify-center">
-                                        {!isViewMode && (
-                                            <>
-                                                <button type="button" onClick={() => handleUploadClick(groupIdx)} className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 text-xs font-medium" title="Upload file">
-                                                    <i className="fa-solid fa-upload text-xs" />
-                                                    <span>Upload</span>
-                                                </button>
-                                                {/* Hidden file input */}
-                                                <input
-                                                    ref={(el) => {
-                                                        fileInputRefs.current[groupIdx] = el;
-                                                    }}
-                                                    type="file"
-                                                    multiple
-                                                    className="hidden"
-                                                    onChange={(e) => handleFileChange(groupIdx, e)}
-                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
-                                                />
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Files in this group */}
-                                {group.files.length === 0 ? (
-                                    <div className="px-4 py-4 text-center text-sm text-gray-400 italic border-b border-gray-100">Chưa có file nào</div>
-                                ) : (
-                                    group.files.map((file, fileIdx) => (
-                                        <div key={file.id} className="grid grid-cols-[40px_1fr_1fr_140px] text-sm text-gray-700 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
-                                            <div className="px-3 py-2.5 text-center text-xs text-gray-400">
-                                                {groupIdx + 1}.{fileIdx + 1}
-                                            </div>
-                                            <div className="px-4 py-2.5 flex items-center gap-2">
-                                                <i className="fa-solid fa-file-lines text-primary/60 text-xs" />
-                                                <span className="truncate">{file.name}</span>
-                                            </div>
-                                            <div className="px-4 py-2.5 text-gray-500">{file.size}</div>
-                                            <div className="px-4 py-2.5 flex items-center justify-center gap-3">
-                                                <button type="button" onClick={() => handlePreview(file)} className="text-gray-400 hover:text-primary transition-colors" title="Xem">
-                                                    <i className="fa-solid fa-eye text-xs" />
-                                                </button>
-                                                {!isViewMode && (
-                                                    <button type="button" onClick={() => onRemoveFile(groupIdx, file.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Xóa">
-                                                        <i className="fa-solid fa-trash text-xs" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
+                    {/* Section: File đính kèm */}
+                    <div className="mt-6 border-t border-gray-100 pt-6">
+                        <h3 className="text-[17px] font-bold text-gray-950 mb-3">File đính kèm</h3>
+                        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            {/* Table header */}
+                            <div className="grid grid-cols-[1.5fr_1.5fr_120px] bg-[#F4F6F8] text-xs font-semibold text-gray-700 border-b border-gray-200 px-4 py-3">
+                                <div>Tên file</div>
+                                <div>Thông tin file</div>
+                                <div className="text-center">Thao tác</div>
                             </div>
-                        ))}
+
+                            {/* Render each attachment group as flat rows */}
+                            {attachmentGroups.map((group, groupIdx) => {
+                                const hasFile = group.files.length > 0;
+                                const firstFile = group.files[0];
+                                return (
+                                    <div key={group.groupName} className="grid grid-cols-[1.5fr_1.5fr_120px] text-xs text-gray-700 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/50 transition-colors px-4 py-3 items-center min-h-[50px]">
+                                        <div className="font-semibold text-gray-800">{group.groupName}</div>
+                                        <div className="truncate pr-4">
+                                            {hasFile ? (
+                                                <span className="text-gray-900 font-semibold">{firstFile.name}</span>
+                                            ) : (
+                                                <span className="text-gray-400 italic">Chưa có file nào</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-center gap-4">
+                                            {hasFile && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handlePreview(firstFile)}
+                                                    className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                    title="Xem"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+                                            )}
+                                            {!isViewMode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleUploadClick(groupIdx)}
+                                                    className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                    title="Tải lên"
+                                                >
+                                                    <Upload size={16} />
+                                                </button>
+                                            )}
+                                            {hasFile && !isViewMode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onRemoveFile(groupIdx, firstFile.id)}
+                                                    className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
+                                            {/* Hidden file input */}
+                                            <input
+                                                ref={(el) => {
+                                                    fileInputRefs.current[groupIdx] = el;
+                                                }}
+                                                type="file"
+                                                className="hidden"
+                                                onChange={(e) => handleFileChange(groupIdx, e)}
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
