@@ -11,20 +11,10 @@ type BusinessIndustryPopupProps = {
     isOpen: boolean;
     editingItem: BusinessIndustry | null;
     onClose: () => void;
-    onSave: (payload: {
-        code: string;
-        name: string;
-        parentId?: number | string;
-        status: BusinessStatus;
-    }) => Promise<void>;
+    onSave: (payload: { code: string; name: string; parentId?: number | string; status: BusinessStatus }) => Promise<void>;
 };
 
-export default function BusinessIndustryPopup({
-    isOpen,
-    editingItem,
-    onClose,
-    onSave,
-}: BusinessIndustryPopupProps) {
+export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, onSave }: BusinessIndustryPopupProps) {
     const [code, setCode] = useState("");
     const [name, setName] = useState("");
     const [parentId, setParentId] = useState("");
@@ -109,44 +99,19 @@ export default function BusinessIndustryPopup({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-            <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
+            <div className="w-full max-w-[520px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
                 {/* Header */}
                 <div className="bg-blue-600 px-6 py-3.5 text-center">
-                    <h2 className="text-white text-[16px] font-bold tracking-wide">
-                        {editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}
-                    </h2>
+                    <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>
                 </div>
 
                 {/* Form Fields */}
                 <div className="px-6 py-6 space-y-6">
-                    <InputField
-                        name="code"
-                        label="Mã ngành *"
-                        value={code}
-                        placeholder="Nhập mã ngành"
-                        onChange={(e) => setCode(e.target.value)}
-                        error={errors.code}
-                    />
+                    <InputField name="code" label="Mã ngành *" value={code} placeholder="Nhập mã ngành" onChange={(e) => setCode(e.target.value)} error={errors.code} />
 
-                    <InputField
-                        name="name"
-                        label="Tên ngành *"
-                        value={name}
-                        placeholder="Nhập tên ngành"
-                        onChange={(e) => setName(e.target.value)}
-                        error={errors.name}
-                    />
+                    <InputField name="name" label="Tên ngành *" value={name} placeholder="Nhập tên ngành" onChange={(e) => setName(e.target.value)} error={errors.name} />
 
-                    <InputField
-                        name="parentId"
-                        label="Nhóm ngành cha"
-                        value={parentId}
-                        isSelect
-                        isSearchable
-                        placeholder="Chọn nhóm ngành cha"
-                        options={parentOptions}
-                        onChange={(e) => setParentId(e.target.value)}
-                    />
+                    <InputField name="parentId" label="Nhóm ngành cha" value={parentId} isSelect isSearchable placeholder="Chọn nhóm ngành cha" options={parentOptions} onChange={(e) => setParentId(e.target.value)} />
 
                     <InputField
                         name="status"
@@ -165,12 +130,7 @@ export default function BusinessIndustryPopup({
 
                 {/* Footer Buttons */}
                 <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer"
-                        disabled={submitting}
-                    >
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer" disabled={submitting}>
                         Huỷ bỏ
                     </button>
                     <button
