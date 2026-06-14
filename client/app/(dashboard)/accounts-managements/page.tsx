@@ -10,6 +10,7 @@ import ToggleSwitch from "@/components/ToggleSwitch";
 import CreatePasswordModal from "@/components/popup/create-password";
 import { toast } from "sonner";
 import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 
 const GRID_COLS = "grid-cols-[40px_45px_45px_1.5fr_1fr_2fr_1.5fr_1.5fr_100px]";
 
@@ -90,7 +91,7 @@ const AccountPage = () => {
                     const newUserId = searchParams.get("newUserId");
                     if (newUserId) {
                         let newUser = result.data.find((u: User) => u.id === Number(newUserId));
-                        
+
                         // If not found in the current page, fetch them separately
                         if (!newUser) {
                             try {
@@ -189,6 +190,22 @@ const AccountPage = () => {
             const message = (error as any)?.response?.data?.message || "Không thể đặt lại mật khẩu";
             toast.error(message);
             throw error;
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} người dùng đã chọn?`);
+        if (!confirmDelete) return;
+
+        try {
+            await Promise.all(selectedIds.map((id) => UserApi.delete(id)));
+            toast.success("Xóa các người dùng thành công");
+            setSelectedIds([]);
+            fetchUsers(pagination.page);
+        } catch (error) {
+            console.error("Lỗi khi xóa người dùng:", error);
+            toast.error("Không thể xóa một số người dùng. Vui lòng thử lại.");
         }
     };
 
@@ -425,6 +442,9 @@ const AccountPage = () => {
 
             {/* Modals */}
             <CreatePasswordModal isOpen={isSetPasswordModalOpen} user={selectedUserForPassword} onClose={() => setIsSetPasswordModalOpen(false)} onSave={handleSavePassword} />
+
+            {/* Selection Banner */}
+            <DeleteSelectionBanner selectedCount={selectedIds.length} onDelete={handleDeleteSelected} onClear={() => setSelectedIds([])} />
         </main>
     );
 };
