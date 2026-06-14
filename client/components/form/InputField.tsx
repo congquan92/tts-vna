@@ -16,7 +16,8 @@ export const InputField = ({
     placeholder = "",
     readOnly = false,
     disabled = false,
-    error
+    error,
+    ...rest
 }: { 
     label?: string; 
     value?: string; 
@@ -31,6 +32,7 @@ export const InputField = ({
     readOnly?: boolean;
     disabled?: boolean;
     error?: string;
+    [key: string]: any;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -103,6 +105,7 @@ export const InputField = ({
                             className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent appearance-none cursor-pointer disabled:bg-gray-50 ${
                                 error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
                             }`}
+                            {...rest}
                         >
                             <option value="" disabled hidden>{shouldFloat ? (placeholder || "Chưa chọn") : ""}</option>
                             {options.length > 0 ? (
@@ -134,6 +137,7 @@ export const InputField = ({
                             className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text ${
                                 error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
                             }`} 
+                            {...rest}
                         />
                     )}
                     

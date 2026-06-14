@@ -37,6 +37,7 @@ const emptyErrors: EnterpriseFormErrors = {
     gpkdProvince: "",
     gpkdWard: "",
     email: "",
+    gpkdDate: "",
 };
 
 const defaultAttachmentGroups: AttachmentGroup[] = [
@@ -119,9 +120,22 @@ export default function CreateBusinessPage() {
             valid = false;
         }
 
+        if (!form.gpkdDate) {
+            next.gpkdDate = "Ngày cấp GPKD là bắt buộc";
+            valid = false;
+        } else {
+            const selectedDate = new Date(form.gpkdDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate > today) {
+                next.gpkdDate = "Ngày cấp GPKD không được là ngày trong tương lai";
+                valid = false;
+            }
+        }
+
         setErrors(next);
         return valid;
-    };
+        };
 
     const handleNext = () => {
         if (validate()) {
@@ -139,7 +153,7 @@ export default function CreateBusinessPage() {
             const payload = {
                 taxCode: form.taxCode,
                 businessName: form.companyName,
-                foreignName: form.foreignName,
+                foreignName: form.foreignName.trim() || undefined,
                 typeOfBusinessId: Number(form.businessType),
                 businessIndustryId: Number(form.industry),
                 businessLicenseDate: form.gpkdDate || undefined,
@@ -147,12 +161,12 @@ export default function CreateBusinessPage() {
                 registeredWard: form.gpkdWard,
                 registeredAddress: form.address,
                 email: form.email,
-                officePhone: form.phone,
-                operatingProvince: form.businessProvince,
-                operatingWard: form.businessWard,
-                businessLocation: form.businessAddress,
-                legalRepresentative: form.representative,
-                representativePhone: form.representativePhone,
+                officePhone: form.phone.trim() || undefined,
+                operatingProvince: form.businessProvince.trim() || undefined,
+                operatingWard: form.businessWard.trim() || undefined,
+                businessLocation: form.businessAddress.trim() || undefined,
+                legalRepresentative: form.representative.trim() || undefined,
+                representativePhone: form.representativePhone.trim() || undefined,
             };
 
             await BusinessApi.create(payload);
@@ -178,20 +192,34 @@ export default function CreateBusinessPage() {
     };
 
     const handleAddFiles = (groupIndex: number, files: FileList) => {
-        const newFiles: UploadedFile[] = Array.from(files).map((file) => {
-            const id = nextFileIdRef.current++;
-            return {
-                id,
-                name: file.name,
-                size: formatFileSize(file.size),
-                file,
-                url: URL.createObjectURL(file),
-            };
+        if (files.length === 0) return;
+
+        // Clean up old object URLs for this group
+        const currentGroup = attachmentGroups[groupIndex];
+        currentGroup.files.forEach((f) => {
+            if (f.url) URL.revokeObjectURL(f.url);
         });
-        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [...group.files, ...newFiles] } : group)));
+
+        // Only take the first file
+        const file = files[0];
+        const id = nextFileIdRef.current++;
+        const newFile: UploadedFile = {
+            id,
+            name: file.name,
+            size: formatFileSize(file.size),
+            file,
+            url: URL.createObjectURL(file),
+        };
+
+        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [newFile] } : group)));
     };
 
     const handleRemoveFile = (groupIndex: number, fileId: number) => {
+        // Clean up object URL
+        const group = attachmentGroups[groupIndex];
+        const fileToRemove = group.files.find((f) => f.id === fileId);
+        if (fileToRemove?.url) URL.revokeObjectURL(fileToRemove.url);
+
         setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: group.files.filter((f) => f.id !== fileId) } : group)));
     };
 

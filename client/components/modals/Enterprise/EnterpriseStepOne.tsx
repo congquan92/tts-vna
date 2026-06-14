@@ -37,6 +37,7 @@ export type EnterpriseFormErrors = {
     gpkdProvince: string;
     gpkdWard: string;
     email: string;
+    gpkdDate: string;
 };
 
 export type UploadedFile = {
@@ -167,23 +168,9 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
         onChange("taxCode", cleaned);
     };
 
-    // Handle GPKD date input - auto format as dd/mm/yyyy
-    const handleGpkdDateChange = (value: string) => {
-        // Remove non-digit and non-slash characters
-        let cleaned = value.replace(/[^0-9/]/g, "");
-        // Auto-insert slashes
-        const digits = cleaned.replace(/\//g, "");
-        if (digits.length <= 2) {
-            cleaned = digits;
-        } else if (digits.length <= 4) {
-            cleaned = digits.slice(0, 2) + "/" + digits.slice(2);
-        } else {
-            cleaned = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4, 8);
-        }
-        onChange("gpkdDate", cleaned);
-    };
-
     const sectionTitle = mode === "create" ? "Thêm mới doanh nghiệp" : mode === "edit" ? "Chỉnh sửa doanh nghiệp" : "Chi tiết doanh nghiệp";
+
+    const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
     return (
         <>
@@ -224,7 +211,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                             placeholder="Chọn ngành nghề"
                         />
 
-                        <InputField label="Ngày cấp GPKD" value={form.gpkdDate} onChange={(e) => handleGpkdDateChange(e.target.value)} placeholder="dd/mm/yyyy" icon={Calendar} disabled={isViewMode} />
+                        <InputField label="Ngày cấp GPKD *" type="date" value={form.gpkdDate} onChange={(e) => onChange("gpkdDate", e.target.value)} placeholder="Chọn ngày" icon={Calendar} disabled={isViewMode} max={today} error={errors.gpkdDate} />
 
                         <InputField
                             label="Tỉnh/Thành phố ĐKKD"

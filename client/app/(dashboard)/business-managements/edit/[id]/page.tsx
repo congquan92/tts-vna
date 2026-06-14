@@ -44,30 +44,15 @@ const defaultAttachmentGroups: AttachmentGroup[] = [
     { groupName: "Giấy tờ khác", files: [] },
 ];
 
-function formatDateToDDMMYYYY(dateString?: string | Date) {
+function formatDateToYYYYMMDD(dateString?: string | Date) {
     if (!dateString) return "";
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return "";
-        const day = String(date.getDate()).padStart(2, "0");
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+        return date.toISOString().split("T")[0];
     } catch {
         return "";
     }
-}
-
-function parseDDMMYYYYToDateString(ddmmyyyy: string): string | undefined {
-    if (!ddmmyyyy) return undefined;
-    const parts = ddmmyyyy.split("/");
-    if (parts.length === 3) {
-        const day = parts[0];
-        const month = parts[1];
-        const year = parts[2];
-        return `${year}-${month}-${day}`;
-    }
-    return ddmmyyyy;
 }
 
 function enterpriseToForm(enterprise: Business): EnterpriseFormData {
@@ -76,7 +61,7 @@ function enterpriseToForm(enterprise: Business): EnterpriseFormData {
         taxCode: enterprise.taxCode,
         businessType: enterprise.typeOfBusinessId?.toString() || "",
         industry: enterprise.businessIndustryId?.toString() || "",
-        gpkdDate: formatDateToDDMMYYYY(enterprise.businessLicenseDate),
+        gpkdDate: formatDateToYYYYMMDD(enterprise.businessLicenseDate),
         gpkdProvince: enterprise.registeredProvince,
         gpkdWard: enterprise.registeredWard,
         address: enterprise.registeredAddress,
@@ -168,6 +153,19 @@ export default function EditBusinessPage() {
             valid = false;
         }
 
+        if (!form.gpkdDate) {
+            next.gpkdDate = "Ngày cấp GPKD là bắt buộc";
+            valid = false;
+        } else {
+            const selectedDate = new Date(form.gpkdDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate > today) {
+                next.gpkdDate = "Ngày cấp GPKD không được là ngày trong tương lai";
+                valid = false;
+            }
+        }
+
         setErrors(next);
         return valid;
     };
@@ -188,20 +186,20 @@ export default function EditBusinessPage() {
         try {
             const payload = {
                 businessName: form.companyName,
-                foreignName: form.foreignName,
+                foreignName: form.foreignName.trim() || undefined,
                 typeOfBusinessId: Number(form.businessType),
                 businessIndustryId: Number(form.industry),
-                businessLicenseDate: parseDDMMYYYYToDateString(form.gpkdDate),
+                businessLicenseDate: form.gpkdDate || undefined,
                 registeredProvince: form.gpkdProvince,
                 registeredWard: form.gpkdWard,
                 registeredAddress: form.address,
                 email: form.email,
-                officePhone: form.phone,
-                operatingProvince: form.businessProvince,
-                operatingWard: form.businessWard,
-                businessLocation: form.businessAddress,
-                legalRepresentative: form.representative,
-                representativePhone: form.representativePhone,
+                officePhone: form.phone.trim() || undefined,
+                operatingProvince: form.businessProvince.trim() || undefined,
+                operatingWard: form.businessWard.trim() || undefined,
+                businessLocation: form.businessAddress.trim() || undefined,
+                legalRepresentative: form.representative.trim() || undefined,
+                representativePhone: form.representativePhone.trim() || undefined,
             };
 
             await BusinessApi.update(business.id, payload);
@@ -220,20 +218,34 @@ export default function EditBusinessPage() {
     };
 
     const handleAddFiles = (groupIndex: number, files: FileList) => {
-        const newFiles: UploadedFile[] = Array.from(files).map((file) => {
-            const id = nextFileIdRef.current++;
-            return {
-                id,
-                name: file.name,
-                size: formatFileSize(file.size),
-                file,
-                url: URL.createObjectURL(file),
-            };
+        if (files.length === 0) return;
+
+        // Clean up old object URLs for this group
+        const currentGroup = attachmentGroups[groupIndex];
+        currentGroup.files.forEach((f) => {
+            if (f.url) URL.revokeObjectURL(f.url);
         });
-        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [...group.files, ...newFiles] } : group)));
+
+        // Only take the first file
+        const file = files[0];
+        const id = nextFileIdRef.current++;
+        const newFile: UploadedFile = {
+            id,
+            name: file.name,
+            size: formatFileSize(file.size),
+            file,
+            url: URL.createObjectURL(file),
+        };
+
+        setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: [newFile] } : group)));
     };
 
     const handleRemoveFile = (groupIndex: number, fileId: number) => {
+        // Clean up object URL
+        const group = attachmentGroups[groupIndex];
+        const fileToRemove = group.files.find((f) => f.id === fileId);
+        if (fileToRemove?.url) URL.revokeObjectURL(fileToRemove.url);
+
         setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: group.files.filter((f) => f.id !== fileId) } : group)));
     };
 
@@ -248,15 +260,6 @@ export default function EditBusinessPage() {
 
     return (
         <div className="h-screen flex flex-col py-2">
-            {/* Top Bar */}
-            <div className="shrink-0 bg-white px-5 py-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
-                <h1 className="text-base font-bold text-gray-800">Chỉnh sửa doanh nghiệp</h1>
-                <button type="button" onClick={handleCancel} className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 rounded hover:bg-gray-50 transition-colors cursor-pointer">
-                    <i className="fa-solid fa-arrow-left text-xs" />
-                    <span>Quay lại danh sách</span>
-                </button>
-            </div>
-
             {/* Main content */}
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
                 {/* Stepper */}

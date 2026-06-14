@@ -18,6 +18,16 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
+function formatDate(dateStr: string) {
+    if (!dateStr) return "—";
+    // Check if it's in YYYY-MM-DD format (typical for <input type="date">)
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        const [y, m, d] = dateStr.split("-");
+        return `${d}/${m}/${y}`;
+    }
+    return dateStr;
+}
+
 export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props) {
     const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
 
@@ -47,7 +57,7 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
                         <InfoRow label="Mã số thuế :" value={form.taxCode} />
                         <InfoRow label="Tên doanh nghiệp :" value={form.companyName} />
                         <InfoRow label="Tên viết bằng tiếng nước ngoài :" value={form.foreignName} />
-                        <InfoRow label="Ngày cấp GPKD:" value={form.gpkdDate} />
+                        <InfoRow label="Ngày cấp GPKD:" value={formatDate(form.gpkdDate)} />
                         <InfoRow label="Email:" value={form.email} />
                         <InfoRow label="Loại hình kinh doanh:" value={form.businessType} />
                         <InfoRow label="Ngành nghề kinh doanh" value={form.industry} />
