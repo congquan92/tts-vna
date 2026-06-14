@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Delete,
   NotFoundException,
   UseGuards,
   Query,
@@ -61,5 +62,10 @@ export class BusinessIndustryController {
     const res = await this.service.findOne(idOrCode);
     if (!res) throw new NotFoundException('BusinessIndustry not found');
     return res;
+  }
+
+  @Delete(':idOrCode')
+  async remove(@Param('idOrCode') idOrCode: string) {
+    return this.service.remove(idOrCode);
   }
 }

@@ -15,6 +15,9 @@ export class Account {
   @Column({ select: false })
   password!: string;
 
+  @Column({ nullable: true })
+  displayPassword?: string;
+
   @Column()
   roleId!: number;
 

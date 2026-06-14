@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent } from "react";
 import Image from "next/image";
 
 // Import đồ chơi của MUI
@@ -15,7 +15,7 @@ import Collapse from "@mui/material/Collapse";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import { menuData } from "@/components/data-sidebar";
-import { Menu as MenuIcon, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu as MenuIcon, ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import AccountPopup from "@/components/popup/account-popup";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,9 +26,15 @@ export default function SidebarMUI() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // Helper for avatar URL
     const getAvatarUrl = (url?: string) => {
-        if (!url) return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+        if (!url || !mounted) return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
         if (url.startsWith("http")) return url;
         const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
         return `${apiUrl}/${url.replace(/^\//, "")}`;
@@ -77,7 +83,7 @@ export default function SidebarMUI() {
     return (
         <Box
             sx={{
-                width: 350,
+                width: 300,
                 bgcolor: "#1b2b65",
                 color: "white",
                 height: "100vh",
@@ -120,12 +126,8 @@ export default function SidebarMUI() {
                                 }}
                             >
                                 <ListItemIcon sx={{ color: "white", minWidth: 40 }}>{menu.icon}</ListItemIcon>
-                                <ListItemText
-                                    primary={
-                                        <Typography sx={{ fontSize: "14px", fontWeight: isSingleActive || isParentActive ? 600 : 400 }}>{menu.label}</Typography>
-                                    }
-                                />
-                                {menu.items && <Box sx={{ display: "flex", alignItems: "center", transition: "transform 0.2s" }}>{menu.isOpen ? <ChevronDown size={16} /> : <ChevronLeft size={16} />}</Box>}
+                                <ListItemText primary={<Typography sx={{ fontSize: "14px", fontWeight: isSingleActive || isParentActive ? 600 : 400 }}>{menu.label}</Typography>} />
+                                {menu.items && <Box sx={{ display: "flex", alignItems: "center", transition: "transform 0.2s" }}>{menu.isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</Box>}
                             </ListItemButton>
 
                             {/* Menu Con (Collapse) */}
@@ -149,11 +151,7 @@ export default function SidebarMUI() {
                                                     <ListItemIcon sx={{ minWidth: 24, color: "inherit" }}>
                                                         <Box sx={{ width: 4, height: 4, bgcolor: "currentColor", borderRadius: "50%" }} />
                                                     </ListItemIcon>
-                                                    <ListItemText
-                                                        primary={
-                                                            <Typography sx={{ fontSize: "13px", fontWeight: isChildActive ? 500 : 400 }}>{item.label}</Typography>
-                                                        }
-                                                    />
+                                                    <ListItemText primary={<Typography sx={{ fontSize: "13px", fontWeight: isChildActive ? 500 : 400 }}>{item.label}</Typography>} />
                                                 </ListItemButton>
                                             );
                                         })}
@@ -181,11 +179,7 @@ export default function SidebarMUI() {
                             <Avatar src={getAvatarUrl(user?.avatarUrl)} alt="Avatar" sx={{ width: 44, height: 44 }} />
                         </ListItemIcon>
 
-                        <ListItemText
-                            primary={
-                                <Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>{user?.fullName || "Người dùng"}</Typography>
-                            }
-                        />
+                        <ListItemText primary={<Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>{mounted ? (user?.fullName || "Người dùng") : "Người dùng"}</Typography>} />
 
                         <ChevronRight size={22} strokeWidth={2.5} className="text-white" />
                     </ListItemButton>

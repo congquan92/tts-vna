@@ -30,6 +30,14 @@ export class TypeOfBusinessRepository {
   async findOneByCode(code: string): Promise<TypeOfBusiness | null> {
     return await this.typeOfBusinessRepository.findOneBy({ code });
   }
+
+  async findByCodePartial(code: string): Promise<TypeOfBusiness[]> {
+    return await this.typeOfBusinessRepository.find({
+      where: { code: ILike(`%${code}%`) },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   // tìm kiếm gần đúng theo tên, đang sử dụng ILike để hỗ trợ tìm kiếm không phân biệt hoa thường, chỉ kiếm 1 từ trong tên cũng được
   async findByName(name: string): Promise<TypeOfBusiness[]> {
     return await this.typeOfBusinessRepository.find({

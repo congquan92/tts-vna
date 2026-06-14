@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthApi } from "@/api/auth";
 import type { User } from "@/types/auth";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
     user: User | null;
@@ -19,7 +19,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-    const pathname = usePathname();
 
     const refreshProfile = useCallback(async () => {
         try {
@@ -35,26 +34,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const token = localStorage.getItem("auth_token");
-        if (token) {
-            refreshProfile();
-        } else {
-            setLoading(false);
-        }
+
+        const timer = setTimeout(() => {
+            if (token) {
+                refreshProfile();
+            } else {
+                setLoading(false);
+            }
+        }, 0);
+
+        return () => clearTimeout(timer);
     }, [refreshProfile]);
 
     const login = async (username: string, password: string) => {
         const res = await AuthApi.login(username, password);
         localStorage.setItem("auth_token", res.accessToken);
+        localStorage.setItem("refresh_token", res.refreshToken);
         await refreshProfile();
         router.push("/accounts"); // Hoặc trang dashboard bất kỳ
     };
 
     const logout = async () => {
         try {
-            // Có thể gọi API logout ở đây nếu cần xóa cookie/revoke token ở backend
-            // await AuthApi.logout();
+            await AuthApi.logout();
         } finally {
             localStorage.removeItem("auth_token");
+            localStorage.removeItem("refresh_token");
             setUser(null);
             router.push("/login");
         }

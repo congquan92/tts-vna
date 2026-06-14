@@ -57,10 +57,9 @@ export class TypeOfBusinessService {
     return items.map((i) => this.toResponse(i));
   }
 
-  async findByCode(code: string): Promise<TypeOfBusinessResponseDto | null> {
-    const item = await this.typeOfBusinessRepository.findOneByCode(code);
-    if (!item) return null;
-    return this.toResponse(item);
+  async findByCode(code: string): Promise<TypeOfBusinessResponseDto[]> {
+    const items = await this.typeOfBusinessRepository.findByCodePartial(code);
+    return items.map((i) => this.toResponse(i));
   }
 
   async findOne(id: number): Promise<TypeOfBusinessResponseDto> {

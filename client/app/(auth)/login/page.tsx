@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import TextInput from "@/components/form/TextInput";
 import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
-import Alert from "@/components/ui/Alert";
+// import Alert from "@/components/ui/Alert";
 import { AuthApi } from "@/api/auth";
+import { toast } from "sonner";
 
 type FormErrors = {
     account?: string;
@@ -22,8 +23,26 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
-    const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
+    // const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Load saved credentials on mount
+    useEffect(() => {
+        const savedAccount = localStorage.getItem("remembered_account");
+        const savedPassword = localStorage.getItem("remembered_password");
+
+        const timer = setTimeout(() => {
+            if (savedAccount) {
+                setAccount(savedAccount);
+                setRememberMe(true);
+            }
+            if (savedPassword) {
+                setPassword(savedPassword);
+            }
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const validateForm = () => {
         const newErrors: FormErrors = {};
@@ -43,36 +62,46 @@ export default function LoginPage() {
         e.preventDefault();
 
         if (!validateForm()) {
-            setAlert({
-                type: "error",
-                message: "Vui lòng nhập đầy đủ thông tin",
-            });
+            // setAlert({
+            //     type: "error",
+            //     message: "Vui lòng nhập đầy đủ thông tin",
+            // });
+            toast.error("Vui lòng nhập đầy đủ thông tin");
             return;
         }
 
         setLoading(true);
         try {
             const res = await AuthApi.login(account, password);
-
             if (res && res.accessToken) {
                 // Lưu token vào localStorage
                 localStorage.setItem("auth_token", res.accessToken);
 
-                setAlert({
-                    type: "success",
-                    message: "Đăng nhập thành công! Đang chuyển hướng...",
-                });
+                // Xử lý Ghi nhớ đăng nhập
+                if (rememberMe) {
+                    localStorage.setItem("remembered_account", account);
+                    localStorage.setItem("remembered_password", password);
+                } else {
+                    localStorage.removeItem("remembered_account");
+                    localStorage.removeItem("remembered_password");
+                }
 
-                // Chuyển hướng sau 1.5 giây
+                // setAlert({
+                //     type: "success",
+                //     message: "Đăng nhập thành công! Đang chuyển hướng...",
+                // });
+                toast.success("Đăng nhập thành công! Đang chuyển hướng...");
                 setTimeout(() => {
                     router.push("/accounts");
                 }, 1500);
             }
-        } catch (error: any) {
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
-            });
+        } catch (error: unknown) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            // setAlert({
+            //     type: "error",
+            //     message: axiosError.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
+            // });
+            toast.error(axiosError.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại");
         } finally {
             setLoading(false);
         }
@@ -93,7 +122,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Alerts */}
-                <div className="mb-4 w-full">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
+                {/* <div className="mb-4 w-full">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div> */}
 
                 {/* Form login */}
                 <form onSubmit={handleLogin} className="flex w-full flex-col gap-5">
@@ -103,7 +132,7 @@ export default function LoginPage() {
                     {/* Đổi label có dấu * giống design */}
                     <TextInput
                         label="Tên tài khoản *"
-                        placeholder="nguyenvanb.stttt"
+                        placeholder="Nhập tên tài khoản"
                         required={true}
                         value={account}
                         onChange={(e) => {

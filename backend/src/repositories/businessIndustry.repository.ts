@@ -117,4 +117,8 @@ export class BusinessIndustryRepository {
       },
     };
   }
+
+  async delete(id: number): Promise<void> {
+    await this.repo.delete(id);
+  }
 }

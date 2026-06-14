@@ -93,10 +93,10 @@ export class SeedService implements OnModuleInit {
 
     private async seedTypeOfBusiness() {
         const data = [
-            { code: 'TNHH', name: 'Công ty TNHH' },
-            { code: 'CP', name: 'Công ty Cổ phần' },
-            { code: 'DNTN', name: 'Doanh nghiệp tư nhân' },
-            { code: 'HKD', name: 'Hộ kinh doanh' },
+            { code: 'TNHH', name: 'Công ty TNHH', status: BusinessStatus.ACTIVE },
+            { code: 'CP', name: 'Công ty Cổ phần', status: BusinessStatus.ACTIVE },
+            { code: 'DNTN', name: 'Doanh nghiệp tư nhân', status: BusinessStatus.ACTIVE },
+            { code: 'HKD', name: 'Hộ kinh doanh', status: BusinessStatus.ACTIVE },
         ];
 
         for (const item of data) {

@@ -62,4 +62,14 @@ export const AuthApi = {
         });
         return res.data;
     },
+
+    refresh: async (refreshToken: string): Promise<{ accessToken: string }> => {
+        const res = await axiosInstance.post<{ accessToken: string }>("/auth/refresh", { refreshToken });
+        return res.data;
+    },
+
+    logout: async (): Promise<{ message: string }> => {
+        const res = await axiosInstance.post<{ message: string }>("/auth/logout");
+        return res.data;
+    },
 };

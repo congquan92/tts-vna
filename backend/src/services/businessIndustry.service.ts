@@ -53,7 +53,7 @@ export class BusinessIndustryService {
 
   async findAll(): Promise<BusinessIndustryListDto[]> {
     const items = await this.repo.findAll();
-    return items.map((i) => ({ code: i.code, name: i.name, level: i.level }));
+    return items.map((i) => ({ id: i.id, code: i.code, name: i.name, level: i.level }));
   }
 
   async findOne(idOrCode: string): Promise<BusinessIndustryResponseDto | null> {
@@ -75,15 +75,31 @@ export class BusinessIndustryService {
     const item = await this.repo.findByIdOrCode(idOrCode);
     if (!item) throw new NotFoundException('BusinessIndustry not found');
 
+    if (dto.name) {
+      item.name = dto.name;
+    }
+
+    if (dto.code && dto.code !== item.code) {
+      item.code = dto.code;
+      item.level = this.calculateLevel(dto.code);
+    }
+
+    if (dto.parentId !== undefined) {
+      if (dto.parentId === null || dto.parentId === 0 || dto.parentId === '0' || dto.parentId === '') {
+        item.parentId = undefined;
+      } else {
+        const parent = await this.repo.findByIdOrCode(String(dto.parentId));
+        if (!parent)
+          throw new BadRequestException(
+            'parentId does not refer to an existing BusinessIndustry',
+          );
+        item.parentId = parent.id;
+      }
+    }
+
     // Kiểm tra nếu status thay đổi
-    const statusChanged = dto.status && dto.status !== item.status;
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    item.name = dto.name;
-    item.status = dto.status;
-
-    // Nếu status thay đổi và là cha, cập nhật tất cả children
-    if (statusChanged) {
+    if (dto.status && dto.status !== item.status) {
+      item.status = dto.status;
       await this.repo.updateStatusWithChildren(item, dto.status);
     }
 
@@ -119,30 +135,26 @@ export class BusinessIndustryService {
     }));
   }
   // hàm tính thứ tự cấp (level) dựa trên quy tắc code:
-  // - Cấp 1: code là một chữ cái từ A đến U (ví dụ: "A", "B", ..., "U")
-  // - Cấp 2: code là hai chữ số từ 01 đến 99 (ví dụ: "01", "02", ..., "99")
-  // - Cấp 3-5: code là chuỗi gồm 3-5 chữ số (ví dụ: "123", "1234", "12345")
+  // - Cấp 1-5: dựa trên độ dài chuỗi code (1-5 ký tự)
   private calculateLevel(code: string): number {
     const trimmed = code.trim();
 
-    if (trimmed.length === 1 && /^[A-U]$/.test(trimmed)) {
-      return 1;
-    }
-
-    if (trimmed.length === 2 && /^(?:0[1-9]|[1-9][0-9])$/.test(trimmed)) {
-      return 2;
-    }
-
-    if ([3, 4, 5].includes(trimmed.length) && /^[0-9]+$/.test(trimmed)) {
+    if (trimmed.length >= 1 && trimmed.length <= 5) {
       return trimmed.length;
     }
 
     throw new BadRequestException(
-      'code không hợp lệ. Quy tắc: cấp 1=A-U, cấp 2=01-99, cấp 3-5=3-5 chữ số',
+      'code không hợp lệ. Quy tắc: độ dài từ 1 đến 5 ký tự',
     );
   }
 
   async searchBusinessIndustries(query: SearchBusinessIndustryDto) {
     return this.repo.search(query);
+  }
+
+  async remove(idOrCode: string): Promise<void> {
+    const item = await this.repo.findByIdOrCode(idOrCode);
+    if (!item) throw new NotFoundException('BusinessIndustry not found');
+    await this.repo.delete(item.id);
   }
 }

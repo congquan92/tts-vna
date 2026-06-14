@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "sonner";
 // import { ThemeProvider } from "@mui/material/styles";
 // import theme from "@/lib/theme"; // Nhớ check lại đường dẫn file theme
 
@@ -33,6 +34,22 @@ export default function RootLayout({
                     <AuthProvider>
                         {/* <ThemeProvider theme={theme}>{children}</ThemeProvider> */}
                         {children}
+                        <Toaster
+                            position="top-right"
+                            duration={5000}
+                            closeButton={true}
+                            richColors
+                            toastOptions={{
+                                classNames: {
+                                    toast: "flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm",
+                                    success: "bg-green-50 text-green-800 border border-green-200",
+                                    error: "bg-red-50 text-red-800 border border-red-200",
+                                    warning: "bg-yellow-50 text-yellow-800 border border-yellow-200",
+                                    info: "bg-blue-50 text-blue-800 border border-blue-200",
+                                    closeButton: "!absolute !left-auto !right-3 !top-5  !bg-transparent hover:!bg-black/10 !border-none !text-inherit cursor-pointer transition-colors !w-6 !h-6 flex items-center justify-center rounded-md",
+                                },
+                            }}
+                        />
                     </AuthProvider>
                 </AppRouterCacheProvider>
             </body>

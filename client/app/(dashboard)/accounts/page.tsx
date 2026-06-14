@@ -3,20 +3,41 @@
 import { InputField } from "@/components/form/InputField";
 import TopHero from "@/components/TopHero";
 import Button from "@/components/ui/Button";
-import Alert from "@/components/ui/Alert";
 import { Calendar, Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
+import { toast } from "sonner";
+
+interface Ward {
+    ward_code: string;
+    name: string;
+    province_code: string;
+}
+
+interface Province {
+    province_code: string;
+    name: string;
+    short_name: string;
+    code: string;
+    place_type: string;
+    wards: Ward[];
+}
+
+type FormErrors = {
+    fullName?: string;
+    email?: string;
+    dob?: string;
+};
 
 const AccountPage = () => {
     const [profile, setProfile] = useState<User | null>(null);
     const [formData, setFormData] = useState<UpdateProfilePayload>({});
+    const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
 
     // Image preview states
@@ -24,15 +45,15 @@ const AccountPage = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     // Dữ liệu hành chính
-    const [provincesData, setProvincesData] = useState<any[]>([]);
+    const [provincesData, setProvincesData] = useState<Province[]>([]);
     const [availableWards, setAvailableWards] = useState<{ label: string; value: string }[]>([]);
 
     useEffect(() => {
         const initData = async () => {
             try {
                 // Fetch provinces data
-                const geoRes = await fetch("/vietnam-provinces.json");
-                const geoData = await geoRes.json();
+                const geoRes = await fetch("/address.json");
+                const geoData: Province[] = await geoRes.json();
                 setProvincesData(geoData);
 
                 // Fetch profile
@@ -54,20 +75,18 @@ const AccountPage = () => {
 
                 // Nếu đã có tỉnh thành, load xã phường tương ứng
                 if (data.province) {
-                    const province = geoData.find((p: any) => p.name === data.province);
-                    if (province) {
-                        const wards = province.districts.flatMap((d: any) =>
-                            d.wards.map((w: any) => ({
-                                label: `${w.name} - ${d.name}`,
-                                value: `${w.name} - ${d.name}`,
-                            })),
-                        );
+                    const province = geoData.find((p: Province) => p.name === data.province);
+                    if (province && province.wards) {
+                        const wards = province.wards.map((w: Ward) => ({
+                            label: w.name,
+                            value: w.name,
+                        }));
                         setAvailableWards(wards);
                     }
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                setAlert({ type: "error", message: "Không thể tải thông tin hệ thống" });
+                toast.error("Không thể tải thông tin hệ thống");
             } finally {
                 setLoading(false);
             }
@@ -76,22 +95,56 @@ const AccountPage = () => {
         initData();
     }, []);
 
+    const validateForm = () => {
+        const newErrors: FormErrors = {};
+
+        if (!formData.fullName?.trim()) {
+            newErrors.fullName = "Vui lòng nhập họ và tên";
+        }
+
+        if (formData.dob) {
+            const birthDate = new Date(formData.dob);
+            const today = new Date();
+
+            if (birthDate > today) {
+                newErrors.dob = "Ngày sinh không thể là tương lai";
+            } else {
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+
+                if (age < 18) {
+                    newErrors.dob = "Bạn phải từ 18 tuổi trở lên";
+                }
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
 
+        // Clear error when typing
+        if (errors[name as keyof FormErrors]) {
+            setErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+
         // Nếu thay đổi tỉnh thành, cần reset và cập nhật xã phường
         if (name === "province") {
             if (value) {
-                const province = provincesData.find((p: any) => p.name === value);
-                const wards = province
-                    ? province.districts.flatMap((d: any) =>
-                          d.wards.map((w: any) => ({
-                              label: `${w.name} - ${d.name}`,
-                              value: `${w.name} - ${d.name}`,
-                          })),
-                      )
-                    : [];
+                const province = provincesData.find((p: Province) => p.name === value);
+                const wards =
+                    province && province.wards
+                        ? province.wards.map((w: Ward) => ({
+                              label: w.name,
+                              value: w.name,
+                          }))
+                        : [];
                 setAvailableWards(wards);
                 setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
             } else {
@@ -106,8 +159,12 @@ const AccountPage = () => {
     };
 
     const handleSave = async () => {
+        if (!validateForm()) {
+            toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc");
+            return;
+        }
+
         setSaving(true);
-        setAlert(null);
         try {
             let currentAvatarUrl = formData.avatarUrl;
 
@@ -121,17 +178,19 @@ const AccountPage = () => {
             const updatedProfile = await AuthApi.updateProfile(payload);
 
             setProfile({ ...updatedProfile, account: profile?.account });
-            setFormData((prev) => ({ ...prev, avatarUrl: updatedProfile.avatarUrl }));
+            setFormData((prev) => ({
+                ...prev,
+                avatarUrl: updatedProfile.avatarUrl,
+                dob: updatedProfile.dob ? new Date(updatedProfile.dob).toISOString().split("T")[0] : "",
+            }));
             setSelectedFile(null);
             setPreviewUrl(null);
 
-            setAlert({ type: "success", message: "Cập nhật thông tin thành công" });
-        } catch (error: any) {
+            toast.success("Cập nhật thông tin thành công");
+        } catch (error: unknown) {
             console.error("Error updating profile:", error);
-            setAlert({
-                type: "error",
-                message: error.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin",
-            });
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            toast.error(axiosError.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin");
         } finally {
             setSaving(false);
         }
@@ -154,7 +213,6 @@ const AccountPage = () => {
             setSelectedFile(null);
             setPreviewUrl(null);
         }
-        setAlert(null);
     };
 
     const handleEmailChanged = () => {
@@ -170,14 +228,14 @@ const AccountPage = () => {
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            setAlert({ type: "error", message: "Kích thước ảnh không được vượt quá 5MB" });
+            toast.error("Kích thước file vượt quá 5 MB. Vui lòng chọn file khác.");
             return;
         }
 
         // Validate file type
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
         if (!allowedTypes.includes(file.type)) {
-            setAlert({ type: "error", message: "Chỉ chấp nhận định dạng .jpeg, .jpg, .png" });
+            toast.error("Chỉ chấp nhận định dạng .jpeg, .jpg, .png");
             return;
         }
 
@@ -208,8 +266,6 @@ const AccountPage = () => {
                     </div>
                 }
             />
-
-            <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div>
 
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}
@@ -257,9 +313,9 @@ const AccountPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-6 mb-6">
                         <InputField label="Tên đăng nhập(*)" value={profile?.account?.username || ""} placeholder="Tên đăng nhập" readOnly />
-                        <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName || ""} onChange={handleChange} />
+                        <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName || ""} onChange={handleChange} error={errors.fullName} />
 
-                        <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob ? new Date(formData.dob).toISOString().split("T")[0] : ""} type="date" icon={Calendar} onChange={handleChange} />
+                        <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob ? new Date(formData.dob).toISOString().split("T")[0] : ""} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} />
                         <InputField
                             name="gender"
                             label="Giới tính"
@@ -296,11 +352,12 @@ const AccountPage = () => {
                                 label="Tỉnh/ thành phố"
                                 value={formData.province ?? ""}
                                 isSelect
+                                isSearchable
                                 placeholder="Chọn tỉnh/ thành phố"
                                 options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
                                 onChange={handleChange}
                             />
-                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
+                            <InputField name="ward" label="Phường xã" value={formData.ward ?? ""} isSelect isSearchable placeholder="Chọn phường/ xã" options={availableWards} disabled={!formData.province} onChange={handleChange} />
                         </div>
 
                         <InputField name="address" label="Địa chỉ" value={formData.address || ""} placeholder="Nhập địa chỉ chi tiết" onChange={handleChange} />

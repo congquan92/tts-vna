@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 import * as ExcelJS from 'exceljs';
 
 import { UserRepository } from '../repositories/user.repository';
+import { User } from '../entities/user.entity';
 import { CreateUserDto, UpdateUserDto } from '../dto/user/user.dto';
 import { SearchUserDto } from '../dto/user/search-user.dto';
 import { AccountRepository } from '../repositories/account.repository';
@@ -133,7 +134,42 @@ export class UserService {
             );
         }
 
-        if (dto.email) {
+        const account = user.accounts?.[0];
+
+        // 1. Cập nhật thông tin Account nếu có
+        if (account) {
+            let accountUpdated = false;
+
+            if (dto.username && dto.username !== account.username) {
+                const existedUsername = await this.accountRepository.findAccountByUsername(dto.username);
+                if (existedUsername && existedUsername.id !== account.id) {
+                    throw new ConflictException('Tên đăng nhập đã tồn tại');
+                }
+                account.username = dto.username;
+                accountUpdated = true;
+            }
+
+            if (dto.roleId && dto.roleId !== account.roleId) {
+                const role = await this.roleRepository.findRoleById(dto.roleId);
+                if (!role) {
+                    throw new NotFoundException('Vai trò không tồn tại');
+                }
+                account.roleId = dto.roleId;
+                accountUpdated = true;
+            }
+
+            if (dto.password) {
+                account.password = await bcrypt.hash(dto.password, 10);
+                accountUpdated = true;
+            }
+
+            if (accountUpdated) {
+                await this.accountRepository.save(account);
+            }
+        }
+
+        // 2. Kiểm tra email nếu thay đổi
+        if (dto.email && dto.email !== user.email) {
             const emailExists =
                 await this.userRepository.findByEmail(
                     dto.email,
@@ -149,30 +185,24 @@ export class UserService {
             }
         }
 
-        if (dto.roleId) {
-            const role =
-                await this.roleRepository.findRoleById(
-                    dto.roleId,
-                );
+        // 3. Chuẩn bị payload cho User entity, loại bỏ các trường của Account
+        const { username, roleId, password, ...userProperties } = dto;
 
-            if (!role) {
-                throw new NotFoundException(
-                    'Vai trò không tồn tại',
-                );
-            }
-
-            user.accounts[0].roleId =
-                dto.roleId;
-        }
-
-        const updatePayload = {
-            ...dto,
+        const updatePayload: Partial<User> = {
+            ...userProperties,
             dob: dto.dob ? new Date(dto.dob) : undefined,
             orgType: dto.orgType as
                 | 'SO'
                 | 'DOANH_NGHIEP'
                 | undefined,
         };
+
+        // Xóa các undefined properties để tránh lỗi TypeORM nếu cần
+        Object.keys(updatePayload).forEach(key => {
+            if ((updatePayload as any)[key] === undefined) {
+                delete (updatePayload as any)[key];
+            }
+        });
 
         return await this.userRepository.update(
             id,
