@@ -75,8 +75,8 @@ function enterpriseToForm(enterprise: Business): EnterpriseFormData {
     return {
         companyName: enterprise.businessName,
         taxCode: enterprise.taxCode,
-        businessType: enterprise.typeOfBusinessId.toString(),
-        industry: enterprise.businessIndustryId.toString(),
+        businessType: enterprise.typeOfBusinessId?.toString() || "",
+        industry: enterprise.businessIndustryId?.toString() || "",
         gpkdDate: enterprise.businessLicenseDate ? new Date(enterprise.businessLicenseDate).toISOString().split('T')[0] : "",
         gpkdProvince: enterprise.registeredProvince,
         gpkdWard: enterprise.registeredWard,

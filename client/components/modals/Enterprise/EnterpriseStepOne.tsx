@@ -190,7 +190,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                         >
                             <option value="">Chọn loại hình</option>
                             {businessTypes.map((bt) => (
-                                <option key={bt.id} value={bt.id.toString()}>
+                                <option key={bt.id} value={bt.id?.toString() || ""}>
                                     {bt.code} - {bt.name}
                                 </option>
                             ))}
@@ -210,7 +210,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                         >
                             <option value="">Chọn ngành nghề</option>
                             {industries.map((ind) => (
-                                <option key={ind.id} value={ind.id.toString()}>
+                                <option key={ind.id} value={ind.id?.toString() || ""}>
                                     {ind.code} - {ind.name}
                                 </option>
                             ))}

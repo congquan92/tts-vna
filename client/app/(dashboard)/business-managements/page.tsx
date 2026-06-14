@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import TopHero from "@/components/TopHero";
-import { Switch } from "@mui/material";
-import EnterpriseModal from "@/components/modals/Enterprise/EnterpriseModal";
+import ToggleSwitch from "@/components/ToggleSwitch";
 import { BusinessApi } from "@/api/business";
 import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
 import { BusinessIndustryApi } from "@/api/businessIndustry";
@@ -12,33 +12,44 @@ import type { TypeOfBusiness } from "@/types/typeOfBusiness";
 import type { BusinessIndustry } from "@/types/businessIndustry";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
-import { FolderUp, Plus, Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { FolderUp, Plus, Eye, Pencil, Trash2, Key, ChevronLeft, ChevronRight, ChevronDown, Upload } from "lucide-react";
 
-import { InputField } from "@/components/form/InputField";
+import CreatePasswordModal from "@/components/popup/create-password";
 
-const GRID_COLS = "grid-cols-[40px_100px_1fr_120px_160px_180px_140px_100px]";
+const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 180px 220px 150px 100px" };
 
 export default function BusinessManagementsPage() {
+    const router = useRouter();
     const [data, setData] = useState<Business[]>([]);
     const [loading, setLoading] = useState(false);
-    const [viewMode, setViewMode] = useState<"list" | "create" | "edit" | "view">("list");
-    const [selectedEnterprise, setSelectedEnterprise] = useState<Business | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    // Password reset modal state
+    const [selectedEnterprise, setSelectedEnterprise] = useState<Business | null>(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Dropdown data
     const [businessTypes, setBusinessTypes] = useState<TypeOfBusiness[]>([]);
     const [industries, setIndustries] = useState<BusinessIndustry[]>([]);
+    const [wardOptions, setWardOptions] = useState<{ label: string; value: string }[]>([]);
 
     const businessTypeOptions = useMemo(() => businessTypes.map((t) => ({ label: t.name, value: t.id.toString() })), [businessTypes]);
     const industryOptions = useMemo(() => industries.filter((i) => i.level === 4 || i.level === 1).map((t) => ({ label: t.name, value: t.id.toString() })), [industries]);
 
     // Filter states
-    const [filterName, setFilterName] = useState("");
-    const [filterTaxCode, setFilterTaxCode] = useState("");
-    const [filterBusinessType, setFilterBusinessType] = useState("");
-    const [filterIndustry, setFilterIndustry] = useState("");
-    const [filterWard, setFilterWard] = useState("");
-    const [filterStatus, setFilterStatus] = useState("");
+    const [filters, setFilters] = useState({
+        businessName: "",
+        taxCode: "",
+        typeOfBusinessId: "",
+        businessIndustryId: "",
+        registeredWard: "",
+        status: "",
+    });
+
+    const handleFilterChange = (field: string, value: string) => {
+        setFilters((prev) => ({ ...prev, [field]: value }));
+        setCurrentPage(1);
+    };
 
     // Pagination
     const [pageSize, setPageSize] = useState(10);
@@ -51,34 +62,67 @@ export default function BusinessManagementsPage() {
             const res = await BusinessApi.search({
                 page: currentPage,
                 limit: pageSize,
-                businessName: filterName || undefined,
-                taxCode: filterTaxCode || undefined,
-                typeOfBusinessId: filterBusinessType ? Number(filterBusinessType) : undefined,
-                businessIndustryId: filterIndustry ? Number(filterIndustry) : undefined,
-                registeredWard: filterWard || undefined,
-                status: filterStatus === "" ? undefined : filterStatus === "active",
+                businessName: filters.businessName || undefined,
+                taxCode: filters.taxCode || undefined,
+                typeOfBusinessId: filters.typeOfBusinessId ? Number(filters.typeOfBusinessId) : undefined,
+                businessIndustryId: filters.businessIndustryId ? Number(filters.businessIndustryId) : undefined,
+                registeredWard: filters.registeredWard || undefined,
+                status: filters.status === "" ? undefined : filters.status === "active",
             });
-            setData(res.data);
-            setTotal(res.total);
+
+            // Map API response keys to format correctly
+            const mappedData = (res.data || []).map((item: any) => ({
+                ...item,
+                businessType: item.typeOfBusiness || item.businessType || "",
+                industry: item.businessIndustry || item.industry || "",
+            }));
+
+            setData(mappedData);
+
+            // Handle metadata wrapping from NestJS backend search
+            const meta = (res as any).meta;
+            if (meta) {
+                setTotal(meta.total ?? 0);
+            } else {
+                setTotal(res.total ?? 0);
+            }
         } catch {
             toast.error("Không thể tải danh sách doanh nghiệp");
         } finally {
             setLoading(false);
         }
-    }, [currentPage, pageSize, filterName, filterTaxCode, filterBusinessType, filterIndustry, filterWard, filterStatus]);
+    }, [currentPage, pageSize, filters]);
 
     const fetchDropdowns = useCallback(async () => {
         try {
-            const [types, inds] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll()]);
+            const [types, inds, geoRes] = await Promise.all([
+                TypeOfBusinessApi.findAll(),
+                BusinessIndustryApi.findAll(),
+                fetch("/address.json")
+            ]);
             setBusinessTypes(types);
             setIndustries(inds);
+            
+            const geoData = await geoRes.json();
+            // Get all unique wards
+            const allWards: string[] = [];
+            geoData.forEach((province: any) => {
+                province.wards?.forEach((ward: any) => {
+                    if (ward.name) allWards.push(ward.name);
+                });
+            });
+            const uniqueWards = Array.from(new Set(allWards)).sort();
+            setWardOptions(uniqueWards.map(name => ({ label: name, value: name })));
         } catch {
             console.error("Error fetching dropdowns");
         }
     }, []);
 
     useEffect(() => {
-        fetchData();
+        const timer = setTimeout(() => {
+            fetchData();
+        }, 300); // Debounce search
+        return () => clearTimeout(timer);
     }, [fetchData]);
 
     useEffect(() => {
@@ -86,18 +130,31 @@ export default function BusinessManagementsPage() {
     }, [fetchDropdowns]);
 
     const openNew = () => {
-        setSelectedEnterprise(null);
-        setViewMode("create");
+        router.push("/business-managements/create");
     };
 
     const handleEdit = (item: Business) => {
-        setSelectedEnterprise(item);
-        setViewMode("edit");
+        router.push(`/business-managements/edit/${item.id}`);
     };
 
     const handleView = (item: Business) => {
+        router.push(`/business-managements/view/${item.id}`);
+    };
+
+    const handleOpenPasswordReset = (item: Business) => {
         setSelectedEnterprise(item);
-        setViewMode("view");
+        setIsPasswordModalOpen(true);
+    };
+
+    const handleSavePassword = async (password: string) => {
+        if (!selectedEnterprise) return;
+        try {
+            await BusinessApi.setPassword(selectedEnterprise.id, password);
+            toast.success("Đặt lại mật khẩu doanh nghiệp thành công");
+            setIsPasswordModalOpen(false);
+        } catch {
+            toast.error("Không thể đặt lại mật khẩu");
+        }
     };
 
     const handleToggleStatus = async (id: number) => {
@@ -123,15 +180,30 @@ export default function BusinessManagementsPage() {
         }
     };
 
-    const closeCreate = () => {
-        setViewMode("list");
-        setSelectedEnterprise(null);
-        fetchData();
-    };
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} doanh nghiệp đã chọn?`);
+        if (!confirmDelete) return;
 
-    const handleSave = async () => {
-        // Logic for saving via BusinessApi will be handled inside EnterpriseModal or passed here
-        // For simplicity, we refresh list after modal closes
+        let successCount = 0;
+        let failCount = 0;
+        for (const id of selectedIds) {
+            try {
+                await BusinessApi.delete(id);
+                successCount++;
+            } catch {
+                failCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(`Đã xóa thành công ${successCount} doanh nghiệp`);
+        }
+        if (failCount > 0) {
+            toast.error(`Không thể xóa ${failCount} doanh nghiệp`);
+        }
+
+        setSelectedIds([]);
         fetchData();
     };
 
@@ -146,114 +218,118 @@ export default function BusinessManagementsPage() {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const allSelected = data.length > 0 && data.every((r) => selectedIds.includes(r.id));
 
-    if (viewMode !== "list") {
-        return <EnterpriseModal isOpen={true} onClose={closeCreate} onSave={handleSave} mode={viewMode} initialData={selectedEnterprise} />;
-    }
-
     return (
-        <div className="space-y-5">
-            <TopHero
-                lable="Danh sách doanh nghiệp"
-                component={
-                    <div className="flex gap-3">
-                        <Button variant="outline" size="md" className="pl-2 font-bold ">
-                            <FolderUp className="size-5 mr-2" />
-                            Import
-                        </Button>
-                        <Button variant="primary" size="md" onClick={openNew} className="pl-2 font-bold">
-                            <Plus className="size-5 mr-2" /> Thêm mới
-                        </Button>
-                    </div>
-                }
-            />
+        <main className="h-screen flex flex-col py-2">
+            <div className="shrink-0">
+                <TopHero
+                    lable="Danh sách doanh nghiệp"
+                    component={
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs font-semibold">
+                                <Upload className="size-4" />
+                                <span>Thêm từ file</span>
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
+                                <Plus className="size-4" />
+                                <span>Thêm mới</span>
+                            </Button>
+                        </div>
+                    }
+                />
+            </div>
 
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
+                {/* Grid Header */}
                 <div className="shrink-0 border-b border-gray-200">
-                    <div className={`grid ${GRID_COLS} text-xs text-gray-500 font-medium bg-gray-50/50`}>
-                        <div className="flex items-center justify-center py-2">
-                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer" checked={allSelected} onChange={(e) => handleSelectAll(e.target.checked)} />
-                        </div>
-                        <div className="px-2 py-2">Thao tác</div>
-                        <div className="px-3 py-2">Tên doanh nghiệp</div>
-                        <div className="px-3 py-2">Mã số thuế</div>
-                        <div className="px-3 py-2">Loại hình kinh doanh</div>
-                        <div className="px-3 py-2">Ngành nghề kinh doanh</div>
-                        <div className="px-3 py-2">Phường/xã</div>
-                        <div className="px-3 py-2 text-center">Trạng thái</div>
+                    <div className="grid gap-3 text-xs font-semibold text-gray-700 py-3 px-4 bg-[#F4F6F8]" style={GRID_STYLE}>
+                        <div />
+                        <div className="px-2">Thao tác</div>
+                        <div className="px-3">Tên doanh nghiệp</div>
+                        <div className="px-3">Mã số thuế</div>
+                        <div className="px-3">Loại hình kinh doanh</div>
+                        <div className="px-3">Ngành nghề kinh doanh</div>
+                        <div className="px-3">Phường/xã</div>
+                        <div className="flex justify-center">Trạng thái</div>
                     </div>
 
-                    <div className={`grid ${GRID_COLS} pb-2`}>
+                    {/* Filter Row */}
+                    <div className="grid pb-3 px-4 bg-[#F4F6F8] gap-3 items-center" style={GRID_STYLE}>
+                        <div className="flex items-center justify-center">
+                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={allSelected} onChange={(e) => handleSelectAll(e.target.checked)} />
+                        </div>
                         <div />
-                        <div />
                         <div className="px-3">
-                            <InputField
-                                value={filterName}
-                                onChange={(e) => {
-                                    setFilterName(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tìm tên..."
+                            <input
+                                type="text"
+                                value={filters.businessName}
+                                onChange={(e) => handleFilterChange("businessName", e.target.value)}
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
                         <div className="px-3">
-                            <InputField
-                                value={filterTaxCode}
-                                onChange={(e) => {
-                                    setFilterTaxCode(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tìm MST..."
+                            <input
+                                type="text"
+                                value={filters.taxCode}
+                                onChange={(e) => handleFilterChange("taxCode", e.target.value)}
+                                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-primary transition-colors"
                             />
                         </div>
-                        <div className="px-3">
-                            <InputField
-                                isSelect
-                                value={filterBusinessType}
-                                options={businessTypeOptions}
-                                onChange={(e) => {
-                                    setFilterBusinessType(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tất cả"
-                            />
+                        <div className="px-3 relative">
+                            <select
+                                value={filters.typeOfBusinessId}
+                                onChange={(e) => handleFilterChange("typeOfBusinessId", e.target.value)}
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                            >
+                                <option value="">Loại hình</option>
+                                {businessTypeOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
-                        <div className="px-3">
-                            <InputField
-                                isSelect
-                                isSearchable
-                                value={filterIndustry}
-                                options={industryOptions}
-                                onChange={(e) => {
-                                    setFilterIndustry(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tất cả"
-                            />
+                        <div className="px-3 relative">
+                            <select
+                                value={filters.businessIndustryId}
+                                onChange={(e) => handleFilterChange("businessIndustryId", e.target.value)}
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                            >
+                                <option value="">Ngành nghề</option>
+                                {industryOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
-                        <div className="px-3">
-                            <InputField
-                                value={filterWard}
-                                onChange={(e) => {
-                                    setFilterWard(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tìm phường/xã..."
-                            />
+                        <div className="px-3 relative">
+                            <select
+                                value={filters.registeredWard}
+                                onChange={(e) => handleFilterChange("registeredWard", e.target.value)}
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                            >
+                                <option value="">Phường/Xã</option>
+                                {wardOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
-                        <div className="px-3">
-                            <InputField
-                                isSelect
-                                value={filterStatus}
-                                options={[
-                                    { label: "Sử dụng", value: "active" },
-                                    { label: "Ngừng sử dụng", value: "inactive" },
-                                ]}
-                                onChange={(e) => {
-                                    setFilterStatus(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                placeholder="Tất cả"
-                            />
+                        <div className="px-3 relative">
+                            <select
+                                value={filters.status}
+                                onChange={(e) => handleFilterChange("status", e.target.value)}
+                                className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
+                            >
+                                <option value="">Trạng thái</option>
+                                <option value="active">Sử dụng</option>
+                                <option value="inactive">Ngừng sử dụng</option>
+                            </select>
+                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
                     </div>
                 </div>
@@ -264,31 +340,31 @@ export default function BusinessManagementsPage() {
                     ) : (
                         <>
                             {data.map((item) => (
-                                <div key={item.id} className={`grid ${GRID_COLS} border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-sm text-gray-700`}>
-                                    <div className="flex items-center justify-center py-2.5">
-                                        <input type="checkbox" className={`w-3.5 h-3.5 accent-primary cursor-pointer`} checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-sm text-gray-700 items-center px-4 py-2.5" style={GRID_STYLE}>
+                                    <div className="flex items-center justify-center">
+                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
                                     </div>
 
-                                    <div className="flex items-center gap-2 px-2 py-2.5">
-                                        <button type="button" onClick={() => handleView(item)} className="text-gray-400 hover:text-primary transition-colors" title="Xem chi tiết">
+                                    <div className="flex items-center gap-2 px-2">
+                                        <button type="button" onClick={() => handleView(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem chi tiết">
                                             <Eye size={16} />
                                         </button>
-                                        <button type="button" onClick={() => handleEdit(item)} className="text-gray-400 hover:text-primary transition-colors" title="Chỉnh sửa">
+                                        <button type="button" onClick={() => handleEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <Pencil size={16} />
                                         </button>
-                                        <button type="button" onClick={() => handleDelete(item.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Xóa">
-                                            <Trash2 size={16} />
+                                        <button type="button" onClick={() => handleOpenPasswordReset(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Đặt lại mật khẩu">
+                                            <Key size={16} />
                                         </button>
                                     </div>
 
-                                    <div className="flex items-center px-3 py-2.5 truncate">{item.businessName}</div>
-                                    <div className="flex items-center px-3 py-2.5">{item.taxCode}</div>
-                                    <div className="flex items-center px-3 py-2.5 truncate">{item.businessType}</div>
-                                    <div className="flex items-center px-3 py-2.5 truncate">{item.industry}</div>
-                                    <div className="flex items-center px-3 py-2.5 truncate">{item.registeredWard}</div>
+                                    <div className="flex items-center px-3 truncate">{item.businessName}</div>
+                                    <div className="flex items-center px-3">{item.taxCode}</div>
+                                    <div className="flex items-center px-3 truncate">{item.businessType}</div>
+                                    <div className="flex items-center px-3 truncate">{item.industry}</div>
+                                    <div className="flex items-center px-3 truncate">{item.registeredWard}</div>
 
-                                    <div className="flex items-center justify-center py-2.5">
-                                        <Switch checked={item.status} onChange={() => handleToggleStatus(item.id)} slotProps={{ input: { "aria-label": "controlled" } }} size="small" color="primary" />
+                                    <div className="flex items-center justify-center">
+                                        <ToggleSwitch checked={item.status} onChange={() => handleToggleStatus(item.id)} />
                                     </div>
                                 </div>
                             ))}
@@ -297,7 +373,7 @@ export default function BusinessManagementsPage() {
                     )}
                 </div>
 
-                <div className="shrink-0 flex items-center justify-end gap-4 px-5 py-3 border-t border-gray-200 text-sm text-gray-500">
+                <div className="shrink-0 flex items-center justify-end gap-4 px-5 py-3 border-t border-gray-200 text-xs text-gray-500 bg-white">
                     <div className="flex items-center gap-1.5">
                         <select
                             value={pageSize}
@@ -305,7 +381,7 @@ export default function BusinessManagementsPage() {
                                 setPageSize(Number(e.target.value));
                                 setCurrentPage(1);
                             }}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
+                            className="border border-gray-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
                         >
                             <option value={10}>10</option>
                             <option value={20}>20</option>
@@ -320,7 +396,7 @@ export default function BusinessManagementsPage() {
                             type="button"
                             disabled={currentPage <= 1}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         >
                             <ChevronLeft size={16} />
                         </button>
@@ -328,13 +404,32 @@ export default function BusinessManagementsPage() {
                             type="button"
                             disabled={currentPage >= totalPages}
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         >
                             <ChevronRight size={16} />
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Selection Banner */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
+                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-[40px]">{selectedIds.length}</div>
+                    <div className="px-4 text-xs font-semibold text-gray-700 select-none">dữ liệu được chọn</div>
+                    <div className="pr-3 flex items-center gap-3">
+                        <button type="button" onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors">
+                            <Trash2 className="size-3.5" />
+                            <span>Xoá</span>
+                        </button>
+                        <button type="button" onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer">
+                            <X className="size-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <CreatePasswordModal isOpen={isPasswordModalOpen} user={selectedEnterprise ? ({ username: selectedEnterprise.taxCode } as any) : null} onClose={() => setIsPasswordModalOpen(false)} onSave={handleSavePassword} />
+        </main>
     );
 }

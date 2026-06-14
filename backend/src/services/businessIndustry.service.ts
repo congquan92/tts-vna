@@ -53,7 +53,7 @@ export class BusinessIndustryService {
 
   async findAll(): Promise<BusinessIndustryListDto[]> {
     const items = await this.repo.findAll();
-    return items.map((i) => ({ code: i.code, name: i.name, level: i.level }));
+    return items.map((i) => ({ id: i.id, code: i.code, name: i.name, level: i.level }));
   }
 
   async findOne(idOrCode: string): Promise<BusinessIndustryResponseDto | null> {
