@@ -9,7 +9,7 @@ import { BusinessApi } from "@/api/business";
 import { BusinessFileApi } from "@/api/businessFile";
 import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
-import AccountInfoPopup from "@/components/popup/account-info-popup";
+import { getErrorMessage } from "@/utils/error-handle";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -193,9 +193,9 @@ export default function CreateBusinessPage() {
 
             toast.success("Khai báo thành công");
             router.push("/business-managements");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving business:", error);
-            toast.error("Có lỗi xảy ra khi lưu thông tin");
+            toast.error(getErrorMessage(error, "Có lỗi xảy ra khi lưu thông tin"));
         } finally {
             setSubmitting(false);
         }

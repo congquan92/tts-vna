@@ -5,6 +5,7 @@ import UserForm from "@/components/modals/UserModal";
 import { UserApi } from "@/api/user";
 import { toast } from "sonner";
 import type { CreateUserPayload } from "@/types/user";
+import { getErrorMessage } from "@/utils/error-handle";
 
 export default function CreateUserPage() {
     const router = useRouter();
@@ -19,8 +20,7 @@ export default function CreateUserPage() {
             router.push("/accounts-managements?newUserId=" + res.data.id);
         } catch (error: any) {
             console.error("Lỗi khi lưu người dùng:", error);
-            const message = error.response?.data?.message || "Không thể lưu người dùng";
-            toast.error(message);
+            toast.error(getErrorMessage(error, "Không thể lưu người dùng"));
             throw error;
         }
     };
