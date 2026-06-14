@@ -2,9 +2,10 @@ import { axiosInstance } from "@/lib/axios";
 import type { BusinessFile } from "@/types/businessFile";
 
 export const BusinessFileApi = {
-    upload: async (businessId: number, file: File): Promise<BusinessFile> => {
+    upload: async (businessId: number, file: File, fileType: string): Promise<BusinessFile> => {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("fileType", fileType);
         const res = await axiosInstance.post<BusinessFile>(`/business-files/${businessId}/upload`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",

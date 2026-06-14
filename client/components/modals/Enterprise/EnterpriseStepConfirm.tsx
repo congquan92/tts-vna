@@ -65,7 +65,9 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
     const businessAddr = [form.businessAddress, form.businessWard, form.businessProvince].filter(Boolean).join(", ");
 
     const handlePreview = (file: UploadedFile) => {
-        if (file.file?.type.startsWith("image/") && file.url) {
+        // If it's an image, show in modal preview
+        const isImage = file.file?.type.startsWith("image/") || file.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+        if (isImage && file.url) {
             setPreviewFile(file);
         } else if (file.url) {
             window.open(file.url, "_blank");

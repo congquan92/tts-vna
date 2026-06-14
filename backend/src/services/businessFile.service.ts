@@ -20,6 +20,7 @@ export class BusinessFileService {
     async uploadBusinessFile(
         businessId: number,
         file: Express.Multer.File,
+        fileType: BusinessFileType = BusinessFileType.OTHER,
     ) {
         const business = await this.businessRepository.findById(businessId);
 
@@ -34,10 +35,12 @@ export class BusinessFileService {
             'image/jpeg',
             'image/png',
             'image/webp',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
 
         if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new BadRequestException('Chỉ cho phép PDF, Word, hình ảnh');
+            throw new BadRequestException('Chỉ cho phép PDF, Word, Excel, hình ảnh');
         }
 
         return this.businessFileRepository.save({
@@ -47,7 +50,7 @@ export class BusinessFileService {
             filePath: `/uploads/business/${file.filename}`,
             fileSize: file.size,
             mimeType: file.mimetype,
-            fileType: BusinessFileType.OTHER,
+            fileType,
         });
     }
 

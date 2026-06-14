@@ -6,6 +6,7 @@ import {
   Param,
   Get,
   Delete,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BusinessFileService } from '../services/businessFile.service';
@@ -17,6 +18,7 @@ import {
   ApiBody,
   ApiOperation,
 } from '@nestjs/swagger';
+import { BusinessFileType } from '../entities/business-file.entity';
 
 @ApiTags('Business Files')
 @Controller('business-files')
@@ -44,14 +46,16 @@ export class BusinessFileController {
       type: 'object',
       properties: {
         file: { type: 'string', format: 'binary' },
+        fileType: { type: 'string', enum: Object.values(BusinessFileType) },
       },
     },
   })
   async upload(
     @Param('businessId') businessId: number,
     @UploadedFile() file: Express.Multer.File,
+    @Body('fileType') fileType: BusinessFileType,
   ) {
-    return this.businessFileService.uploadBusinessFile(businessId, file);
+    return this.businessFileService.uploadBusinessFile(businessId, file, fileType);
   }
 
   // GET LIST

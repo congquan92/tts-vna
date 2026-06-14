@@ -46,6 +46,7 @@ export type UploadedFile = {
     size: string;
     file?: File;
     url?: string;
+    mimeType?: string;
 };
 
 export type AttachmentGroup = {
@@ -139,7 +140,8 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
 
     const handlePreview = (file: UploadedFile) => {
         // If it's an image, show in modal preview
-        if (file.file?.type.startsWith("image/") && file.url) {
+        const isImage = file.file?.type.startsWith("image/") || file.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+        if (isImage && file.url) {
             setPreviewFile(file);
         } else if (file.url) {
             // For non-image files, open in a new browser tab

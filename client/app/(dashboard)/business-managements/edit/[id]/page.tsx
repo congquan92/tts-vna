@@ -6,6 +6,7 @@ import EnterpriseStepOne from "@/components/modals/Enterprise/EnterpriseStepOne"
 import EnterpriseStepConfirm from "@/components/modals/Enterprise/EnterpriseStepConfirm";
 import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, UploadedFile } from "@/components/modals/Enterprise/EnterpriseStepOne";
 import { BusinessApi } from "@/api/business";
+import { BusinessFileApi } from "@/api/businessFile";
 import type { Business } from "@/types/business";
 import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
@@ -91,6 +92,7 @@ export default function EditBusinessPage() {
     const [form, setForm] = useState<EnterpriseFormData>({ ...emptyForm });
     const [errors, setErrors] = useState<EnterpriseFormErrors>({ ...emptyErrors });
     const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(defaultAttachmentGroups.map((g) => ({ ...g, files: [] })));
+    const [deletedFileIds, setDeletedFileIds] = useState<number[]>([]);
     const nextFileIdRef = useRef(1);
 
     const [loading, setLoading] = useState(true);
@@ -105,9 +107,41 @@ export default function EditBusinessPage() {
                     router.push("/business-managements");
                     return;
                 }
-                const data = await BusinessApi.getById(id);
+
+                // Fetch business and its files
+                const [data, files] = await Promise.all([BusinessApi.getById(id), BusinessFileApi.getFiles(id)]);
+
                 setBusiness(data);
                 setForm(enterpriseToForm(data));
+
+                // Map files to groups correctly by fileType
+                if (files.length > 0) {
+                    const TYPE_TO_GROUP: Record<string, string> = {
+                        business_license: "Giấy phép kinh doanh",
+                        other: "Giấy tờ khác",
+                    };
+
+                    setAttachmentGroups((prev) =>
+                        prev.map((group) => {
+                            const matchingFile = files.find((f) => TYPE_TO_GROUP[f.fileType] === group.groupName);
+                            if (matchingFile) {
+                                return {
+                                    ...group,
+                                    files: [
+                                        {
+                                            id: matchingFile.id,
+                                            name: matchingFile.fileName,
+                                            size: formatFileSize(matchingFile.fileSize),
+                                            url: `${process.env.NEXT_PUBLIC_API_URL}${matchingFile.filePath}`,
+                                            mimeType: matchingFile.mimeType,
+                                        },
+                                    ],
+                                };
+                            }
+                            return group;
+                        }),
+                    );
+                }
             } catch (error) {
                 console.error("Error loading business:", error);
                 toast.error("Không thể tải thông tin doanh nghiệp");
@@ -210,6 +244,33 @@ export default function EditBusinessPage() {
             };
 
             await BusinessApi.update(business.id, payload);
+
+            // 1. Delete removed files from backend
+            if (deletedFileIds.length > 0) {
+                await Promise.all(deletedFileIds.map((id) => BusinessFileApi.deleteFile(id)));
+            }
+
+            // 2. Upload new files
+            const uploadPromises: Promise<unknown>[] = [];
+            const GROUP_TO_TYPE: Record<string, string> = {
+                "Giấy phép kinh doanh": "business_license",
+                "Giấy tờ khác": "other",
+            };
+
+            attachmentGroups.forEach((group) => {
+                group.files.forEach((uploadedFile) => {
+                    // Only upload if it's a new file (has the 'file' blob)
+                    if (uploadedFile.file) {
+                        const fileType = GROUP_TO_TYPE[group.groupName] || "other";
+                        uploadPromises.push(BusinessFileApi.upload(business.id, uploadedFile.file, fileType));
+                    }
+                });
+            });
+
+            if (uploadPromises.length > 0) {
+                await Promise.all(uploadPromises);
+            }
+
             toast.success("Cập nhật doanh nghiệp thành công");
             router.push("/business-managements");
         } catch (error) {
@@ -230,7 +291,14 @@ export default function EditBusinessPage() {
         // Clean up old object URLs for this group
         const currentGroup = attachmentGroups[groupIndex];
         currentGroup.files.forEach((f) => {
-            if (f.url) URL.revokeObjectURL(f.url);
+            if (f.url) {
+                if (f.url.startsWith("blob:")) {
+                    URL.revokeObjectURL(f.url);
+                } else {
+                    // Existing backend file - track for deletion
+                    setDeletedFileIds((prev) => [...prev, f.id]);
+                }
+            }
         });
 
         // Only take the first file
@@ -248,10 +316,18 @@ export default function EditBusinessPage() {
     };
 
     const handleRemoveFile = (groupIndex: number, fileId: number) => {
-        // Clean up object URL
+        // Clean up object URL and track for deletion
         const group = attachmentGroups[groupIndex];
         const fileToRemove = group.files.find((f) => f.id === fileId);
-        if (fileToRemove?.url) URL.revokeObjectURL(fileToRemove.url);
+
+        if (fileToRemove) {
+            if (fileToRemove.url?.startsWith("blob:")) {
+                URL.revokeObjectURL(fileToRemove.url);
+            } else {
+                // Existing file from backend - track ID to delete on save
+                setDeletedFileIds((prev) => [...prev, fileId]);
+            }
+        }
 
         setAttachmentGroups((prev) => prev.map((group, idx) => (idx === groupIndex ? { ...group, files: group.files.filter((f) => f.id !== fileId) } : group)));
     };

@@ -5,6 +5,7 @@ export interface BusinessFile {
     filePath: string;
     fileType: string;
     fileSize: number;
+    mimeType?: string;
     createdAt: string;
     updatedAt: string;
 }

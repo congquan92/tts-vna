@@ -6,6 +6,7 @@ import EnterpriseStepOne from "@/components/modals/Enterprise/EnterpriseStepOne"
 import EnterpriseStepConfirm from "@/components/modals/Enterprise/EnterpriseStepConfirm";
 import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, UploadedFile } from "@/components/modals/Enterprise/EnterpriseStepOne";
 import { BusinessApi } from "@/api/business";
+import { BusinessFileApi } from "@/api/businessFile";
 import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
 import AccountInfoPopup from "@/components/popup/account-info-popup";
@@ -135,7 +136,7 @@ export default function CreateBusinessPage() {
 
         setErrors(next);
         return valid;
-        };
+    };
 
     const handleNext = () => {
         if (validate()) {
@@ -168,12 +169,30 @@ export default function CreateBusinessPage() {
                 legalRepresentative: form.representative.trim() || undefined,
                 representativePhone: form.representativePhone.trim() || undefined,
             };
+            const business = await BusinessApi.create(payload);
 
-            await BusinessApi.create(payload);
-            // const info = generateAccountInfo(form.taxCode);
-            // setAccountInfo(info);
+            // Upload files
+            const uploadPromises: Promise<unknown>[] = [];
+            const GROUP_TO_TYPE: Record<string, string> = {
+                "Giấy phép kinh doanh": "business_license",
+                "Giấy tờ khác": "other",
+            };
+
+            attachmentGroups.forEach((group) => {
+                group.files.forEach((uploadedFile) => {
+                    if (uploadedFile.file) {
+                        const fileType = GROUP_TO_TYPE[group.groupName] || "other";
+                        uploadPromises.push(BusinessFileApi.upload(business.id, uploadedFile.file, fileType));
+                    }
+                });
+            });
+
+            if (uploadPromises.length > 0) {
+                await Promise.all(uploadPromises);
+            }
+
             toast.success("Khai báo thành công");
-            // setShowAccountPopup(true);
+            router.push("/business-managements");
         } catch (error) {
             console.error("Error saving business:", error);
             toast.error("Có lỗi xảy ra khi lưu thông tin");
