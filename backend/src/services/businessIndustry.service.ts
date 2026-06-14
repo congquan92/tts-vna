@@ -145,4 +145,10 @@ export class BusinessIndustryService {
   async searchBusinessIndustries(query: SearchBusinessIndustryDto) {
     return this.repo.search(query);
   }
+
+  async remove(idOrCode: string): Promise<void> {
+    const item = await this.repo.findByIdOrCode(idOrCode);
+    if (!item) throw new NotFoundException('BusinessIndustry not found');
+    await this.repo.delete(item.id);
+  }
 }

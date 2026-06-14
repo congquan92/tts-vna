@@ -38,4 +38,8 @@ export const BusinessIndustryApi = {
         const res = await axiosInstance.get<BusinessIndustry>(`/businessIndustries/${idOrCode}`);
         return res.data;
     },
+
+    delete: async (idOrCode: string | number): Promise<void> => {
+        await axiosInstance.delete(`/businessIndustries/${idOrCode}`);
+    },
 };

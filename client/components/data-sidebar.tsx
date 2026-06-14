@@ -19,6 +19,7 @@ export const menuData: SidebarMenuItem[] = [
         items: [
             { id: "users", label: "Quản lý người dùng", path: "/accounts-managements" },
             { id: "types-of-business", label: "Loại Hình Kinh Doanh", path: "/business-types" },
+            { id: "industries", label: "Ngành nghề kinh doanh", path: "/business-industries" },
             { id: "roles", label: "Quản lý doanh nghiệp", path: "/business-managements" },
             { id: "reports", label: "Kỳ báo cáo", path: "/reports" },
         ],
