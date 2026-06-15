@@ -103,6 +103,7 @@ export default function BusinessTypePopup({ isOpen, editingItem, onClose, onSave
                             { label: "Ngừng sử dụng", value: "false" },
                         ]}
                         onChange={(e) => setStatus(e.target.value)}
+                        disabled={!editingItem}
                     />
                 </div>
 

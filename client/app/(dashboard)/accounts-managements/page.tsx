@@ -211,7 +211,7 @@ const AccountPage = () => {
             if (failed > 0) {
                 const firstErrors = res.data.errors.slice(0, 3);
                 const errorMsg = firstErrors.map((err: any) => `• Dòng ${err.row}: ${err.errors.join(", ")}`).join("\n");
-                
+
                 toast.error(`Có ${failed}/${total} người dùng import thất bại`, {
                     description: (
                         <div className="flex flex-col gap-1 mt-1 text-[11px] leading-relaxed">
@@ -356,7 +356,7 @@ const AccountPage = () => {
                                 onChange={(e) => handleStatusChange(e.target.value)}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Trạng thái</option>
+                                <option value="">Tất cả</option>
                                 <option value="true">Hoạt động</option>
                                 <option value="false">Ngừng hoạt động</option>
                             </select>

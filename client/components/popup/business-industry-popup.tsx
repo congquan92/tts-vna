@@ -125,6 +125,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
                         ]}
                         onChange={(e) => setStatus(e.target.value)}
                         error={errors.status}
+                        disabled={!editingItem}
                     />
                 </div>
 
