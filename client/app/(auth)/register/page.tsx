@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { AuthApi } from "@/api/auth";
 import { validateStrongPassword } from "@/utils/validation";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type FormErrors = {
     username?: string;
@@ -92,6 +93,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-white py-10">
+            <LoadingOverlay isLoading={loading} />
             <div className="flex w-full max-w-[550px] flex-col items-center justify-center rounded-lg shadow-lg p-8">
                 {/* Logo  */}
                 <div className="mb-6 h-24 w-24">
@@ -150,6 +152,7 @@ export default function RegisterPage() {
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.role}
                             onChange={(e) => handleChange("role", e.target.value)}
+                            disabled={loading}
                         >
                             <option value="User">Người dùng</option>
                             <option value="Moderator">Người kiểm duyệt</option>
@@ -159,7 +162,7 @@ export default function RegisterPage() {
 
                     {/* Buttons */}
                     <div className="mt-6 flex flex-col gap-4">
-                        <Button variant="primary" type="submit" loading={loading}>
+                        <Button variant="primary" type="submit" disabled={loading}>
                             Đăng ký
                         </Button>
 

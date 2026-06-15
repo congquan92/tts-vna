@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { AuthApi } from "@/api/auth";
 import { toast } from "sonner";
 import { validateStrongPassword } from "@/utils/validation";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type Step = "email" | "otp" | "newPassword";
 type FormErrors = {
@@ -100,10 +101,6 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateEmail()) {
-            // setAlert({
-            //     type: "error",
-            //     message: "Vui lòng nhập đúng định dạng email",
-            // });
             toast.error("Vui lòng nhập đúng định dạng email");
             return;
         }
@@ -111,21 +108,12 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         try {
             await AuthApi.forgotPassword({ email });
-            // setAlert({
-            //     type: "success",
-            //     message: "Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP",
-            // });
             toast.success("Gửi email thành công! Vui lòng kiểm tra email để nhận mã OTP");
             setTimeout(() => {
                 setStep("otp");
                 setResendTimer(TIMERS.RESEND_OTP);
-                // setAlert(null);
             }, TIMERS.LOGIN_SUCCESS_DELAY);
         } catch (error: any) {
-            // setAlert({
-            //     type: "error",
-            //     message: error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra",
-            // });
             toast.error(error.response?.data?.message || "Email chưa đăng ký trong hệ thống hoặc có lỗi xảy ra");
         } finally {
             setLoading(false);
@@ -136,10 +124,6 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateOTP()) {
-            // setAlert({
-            //     type: "error",
-            //     message: "Vui lòng nhập đầy đủ thông tin",
-            // });
             toast.error("Vui lòng nhập đầy đủ thông tin");
             return;
         }
@@ -147,20 +131,11 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         try {
             await AuthApi.verifyOtp(email, otp);
-            // setAlert({
-            //     type: "success",
-            //     message: "Xác nhận OTP thành công!",
-            // });
             toast.success("Xác nhận OTP thành công!");
             setTimeout(() => {
                 setStep("newPassword");
-                // setAlert(null);
             }, TIMERS.OTP_VERIFY_DELAY);
         } catch (error: any) {
-            // setAlert({
-            // //     type: "error",
-            // //     message: error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn",
-            // });
             toast.error(error.response?.data?.message || "Mã OTP không chính xác hoặc đã hết hạn");
         } finally {
             setLoading(false);
@@ -173,18 +148,10 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         try {
             await AuthApi.forgotPassword({ email });
-            // setAlert({
-            //     type: "success",
-            //     message: "Gửi lại mã OTP thành công! Vui lòng kiểm tra email",
-            // });
             toast.success("Gửi lại mã OTP thành công! Vui lòng kiểm tra email");
             setOtp("");
             setResendTimer(TIMERS.RESEND_OTP);
         } catch (error: any) {
-            // setAlert({
-            //     type: "error",
-            //     message: error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau",
-            // });
             toast.error(error.response?.data?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau");
         } finally {
             setLoading(false);
@@ -201,10 +168,6 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
 
         if (!validateNewPassword()) {
-            // setAlert({
-            //     type: "error",
-            //     message: "Vui lòng nhập đầy đủ thông tin hợp lệ",
-            // });
             toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ");
             return;
         }
@@ -218,20 +181,12 @@ export default function ForgotPasswordPage() {
                 confirmNewPassword: confirmPassword,
             });
 
-            // setAlert({
-            //     type: "success",
-            //     message: "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới",
-            // });
             toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới");
 
             setTimeout(() => {
                 window.location.href = "/login";
             }, 2000);
         } catch (error: any) {
-            // setAlert({
-            //     type: "error",
-            //     message: error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau",
-            // });
             toast.error(error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau");
         } finally {
             setLoading(false);
@@ -240,6 +195,7 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center">
+            <LoadingOverlay isLoading={loading} />
             <div className="shadow-lg p-8 flex flex-col justify-center items-center rounded-2xl w-full max-w-md">
                 {/* logo */}
                 <div className="h-20 w-20">
@@ -248,9 +204,6 @@ export default function ForgotPasswordPage() {
 
                 {/* title */}
                 <h1 className="font-bold py-3 text-xl text-primary">QUÊN MẬT KHẨU</h1>
-
-                {/* alerts */}
-                {/* <div className="w-full mb-4">{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</div> */}
 
                 {/* Step 1: Email */}
                 {step === "email" && (
@@ -273,7 +226,7 @@ export default function ForgotPasswordPage() {
                             />
 
                             <div className="flex flex-col gap-2">
-                                <Button variant="primary" type="submit" loading={loading}>
+                                <Button variant="primary" type="submit" disabled={loading}>
                                     Gửi mã OTP
                                 </Button>
 
@@ -328,7 +281,7 @@ export default function ForgotPasswordPage() {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Button variant="primary" type="submit" loading={loading}>
+                                <Button variant="primary" type="submit" disabled={loading}>
                                     Xác nhận
                                 </Button>
                             </div>
@@ -379,7 +332,7 @@ export default function ForgotPasswordPage() {
                             />
 
                             <div className="flex flex-col gap-2">
-                                <Button variant="primary" type="submit" loading={loading}>
+                                <Button variant="primary" type="submit" disabled={loading}>
                                     Cập nhật mật khẩu
                                 </Button>
 

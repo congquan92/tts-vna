@@ -8,11 +8,10 @@ type ButtonProps = {
     type?: "button" | "submit" | "reset";
     className?: string;
     disabled?: boolean;
-    loading?: boolean;
     size?: "sm" | "md" | "lg";
 };
 
-export default function Button({ children, variant = "primary", onClick, type = "button", className, disabled = false, loading = false, size = "md" }: ButtonProps) {
+export default function Button({ children, variant = "primary", onClick, type = "button", className, disabled = false, size = "md" }: ButtonProps) {
     const style = clsx(
         "font-medium cursor-pointer rounded-lg text-center transition-all duration-200 flex items-center justify-center",
         {
@@ -26,14 +25,14 @@ export default function Button({ children, variant = "primary", onClick, type = 
             "py-4 px-6 text-lg": size === "lg",
 
             // State
-            "opacity-60 cursor-not-allowed": disabled || loading,
+            "opacity-60 cursor-not-allowed": disabled,
         },
         className,
     );
 
     return (
-        <button type={type} onClick={onClick} className={style} disabled={disabled || loading}>
-            {loading ? "Đang xử lý..." : children}
+        <button type={type} onClick={onClick} className={style} disabled={disabled}>
+            {children}
         </button>
     );
 }

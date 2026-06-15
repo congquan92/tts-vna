@@ -12,6 +12,7 @@ import { getRoleDisplayName } from "@/utils/display";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
 import { toast } from "sonner";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 interface Ward {
     ward_code: string;
@@ -254,14 +255,15 @@ const AccountPage = () => {
 
     return (
         <div className="space-y-5">
+            <LoadingOverlay isLoading={saving} />
             <TopHero
                 lable="Danh sách người dùng"
                 component={
                     <div className="flex gap-3 ">
-                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={handleCancel} disabled={saving}>
+                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={handleCancel}>
                             Hủy Bỏ
                         </Button>
-                        <Button variant="primary" size="sm" className="pl-2 font-bold " onClick={handleSave} loading={saving}>
+                        <Button variant="primary" size="sm" className="pl-2 font-bold " onClick={handleSave}>
                             <Save className="size-5 mr-2" /> Lưu
                         </Button>
                     </div>

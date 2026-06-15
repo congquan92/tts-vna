@@ -6,6 +6,7 @@ import { AuthApi } from "@/api/auth";
 import Button from "@/components/ui/Button";
 import { validateStrongPassword } from "@/utils/validation";
 import { toast } from "sonner";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -83,6 +84,7 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
     return (
         // backdrop-blur-sm
         <div className="fixed inset-0 z-9999 bg-black/40 flex items-center justify-center p-4 ">
+            <LoadingOverlay isLoading={loading} />
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-105 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="bg-[#2f6ced] py-4 text-center">
@@ -92,16 +94,16 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
                 {/* Form Body */}
                 <div className="p-6 flex flex-col gap-5">
                     <form onSubmit={handleSave} className="flex flex-col gap-6 text-black">
-                        <PasswordInput label="Mật khẩu cũ" required value={formData.oldPass} onChange={handleFieldChange("oldPass")} disabled={loading} />
-                        <PasswordInput label="Mật khẩu mới" required value={formData.newPass} onChange={handleFieldChange("newPass")} disabled={loading} />
-                        <PasswordInput label="Nhập lại mật khẩu mới" required value={formData.confirmPass} onChange={handleFieldChange("confirmPass")} disabled={loading} />
+                        <PasswordInput label="Mật khẩu cũ" required value={formData.oldPass} onChange={handleFieldChange("oldPass")} />
+                        <PasswordInput label="Mật khẩu mới" required value={formData.newPass} onChange={handleFieldChange("newPass")} />
+                        <PasswordInput label="Nhập lại mật khẩu mới" required value={formData.confirmPass} onChange={handleFieldChange("confirmPass")} />
 
                         {/* Footer Buttons */}
                         <div className="flex justify-end gap-3 items-center mt-2">
-                            <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="text-gray-500 border-none ">
+                            <Button variant="outline" size="sm" onClick={onClose} className="text-gray-500 border-none ">
                                 <strong>Huỷ bỏ</strong>
                             </Button>
-                            <Button variant="primary" size="sm" type="submit" loading={loading} className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
+                            <Button variant="primary" size="sm" type="submit" className="bg-[#2f6ced] text-white font-semibold text-[15px] px-10 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-md h-auto">
                                 Lưu
                             </Button>
                         </div>

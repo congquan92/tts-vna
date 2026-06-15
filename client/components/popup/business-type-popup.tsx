@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { InputField } from "@/components/form/InputField";
 import { BusinessStatus } from "@/types/typeOfBusiness";
 import type { TypeOfBusiness } from "@/types/typeOfBusiness";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type BusinessTypePopupProps = {
     isOpen: boolean;
@@ -18,8 +19,10 @@ export default function BusinessTypePopup({ isOpen, editingItem, onClose, onSave
     const [status, setStatus] = useState("true"); // "true" -> ACTIVE, "false" -> INACTIVE
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-    useEffect(() => {
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             if (editingItem) {
                 setCode(editingItem.code);
@@ -32,7 +35,7 @@ export default function BusinessTypePopup({ isOpen, editingItem, onClose, onSave
             }
             setErrors({});
         }
-    }, [isOpen, editingItem]);
+    }
 
     if (!isOpen) return null;
 
@@ -63,70 +66,71 @@ export default function BusinessTypePopup({ isOpen, editingItem, onClose, onSave
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-            <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
-                {/* Header */}
-                <div className="bg-blue-600 px-6 py-3.5 text-center">
-                    <h2 className="text-white text-[16px] font-bold tracking-wide">
-                        {editingItem ? "Chỉnh sửa loại hình kinh doanh" : "Thêm mới loại hình kinh doanh"}
-                    </h2>
-                </div>
+        <>
+            <LoadingOverlay isLoading={submitting} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
+                <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
+                    {/* Header */}
+                    <div className="bg-blue-600 px-6 py-3.5 text-center">
+                        <h2 className="text-white text-[16px] font-bold tracking-wide">
+                            {editingItem ? "Chỉnh sửa loại hình kinh doanh" : "Thêm mới loại hình kinh doanh"}
+                        </h2>
+                    </div>
 
-                {/* Form Fields */}
-                <div className="px-6 py-6 space-y-6">
-                    <InputField 
-                        name="code"
-                        label="Mã loại hình *" 
-                        value={code} 
-                        placeholder="Nhập mã loại hình" 
-                        onChange={(e) => setCode(e.target.value)}
-                        error={errors.code}
-                    />
+                    {/* Form Fields */}
+                    <div className="px-6 py-6 space-y-6">
+                        <InputField 
+                            name="code"
+                            label="Mã loại hình *" 
+                            value={code} 
+                            placeholder="Nhập mã loại hình" 
+                            onChange={(e) => setCode(e.target.value)}
+                            error={errors.code}
+                        />
 
-                    <InputField 
-                        name="name"
-                        label="Tên loại hình kinh doanh *" 
-                        value={name} 
-                        placeholder="Nhập tên loại hình kinh doanh" 
-                        onChange={(e) => setName(e.target.value)}
-                        error={errors.name}
-                    />
+                        <InputField 
+                            name="name"
+                            label="Tên loại hình kinh doanh *" 
+                            value={name} 
+                            placeholder="Nhập tên loại hình kinh doanh" 
+                            onChange={(e) => setName(e.target.value)}
+                            error={errors.name}
+                        />
 
-                    <InputField
-                        name="status"
-                        label="Trạng thái"
-                        value={status}
-                        isSelect
-                        placeholder="Chọn trạng thái"
-                        options={[
-                            { label: "Sử dụng", value: "true" },
-                            { label: "Ngừng sử dụng", value: "false" },
-                        ]}
-                        onChange={(e) => setStatus(e.target.value)}
-                        disabled={!editingItem}
-                    />
-                </div>
+                        <InputField
+                            name="status"
+                            label="Trạng thái"
+                            value={status}
+                            isSelect
+                            placeholder="Chọn trạng thái"
+                            options={[
+                                { label: "Sử dụng", value: "true" },
+                                { label: "Ngừng sử dụng", value: "false" },
+                            ]}
+                            onChange={(e) => setStatus(e.target.value)}
+                            disabled={!editingItem}
+                        />
+                    </div>
 
-                {/* Footer Buttons */}
-                <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-4">
-                    <button 
-                        type="button" 
-                        onClick={onClose} 
-                        className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer" 
-                        disabled={submitting}
-                    >
-                        Huỷ bỏ
-                    </button>
-                    <button 
-                        type="button" 
-                        onClick={handleSave} 
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center cursor-pointer min-w-[80px]" 
-                        disabled={submitting}
-                    >
-                        {submitting ? "Đang lưu..." : "Lưu"}
-                    </button>
+                    {/* Footer Buttons */}
+                    <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-4">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer" 
+                        >
+                            Huỷ bỏ
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={handleSave} 
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center cursor-pointer min-w-[80px]" 
+                        >
+                            Lưu
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

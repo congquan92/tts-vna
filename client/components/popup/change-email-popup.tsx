@@ -7,6 +7,7 @@ import axios, { AxiosError } from "axios";
 import Button from "@/components/ui/Button";
 import { InputField } from "@/components/form/InputField";
 import { toast } from "sonner";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 interface ChangeEmailPopupProps {
     open: boolean;
@@ -150,6 +151,7 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 },
             }}
         >
+            <LoadingOverlay isLoading={loading} />
             <Typography
                 variant="h6"
                 sx={{
@@ -197,7 +199,7 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                             </Typography>
                         </Box>
 
-                        <Button onClick={handleConfirmOtp} disabled={loading || !otp} loading={loading} className="w-full">
+                        <Button onClick={handleConfirmOtp} disabled={!otp} className="w-full">
                             Tiếp tục
                         </Button>
                     </Box>
@@ -206,10 +208,10 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                     <Box className="flex flex-col gap-4 rounded-none">
                         <div>Vui lòng nhập địa chỉ email mới</div>
 
-                        <InputField label="Email" type="email" placeholder="Nhập email mới" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} disabled={loading} />
+                        <InputField label="Email" type="email" placeholder="Nhập email mới" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
 
                         <Box className="flex flex-col gap-3 mt-2">
-                            <Button onClick={handleSaveEmail} disabled={loading || !newEmail} loading={loading} className="w-full">
+                            <Button onClick={handleSaveEmail} disabled={!newEmail} className="w-full">
                                 Lưu thay đổi
                             </Button>
                         </Box>
@@ -217,7 +219,7 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 )}
 
                 {/* NÚT HỦY  */}
-                <Button variant="outline" onClick={handleClose} disabled={loading} className="w-full border-none text-gray-500 hover:text-gray-700 mt-2">
+                <Button variant="outline" onClick={handleClose} className="w-full border-none text-gray-500 hover:text-gray-700 mt-2">
                     <strong>Hủy bỏ</strong>
                 </Button>
             </DialogContent>

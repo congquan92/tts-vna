@@ -9,6 +9,7 @@ import { Camera, Save, Calendar } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/utils/display";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 interface Ward {
     ward_code: string;
@@ -276,14 +277,15 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
     return (
         <div className="space-y-5 pb-10">
+            <LoadingOverlay isLoading={submitting} />
             <TopHero
                 lable={editingItem ? "Chi tiết người dùng" : "Thêm mới người dùng"}
                 component={
                     <div className="flex gap-3">
-                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={onClose} disabled={submitting}>
+                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={onClose}>
                             Hủy Bỏ
                         </Button>
-                        <Button variant="primary" size="sm" className="pl-2 font-bold" onClick={handleSave} loading={submitting}>
+                        <Button variant="primary" size="sm" className="pl-2 font-bold" onClick={handleSave}>
                             <Save className="size-5 mr-2" /> Lưu
                         </Button>
                     </div>

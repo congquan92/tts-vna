@@ -10,6 +10,7 @@ import { BusinessFileApi } from "@/api/businessFile";
 import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
 import { getErrorMessage } from "@/utils/error-handle";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -310,6 +311,7 @@ export default function CreateBusinessPage() {
 
     return (
         <div className="h-screen flex flex-col">
+            <LoadingOverlay isLoading={submitting} />
             {/* Main content */}
             <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
                 {/* Stepper */}
@@ -355,12 +357,12 @@ export default function CreateBusinessPage() {
                     )}
                     {currentStep === 2 && (
                         <>
-                            <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer" disabled={submitting}>
+                            <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
                                 Trở về
                             </button>
-                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer" disabled={submitting}>
+                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
                                 <Check size={14} />
-                                {submitting ? "Đang xử lý..." : "Xác nhận"}
+                                Xác nhận
                             </button>
                         </>
                     )}
