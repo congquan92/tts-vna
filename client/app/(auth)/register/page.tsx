@@ -10,6 +10,7 @@ import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { AuthApi } from "@/api/auth";
+import { validateStrongPassword } from "@/utils/validation";
 
 type FormErrors = {
     username?: string;
@@ -36,8 +37,11 @@ export default function RegisterPage() {
         const newErrors: FormErrors = {};
 
         if (!formData.username.trim()) newErrors.username = "Vui lòng nhập tên đăng nhập";
-        if (!formData.password.trim()) newErrors.password = "Vui lòng nhập mật khẩu";
-        else if (formData.password.length < 6) newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        
+        const passwordValidation = validateStrongPassword(formData.password);
+        if (!passwordValidation.isValid) {
+            newErrors.password = passwordValidation.message;
+        }
         
         if (!formData.fullName.trim()) newErrors.fullName = "Vui lòng nhập họ và tên";
         if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
