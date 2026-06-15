@@ -316,7 +316,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                     isSelect
                                     placeholder="Chọn vai trò"
                                     options={[
-                                        { label: "Quản trị viên", value: "1" },
+                                        { label: "Quản trị viên Sở", value: "1" },
                                         { label: "Lãnh đạo Sở", value: "2" },
                                         { label: "Chuyên viên", value: "3" },
                                         { label: "Giám đốc Doanh nghiệp", value: "4" },
@@ -364,7 +364,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                     isSelect
                                     placeholder="Chọn vai trò"
                                     options={[
-                                        { label: "Quản trị viên", value: "1" },
+                                        { label: "Quản trị viên Sở", value: "1" },
                                         { label: "Lãnh đạo Sở", value: "2" },
                                         { label: "Chuyên viên", value: "3" },
                                         { label: "Giám đốc Doanh nghiệp", value: "4" },

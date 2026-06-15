@@ -11,28 +11,8 @@ import CreatePasswordModal from "@/components/popup/create-password";
 import { toast } from "sonner";
 import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
-
-const GRID_COLS = "grid-cols-[40px_45px_45px_1.5fr_1fr_2fr_1.5fr_1.5fr_100px]";
-
-const getRoleDisplayName = (roleName?: string) => {
-    if (!roleName) return "-";
-    switch (roleName) {
-        case "ADMIN_SO":
-            return "Quản trị viên Sở";
-        case "MANAGER_SO":
-            return "Lãnh đạo Sở";
-        case "CHUYENVIEN_SO":
-            return "Chuyên viên";
-        case "CEO_DN":
-            return "Giám đốc Doanh nghiệp";
-        case "MANAGER_DN":
-            return "Quản lý Doanh nghiệp";
-        case "USER_DN":
-            return "Nhân viên Doanh nghiệp";
-        default:
-            return roleName;
-    }
-};
+import axios from "axios";
+import { getRoleDisplayName } from "@/utils/display";
 
 const AccountPage = () => {
     const router = useRouter();
@@ -79,12 +59,11 @@ const AccountPage = () => {
 
                 if (result.data) {
                     setUsers(result.data);
-                    const meta = (result as any).meta || { total: result.total, page: result.page, limit: result.limit };
                     setPagination((prev) => ({
                         ...prev,
                         page,
                         pageSize: limit,
-                        total: meta.total || result.total || 0,
+                        total: result.total || 0,
                     }));
 
                     // Check if we need to show password modal for a newly created user
@@ -121,7 +100,10 @@ const AccountPage = () => {
 
     // Load data on mount
     useEffect(() => {
-        fetchUsers(1);
+        const loadInitialData = async () => {
+            await fetchUsers(1);
+        };
+        loadInitialData();
     }, [fetchUsers]);
 
     // Filter handlers
@@ -148,7 +130,6 @@ const AccountPage = () => {
                             return {
                                 ...u,
                                 isActive: newIsActive,
-                                status: newIsActive ? "Active" : "Inactive",
                             };
                         }
                         return u;
@@ -187,7 +168,10 @@ const AccountPage = () => {
             setIsSetPasswordModalOpen(false);
         } catch (error: unknown) {
             console.error("Lỗi khi đặt lại mật khẩu:", error);
-            const message = (error as any)?.response?.data?.message || "Không thể đặt lại mật khẩu";
+            let message = "Không thể đặt lại mật khẩu";
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                message = error.response.data.message;
+            }
             toast.error(message);
             throw error;
         }
@@ -221,7 +205,10 @@ const AccountPage = () => {
             fetchUsers(1);
         } catch (error: unknown) {
             console.error("Lỗi khi import dữ liệu:", error);
-            const message = (error as any)?.response?.data?.message || "Không thể import dữ liệu";
+            let message = "Không thể import dữ liệu";
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                message = error.response.data.message;
+            }
             toast.error(message);
         } finally {
             toast.dismiss(loadingToast);
@@ -321,12 +308,12 @@ const AccountPage = () => {
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
                                 <option value="">Vai trò</option>
-                                <option value="1">ADMIN_SO</option>
-                                <option value="2">MANAGER_SO</option>
-                                <option value="3">CHUYENVIEN_SO</option>
-                                <option value="4">CEO_DN</option>
-                                <option value="5">MANAGER_DN</option>
-                                <option value="6">USER_DN</option>
+                                <option value="1">Quản trị viên Sở</option>
+                                <option value="2">Lãnh đạo Sở</option>
+                                <option value="3">Chuyên viên</option>
+                                <option value="4">Giám đốc Doanh nghiệp</option>
+                                <option value="5">Quản lý Doanh nghiệp</option>
+                                <option value="6">Nhân viên Doanh nghiệp</option>
                             </select>
                             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
@@ -360,7 +347,11 @@ const AccountPage = () => {
                     ) : (
                         <>
                             {users.map((user) => (
-                                <div key={user.id} className="grid gap-3 px-4 py-2.5 hover:bg-blue-50/20 border-b border-gray-100 items-center text-xs text-gray-700 transition-colors" style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}>
+                                <div
+                                    key={user.id}
+                                    className="grid gap-3 px-4 py-2.5 hover:bg-blue-50/20 border-b border-gray-100 items-center text-xs text-gray-700 transition-colors"
+                                    style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}
+                                >
                                     <div className="flex items-center justify-center">
                                         <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => handleSelectOne(user.id)} className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" />
                                     </div>
@@ -380,7 +371,7 @@ const AccountPage = () => {
                                     <div className="truncate">{getRoleDisplayName((user as any).role)}</div>
                                     <div className="truncate">{user.position || "-"}</div>
                                     <div className="flex items-center">
-                                        <ToggleSwitch checked={user.isActive ?? (user as any).status === "Active"} onChange={() => handleToggleStatus(user.id)} />
+                                        <ToggleSwitch checked={user.isActive ?? false} onChange={() => handleToggleStatus(user.id)} />
                                     </div>
                                 </div>
                             ))}

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import { getRoleDisplayName } from "@/utils/display";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -334,7 +335,7 @@ const AccountPage = () => {
                         />
 
                         <InputField name="position" label="Chức danh" value={formData.position || ""} placeholder="Nhập chức danh" onChange={handleChange} />
-                        <InputField label="Vai trò *" value={profile?.account?.role?.name || "User"} isSelect readOnly />
+                        <InputField label="Vai trò *" value={getRoleDisplayName(profile?.account?.role?.name) || "User"} isSelect readOnly />
                     </div>
 
                     <div className="flex items-center gap-4 mb-8 w-full md:w-[calc(50%-10px)]">
