@@ -24,7 +24,7 @@ export class CreateBusinessDto {
     @IsNotEmpty({
         message: 'Mã số thuế không được để trống',
     })
-    @Matches(/^[0-9]{10,13}$/, {
+    @Matches(/^(\d{10})$|^(\d{10}-\d{3})$/, {
         message: 'Mã số thuế không hợp lệ',
     })
     taxCode!: string;

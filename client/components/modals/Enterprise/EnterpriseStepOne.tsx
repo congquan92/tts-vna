@@ -36,8 +36,16 @@ export type EnterpriseFormErrors = {
     industry: string;
     gpkdProvince: string;
     gpkdWard: string;
+    address: string;
+    foreignName: string;
     email: string;
     gpkdDate: string;
+    phone: string;
+    businessProvince: string;
+    businessWard: string;
+    businessAddress: string;
+    representative: string;
+    representativePhone: string;
 };
 
 export type UploadedFile = {
@@ -90,7 +98,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
     useEffect(() => {
         const fetchOptions = async () => {
             try {
-                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll(), fetch("/address.json")]);
+                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findLevel4(), fetch("/address.json")]);
                 setBusinessTypes(types.filter((t) => t.status));
                 setIndustries(inds);
 
@@ -122,8 +130,8 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
     // In edit mode, tax code is always read-only
     const isTaxCodeDisabled = isViewMode || isEditMode;
 
-    // In edit mode, email is only editable when userRole === 'SỞ'
-    const isEmailDisabled = isViewMode || (isEditMode && userRole !== "SỞ");
+    // In edit mode, email is now editable
+    const isEmailDisabled = isViewMode;
 
     const handleUploadClick = (groupIndex: number) => {
         if (isViewMode) return;
@@ -181,11 +189,12 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                     <h3 className="text-[17px] font-bold text-gray-950 mb-4">{sectionTitle}</h3>
                     <div className="grid grid-cols-3 gap-4">
-                        <InputField label="Tên doanh nghiệp" value={form.companyName} onChange={(e) => onChange("companyName", e.target.value)} placeholder="Nhập tên doanh nghiệp" disabled={isViewMode} error={errors.companyName} />
-                        <InputField label="Mã số thuế" value={form.taxCode} onChange={(e) => handleTaxCodeChange(e.target.value)} placeholder="VD: 0123456789 hoặc 0123456789-001" disabled={isTaxCodeDisabled} error={errors.taxCode} />
+                        <InputField label="Tên doanh nghiệp *" value={form.companyName} onChange={(e) => onChange("companyName", e.target.value)} placeholder="Nhập tên doanh nghiệp" disabled={isViewMode} error={errors.companyName} />
+                        <InputField label="Mã số thuế *" value={form.taxCode} onChange={(e) => handleTaxCodeChange(e.target.value)} placeholder="VD: 0123456789 hoặc 0123456789-001" disabled={isTaxCodeDisabled} error={errors.taxCode} />
                         <InputField
-                            label="Loại hình kinh doanh"
+                            label="Loại hình kinh doanh *"
                             isSelect
+                            isSearchable
                             value={form.businessType}
                             onChange={(e) => onChange("businessType", e.target.value)}
                             options={businessTypes.map((bt) => ({
@@ -200,8 +209,9 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
 
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <InputField
-                            label="Ngành nghề kinh doanh chính"
+                            label="Ngành nghề kinh doanh chính *"
                             isSelect
+                            isSearchable
                             value={form.industry}
                             onChange={(e) => onChange("industry", e.target.value)}
                             options={industries.map((ind) => ({
@@ -216,8 +226,9 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                         <InputField label="Ngày cấp GPKD *" type="date" value={form.gpkdDate} onChange={(e) => onChange("gpkdDate", e.target.value)} placeholder="Chọn ngày" icon={Calendar} disabled={isViewMode} max={today} error={errors.gpkdDate} />
 
                         <InputField
-                            label="Tỉnh/Thành phố ĐKKD"
+                            label="Tỉnh/Thành phố ĐKKD *"
                             isSelect
+                            isSearchable
                             value={form.gpkdProvince}
                             onChange={(e) => handleProvinceChange("gpkdProvince", e.target.value)}
                             options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
@@ -229,8 +240,9 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
 
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <InputField
-                            label="Phường/Xã ĐKKD"
+                            label="Phường/Xã ĐKKD *"
                             isSelect
+                            isSearchable
                             value={form.gpkdWard}
                             onChange={(e) => onChange("gpkdWard", e.target.value)}
                             options={availableGpkdWards}
@@ -239,7 +251,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                             placeholder="Chọn phường/xã"
                         />
                         <div className="col-span-2">
-                            <InputField label="Địa chỉ" value={form.address} onChange={(e) => onChange("address", e.target.value)} placeholder="Nhập địa chỉ" disabled={isViewMode} />
+                            <InputField label="Địa chỉ *" value={form.address} onChange={(e) => onChange("address", e.target.value)} placeholder="Nhập địa chỉ" disabled={isViewMode} error={errors.address} />
                         </div>
                     </div>
                 </div>
@@ -249,34 +261,59 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                     <div>
                         <h3 className="text-[17px] font-bold text-gray-950 mb-4">Thông tin liên hệ</h3>
                         <div className="grid grid-cols-3 gap-4">
-                            <InputField label="Tên viết bằng tiếng nước ngoài" value={form.foreignName} onChange={(e) => onChange("foreignName", e.target.value)} placeholder="Tên viết bằng tiếng nước ngoài" disabled={isViewMode} />
-                            <InputField label="Email" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Nhập email" disabled={isEmailDisabled} error={errors.email} />
-                            <InputField label="Số điện thoại cơ quan" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Số điện thoại cơ quan" disabled={isViewMode} />
+                            <InputField
+                                label="Tên viết bằng tiếng nước ngoài *"
+                                value={form.foreignName}
+                                onChange={(e) => onChange("foreignName", e.target.value)}
+                                placeholder="Tên viết bằng tiếng nước ngoài"
+                                disabled={isViewMode}
+                                error={errors.foreignName}
+                            />
+                            <InputField label="Email *" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Nhập email" disabled={isEmailDisabled} error={errors.email} />
+                            <InputField label="Số điện thoại cơ quan *" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Số điện thoại cơ quan" disabled={isViewMode} error={errors.phone} />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
                             <InputField
-                                label="Tỉnh/TP hoạt động KD"
+                                label="Tỉnh/TP hoạt động KD *"
                                 isSelect
+                                isSearchable
                                 value={form.businessProvince}
                                 onChange={(e) => handleProvinceChange("businessProvince", e.target.value)}
                                 options={provincesData.map((p) => ({ label: p.name, value: p.name }))}
                                 disabled={isViewMode}
                                 placeholder="Chọn tỉnh/TP"
+                                error={errors.businessProvince}
                             />
                             <InputField
-                                label="Phường/Xã hoạt động KD"
+                                label="Phường/Xã hoạt động KD *"
                                 isSelect
+                                isSearchable
                                 value={form.businessWard}
                                 onChange={(e) => onChange("businessWard", e.target.value)}
                                 options={availableBusinessWards}
                                 disabled={isViewMode || !form.businessProvince}
                                 placeholder="Chọn phường/xã"
+                                error={errors.businessWard}
                             />
-                            <InputField label="Địa điểm kinh doanh" value={form.businessAddress} onChange={(e) => onChange("businessAddress", e.target.value)} placeholder="Địa điểm kinh doanh" disabled={isViewMode} />
+                            <InputField label="Địa điểm kinh doanh *" value={form.businessAddress} onChange={(e) => onChange("businessAddress", e.target.value)} placeholder="Địa điểm kinh doanh" disabled={isViewMode} error={errors.businessAddress} />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
-                            <InputField label="Người đứng đầu doanh nghiệp" value={form.representative} onChange={(e) => onChange("representative", e.target.value)} placeholder="Người đứng đầu doanh nghiệp" disabled={isViewMode} />
-                            <InputField label="SĐT liên hệ người đứng đầu" value={form.representativePhone} onChange={(e) => onChange("representativePhone", e.target.value)} placeholder="SĐT liên hệ người đứng đầu" disabled={isViewMode} />
+                            <InputField
+                                label="Người đứng đầu doanh nghiệp *"
+                                value={form.representative}
+                                onChange={(e) => onChange("representative", e.target.value)}
+                                placeholder="Người đứng đầu doanh nghiệp"
+                                disabled={isViewMode}
+                                error={errors.representative}
+                            />
+                            <InputField
+                                label="SĐT liên hệ người đứng đầu *"
+                                value={form.representativePhone}
+                                onChange={(e) => onChange("representativePhone", e.target.value)}
+                                placeholder="SĐT liên hệ người đứng đầu"
+                                disabled={isViewMode}
+                                error={errors.representativePhone}
+                            />
                             <div />
                         </div>
                     </div>
@@ -324,7 +361,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                                 type="file"
                                                 className="hidden"
                                                 onChange={(e) => handleFileChange(groupIdx, e)}
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                                                accept=".pdf,.doc,.docx,image/*"
                                             />
                                         </div>
                                     </div>

@@ -19,7 +19,7 @@ import AccountInfoPopup from "@/components/popup/account-info-popup";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
-const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 150px 200px 200px 100px" };
+const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 140px 150px 200px 200px 110px" };
 
 interface ApiBusiness extends Business {
     typeOfBusiness?: { name: string } | string;
@@ -137,7 +137,7 @@ export default function BusinessManagementsPage() {
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll(), fetch("/address.json")]);
+                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findLevel4(), fetch("/address.json")]);
                 setBusinessTypes(types);
                 setIndustries(inds);
 
@@ -315,7 +315,7 @@ export default function BusinessManagementsPage() {
                                 onChange={(e) => handleFilterChange("typeOfBusinessId", e.target.value)}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Loại hình</option>
+                                <option value="">Tất cả</option>
                                 {businessTypeOptions.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
                                         {opt.label}
@@ -330,7 +330,7 @@ export default function BusinessManagementsPage() {
                                 onChange={(e) => handleFilterChange("businessIndustryId", e.target.value)}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Ngành nghề</option>
+                                <option value="">Tất cả</option>
                                 {industryOptions.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
                                         {opt.label}
@@ -399,7 +399,7 @@ export default function BusinessManagementsPage() {
                                 onChange={(e) => handleFilterChange("status", e.target.value)}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Trạng thái</option>
+                                <option value="">Tất cả</option>
                                 <option value="active">Sử dụng</option>
                                 <option value="inactive">Ngừng sử dụng</option>
                             </select>
@@ -495,12 +495,7 @@ export default function BusinessManagementsPage() {
                 onSave={handleSavePassword}
             />
 
-            <AccountInfoPopup
-                isOpen={isAccountInfoOpen}
-                onClose={() => setIsAccountInfoOpen(false)}
-                accountNumber={selectedAccountDetails?.accountNumber || ""}
-                password={selectedAccountDetails?.password}
-            />
+            <AccountInfoPopup isOpen={isAccountInfoOpen} onClose={() => setIsAccountInfoOpen(false)} accountNumber={selectedAccountDetails?.accountNumber || ""} password={selectedAccountDetails?.password} />
         </main>
     );
 }

@@ -37,8 +37,16 @@ const emptyErrors: EnterpriseFormErrors = {
     industry: "",
     gpkdProvince: "",
     gpkdWard: "",
+    address: "",
+    foreignName: "",
     email: "",
     gpkdDate: "",
+    phone: "",
+    businessProvince: "",
+    businessWard: "",
+    businessAddress: "",
+    representative: "",
+    representativePhone: "",
 };
 
 const defaultAttachmentGroups: AttachmentGroup[] = [
@@ -60,6 +68,9 @@ function formatFileSize(bytes: number): string {
 //         password: "123456",
 //     };
 // }
+
+const PHONE_REGEX = /^[0-9]{8,15}$/;
+const MOBILE_REGEX = /^[0-9]{10,11}$/;
 
 export default function CreateBusinessPage() {
     const router = useRouter();
@@ -84,6 +95,7 @@ export default function CreateBusinessPage() {
         const next: EnterpriseFormErrors = { ...emptyErrors };
         let valid = true;
 
+        // --- Section: Thông tin doanh nghiệp ---
         if (!form.companyName.trim()) {
             next.companyName = "Tên doanh nghiệp là bắt buộc";
             valid = false;
@@ -113,11 +125,8 @@ export default function CreateBusinessPage() {
             next.gpkdWard = "Phường/Xã ĐKKD là bắt buộc";
             valid = false;
         }
-        if (!form.email.trim()) {
-            next.email = "Email là bắt buộc";
-            valid = false;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-            next.email = "Email không hợp lệ";
+        if (!form.address.trim()) {
+            next.address = "Địa chỉ ĐKKD là bắt buộc";
             valid = false;
         }
 
@@ -132,6 +141,57 @@ export default function CreateBusinessPage() {
                 next.gpkdDate = "Ngày cấp GPKD không được là ngày trong tương lai";
                 valid = false;
             }
+        }
+
+        // --- Section: Thông tin liên hệ ---
+        if (!form.foreignName.trim()) {
+            next.foreignName = "Tên viết bằng tiếng nước ngoài là bắt buộc";
+            valid = false;
+        } else if (form.foreignName.trim().length > 255) {
+            next.foreignName = "Tên tiếng nước ngoài tối đa 255 ký tự";
+            valid = false;
+        }
+
+        if (!form.email.trim()) {
+            next.email = "Email là bắt buộc";
+            valid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+            next.email = "Email không hợp lệ";
+            valid = false;
+        }
+
+        if (!form.phone.trim()) {
+            next.phone = "Số điện thoại cơ quan là bắt buộc";
+            valid = false;
+        } else if (!PHONE_REGEX.test(form.phone.trim())) {
+            next.phone = "Số điện thoại cơ quan không hợp lệ (8-15 chữ số)";
+            valid = false;
+        }
+
+        if (!form.businessProvince) {
+            next.businessProvince = "Tỉnh/TP hoạt động là bắt buộc";
+            valid = false;
+        }
+        if (!form.businessWard) {
+            next.businessWard = "Phường/Xã hoạt động là bắt buộc";
+            valid = false;
+        }
+        if (!form.businessAddress.trim()) {
+            next.businessAddress = "Địa điểm kinh doanh là bắt buộc";
+            valid = false;
+        }
+
+        if (!form.representative.trim()) {
+            next.representative = "Người đứng đầu là bắt buộc";
+            valid = false;
+        }
+
+        if (!form.representativePhone.trim()) {
+            next.representativePhone = "SĐT người đứng đầu là bắt buộc";
+            valid = false;
+        } else if (!MOBILE_REGEX.test(form.representativePhone.trim())) {
+            next.representativePhone = "SĐT không hợp lệ (10-11 chữ số)";
+            valid = false;
         }
 
         setErrors(next);

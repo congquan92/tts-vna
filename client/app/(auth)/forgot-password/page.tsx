@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { AuthApi } from "@/api/auth";
 import { toast } from "sonner";
+import { validateStrongPassword } from "@/utils/validation";
 
 type Step = "email" | "otp" | "newPassword";
 type FormErrors = {
@@ -80,10 +81,9 @@ export default function ForgotPasswordPage() {
     const validateNewPassword = () => {
         const newErrors: FormErrors = {};
 
-        if (!newPassword.trim()) {
-            newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
-        } else if (newPassword.length < PASSWORD_CONSTRAINTS.MIN_LENGTH) {
-            newErrors.newPassword = `Mật khẩu phải có ít nhất ${PASSWORD_CONSTRAINTS.MIN_LENGTH} ký tự`;
+        const passwordValidation = validateStrongPassword(newPassword);
+        if (!passwordValidation.isValid) {
+            newErrors.newPassword = passwordValidation.message;
         }
 
         if (!confirmPassword.trim()) {

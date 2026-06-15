@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { User } from "@/types/auth";
 import { Save } from "lucide-react"; // Đổi icon thành Save (đĩa mềm)
+import { validateStrongPassword } from "@/utils/validation";
 
 type CreatePasswordModalProps = {
     isOpen: boolean;
@@ -27,10 +28,9 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
 
     const validate = () => {
         const nextErrors: Record<string, string> = {};
-        if (!password) {
-            nextErrors.password = "Mật khẩu mới là bắt buộc";
-        } else if (password.length < 6) {
-            nextErrors.password = "Mật khẩu phải chứa ít nhất 6 ký tự";
+        const passwordValidation = validateStrongPassword(password);
+        if (!passwordValidation.isValid) {
+            nextErrors.password = passwordValidation.message;
         }
 
         setErrors(nextErrors);

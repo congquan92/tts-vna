@@ -51,6 +51,7 @@ export class UserRepository {
                 username: account?.username,
                 role: account?.role?.name,
                 position: user.position,
+                isActive: user.isActive,
                 status: user.isActive ? 'Active' : 'Inactive',
             };
         });
@@ -142,6 +143,7 @@ export class UserRepository {
                     email: user.email,
                     role: acc?.role?.name ?? '',
                     position: user.position ?? '',
+                    isActive: user.isActive,
                     status: user.isActive ? 'Active' : 'Inactive',
                 };
             });

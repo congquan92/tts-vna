@@ -7,6 +7,7 @@ import { BusinessIndustryApi } from "@/api/businessIndustry";
 import type { BusinessIndustry } from "@/types/businessIndustry";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
+import axios from "axios";
 import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 
 export default function BusinessIndustriesPage() {
@@ -86,8 +87,12 @@ export default function BusinessIndustriesPage() {
             }
             fetchData();
             closeModal();
-        } catch (error) {
-            toast.error("Có lỗi xảy ra khi lưu");
+        } catch (error: any) {
+            if (axios.isAxiosError(error) && error.response?.status === 409) {
+                toast.error("Mã đã được sử dụng. Vui lòng nhập mã khác");
+            } else {
+                toast.error("Có lỗi xảy ra khi lưu");
+            }
             throw error;
         }
     };

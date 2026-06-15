@@ -8,6 +8,7 @@ import { TypeOfBusinessApi } from "@/api/typeOfBusiness";
 import { TypeOfBusiness, BusinessStatus } from "@/types/typeOfBusiness";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
+import axios from "axios";
 import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, ChevronDown, Trash2, X } from "lucide-react";
 
 const GRID_COLS = "grid-cols-[40px_40px_120px_1fr_140px]";
@@ -84,8 +85,12 @@ export default function BusinessTypesPage() {
             }
             fetchData();
             closeModal();
-        } catch (error) {
-            toast.error("Có lỗi xảy ra khi lưu");
+        } catch (error: any) {
+            if (axios.isAxiosError(error) && error.response?.status === 409) {
+                toast.error("Mã đã được sử dụng. Vui lòng nhập mã khác");
+            } else {
+                toast.error("Có lỗi xảy ra khi lưu");
+            }
             throw error;
         }
     };

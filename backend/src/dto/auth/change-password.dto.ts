@@ -12,16 +12,16 @@ export class ChangePasswordDto {
   oldPass!: string;
 
   @ApiProperty({ 
-    description: 'Mật khẩu mới (ít nhất 6 ký tự, bao gồm chữ và số)', 
-    example: 'new_password_456',
-    minLength: 6,
+    description: 'Mật khẩu mới (ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa)', 
+    example: 'NewPassword123',
+    minLength: 8,
     required: true 
   })
   @IsNotEmpty({ message: 'Mật khẩu mới không được để trống' })
   @IsString()
-  @MinLength(6, { message: 'Mật khẩu mới phải có ít nhất 6 ký tự' })
-  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/, {
-    message: 'Mật khẩu mới phải chứa ít nhất một chữ cái và một số',
+  @MinLength(8, { message: 'Mật khẩu mới phải có ít nhất 8 ký tự' })
+  @Matches(/[A-Z]/, {
+    message: 'Mật khẩu mới phải chứa ít nhất một chữ cái viết hoa',
   })
   newPass!: string;
 

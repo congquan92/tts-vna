@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsNotEmpty, ValidateIf, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, ValidateIf, MinLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ForgotPasswordDto {
@@ -21,20 +21,21 @@ export class ForgotPasswordDto {
   otp?: string;
 
   @ApiPropertyOptional({ 
-    description: 'Mật khẩu mới (Tối thiểu 6 ký tự)', 
-    example: 'newPassword789' 
+    description: 'Mật khẩu mới (Tối thiểu 8 ký tự, 1 chữ hoa)', 
+    example: 'NewPassword789' 
   })
   @ValidateIf(o => o.otp)
   @IsNotEmpty({ message: 'Mật khẩu mới không được để trống' })
-  @MinLength(6, { message: 'Mật khẩu mới phải có ít nhất 6 ký tự' })
+  @MinLength(8, { message: 'Mật khẩu mới phải có ít nhất 8 ký tự' })
+  @Matches(/[A-Z]/, { message: 'Mật khẩu phải chứa ít nhất một chữ cái viết hoa' })
   newPassword?: string;
 
   @ApiPropertyOptional({ 
     description: 'Xác nhận mật khẩu mới', 
-    example: 'newPassword789' 
+    example: 'NewPassword789' 
   })
   @ValidateIf(o => o.otp)
   @IsNotEmpty({ message: 'Xác nhận mật khẩu mới không được để trống' })
-  @MinLength(6, { message: 'Xác nhận mật khẩu mới phải có ít nhất 6 ký tự' })
+  @MinLength(8, { message: 'Xác nhận mật khẩu mới phải có ít nhất 8 ký tự' })
   confirmNewPassword?: string;
 }

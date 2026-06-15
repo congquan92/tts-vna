@@ -5,6 +5,7 @@ import PasswordInput from "@/components/form/PasswordInput";
 import { AuthApi } from "@/api/auth";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import { validateStrongPassword } from "@/utils/validation";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -52,8 +53,9 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
             return;
         }
 
-        if (formData.newPass.length < 6) {
-            setAlert({ type: "error", message: "Mật khẩu mới phải có ít nhất 6 ký tự" });
+        const passwordValidation = validateStrongPassword(formData.newPass);
+        if (!passwordValidation.isValid) {
+            setAlert({ type: "error", message: passwordValidation.message });
             return;
         }
 
