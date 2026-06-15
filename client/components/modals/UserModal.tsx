@@ -69,7 +69,7 @@ const formatDateToYYYYMMDD = (dateVal: string | Date | null | undefined) => {
 export default function UserForm({ editingItem, onClose, onSave }: UserFormProps) {
     const [formData, setFormData] = useState<UserFormData>({
         username: "",
-        password: "",
+        password: editingItem ? "************" : "12345678",
         fullName: "",
         email: "",
         roleId: "",
@@ -142,6 +142,23 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                         setAvailableWards(province.wards.map((w: Ward) => ({ label: w.name, value: w.name })));
                     }
                 }
+            } else {
+                // Reset to default for new user
+                setFormData({
+                    username: "",
+                    password: "12345678",
+                    fullName: "",
+                    email: "",
+                    roleId: "",
+                    position: "",
+                    isActive: true,
+                    gender: "",
+                    dob: "",
+                    province: "",
+                    ward: "",
+                    address: "",
+                    avatarUrl: "",
+                });
             }
         });
 
@@ -196,6 +213,15 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
             nextErrors.email = "Email không hợp lệ";
         }
         if (!formData.roleId) nextErrors.roleId = "Vai trò là bắt buộc";
+
+        if (formData.dob) {
+            const selectedDate = new Date(formData.dob);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate > today) {
+                nextErrors.dob = "Ngày sinh không được là ngày trong tương lai";
+            }
+        }
 
         if (!editingItem) {
             if (!formData.password || !formData.password.trim()) {
@@ -296,8 +322,8 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
                     <div className="flex items-center justify-between w-full mt-auto pt-4 border-t border-gray-50">
                         <span className="text-sm font-bold text-gray-800">Kích hoạt</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))} />
+                        <label className="relative inline-flex items-center cursor-not-allowed opacity-50">
+                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))} disabled={true} />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
@@ -315,7 +341,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                 <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName} placeholder="Nhập họ và tên" onChange={handleChange} error={errors.fullName} />
 
                                 {/* Row 2: Ngày tháng năm sinh | Giới tính */}
-                                <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} />
+                                <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} max={new Date().toISOString().split("T")[0]} />
                                 <InputField
                                     name="gender"
                                     label="Giới tính"
@@ -331,16 +357,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
                                 {/* Row 3: Chức danh | Vai trò * */}
                                 <InputField name="position" label="Chức danh" value={formData.position} placeholder="Nhập chức danh" onChange={handleChange} />
-                                <InputField
-                                    name="roleId"
-                                    label="Vai trò *"
-                                    value={formData.roleId}
-                                    isSelect
-                                    placeholder="Chọn vai trò"
-                                    options={ROLE_OPTIONS}
-                                    onChange={handleChange}
-                                    error={errors.roleId}
-                                />
+                                <InputField name="roleId" label="Vai trò *" value={formData.roleId} isSelect placeholder="Chọn vai trò" options={ROLE_OPTIONS} onChange={handleChange} error={errors.roleId} />
 
                                 {/* Row 4: Email * | Empty Column */}
                                 <InputField name="email" type="email" label="Email *" value={formData.email} placeholder="Nhập địa chỉ email" onChange={handleChange} error={errors.email} />
@@ -354,7 +371,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
                                 {/* Row 2: Họ và tên(*) | Ngày tháng năm sinh */}
                                 <InputField name="fullName" label="Họ và tên(*)" value={formData.fullName} placeholder="Nhập họ và tên" onChange={handleChange} error={errors.fullName} />
-                                <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} />
+                                <InputField name="dob" label="Ngày tháng năm sinh" value={formData.dob} type="date" icon={Calendar} onChange={handleChange} error={errors.dob} max={new Date().toISOString().split("T")[0]} />
 
                                 {/* Row 3: Giới tính | Chức danh */}
                                 <InputField
@@ -372,16 +389,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                 <InputField name="position" label="Chức danh" value={formData.position} placeholder="Nhập chức danh" onChange={handleChange} />
 
                                 {/* Row 4: Vai trò * | Email * */}
-                                <InputField
-                                    name="roleId"
-                                    label="Vai trò *"
-                                    value={formData.roleId}
-                                    isSelect
-                                    placeholder="Chọn vai trò"
-                                    options={ROLE_OPTIONS}
-                                    onChange={handleChange}
-                                    error={errors.roleId}
-                                />
+                                <InputField name="roleId" label="Vai trò *" value={formData.roleId} isSelect placeholder="Chọn vai trò" options={ROLE_OPTIONS} onChange={handleChange} error={errors.roleId} />
                                 <InputField name="email" type="email" label="Email *" value={formData.email} placeholder="Nhập địa chỉ email" onChange={handleChange} error={errors.email} />
                             </div>
                         )}

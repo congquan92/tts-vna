@@ -184,7 +184,7 @@ const AccountPage = () => {
 
         try {
             await Promise.all(selectedIds.map((id) => UserApi.delete(id)));
-            toast.success("Xóa các người dùng thành công");
+            toast.success(selectedIds.length === 1 ? "Xóa người dùng thành công" : "Xóa các người dùng thành công");
             setSelectedIds([]);
             fetchUsers(pagination.page);
         } catch (error) {
@@ -201,8 +201,20 @@ const AccountPage = () => {
         const loadingToast = toast.loading("Đang import dữ liệu...");
         try {
             const res = await UserApi.importUsers(file);
-            toast.success(res.message || "Import dữ liệu thành công");
-            fetchUsers(1);
+            const { success, failed, total } = res.data;
+
+            if (success > 0) {
+                toast.success(`Đã import thành công ${success}/${total} người dùng`);
+                fetchUsers(1);
+            }
+
+            if (failed > 0) {
+                toast.error(`Có ${failed} người dùng import thất bại. Vui lòng kiểm tra lại dữ liệu.`);
+            }
+
+            if (total === 0) {
+                toast.warning("File import không có dữ liệu người dùng.");
+            }
         } catch (error: unknown) {
             console.error("Lỗi khi import dữ liệu:", error);
             let message = "Không thể import dữ liệu";
@@ -307,7 +319,7 @@ const AccountPage = () => {
                                 onChange={(e) => handleFilterChange("roleId", e.target.value ? Number(e.target.value) : undefined)}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Vai trò</option>
+                                <option value="">Tất cả</option>
                                 {ROLE_OPTIONS.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
                                         {opt.label}
@@ -331,8 +343,8 @@ const AccountPage = () => {
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
                                 <option value="">Trạng thái</option>
-                                <option value="true">Bật</option>
-                                <option value="false">Tắt</option>
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Ngừng hoạt động</option>
                             </select>
                             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>
