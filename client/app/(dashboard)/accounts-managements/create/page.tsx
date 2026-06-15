@@ -14,8 +14,8 @@ export default function CreateUserPage() {
         try {
             const res = await UserApi.create(payload);
             toast.success(res.message || "Thêm mới người dùng thành công");
-            
-            // Note: In a real app, we might store the new user ID in a temporary state/query 
+
+            // Note: In a real app, we might store the new user ID in a temporary state/query
             // to show the password popup on the list page. For now, we just redirect.
             router.push("/accounts-managements?newUserId=" + res.data.id);
         } catch (error: any) {

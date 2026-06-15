@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import axios from "axios";
-import { getRoleDisplayName } from "@/utils/display";
+import { getRoleDisplayName, ROLE_OPTIONS } from "@/utils/display";
 
 const AccountPage = () => {
     const router = useRouter();
@@ -308,12 +308,11 @@ const AccountPage = () => {
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
                                 <option value="">Vai trò</option>
-                                <option value="1">Quản trị viên Sở</option>
-                                <option value="2">Lãnh đạo Sở</option>
-                                <option value="3">Chuyên viên</option>
-                                <option value="4">Giám đốc Doanh nghiệp</option>
-                                <option value="5">Quản lý Doanh nghiệp</option>
-                                <option value="6">Nhân viên Doanh nghiệp</option>
+                                {ROLE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
                             </select>
                             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                         </div>

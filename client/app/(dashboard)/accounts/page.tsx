@@ -157,10 +157,6 @@ const AccountPage = () => {
         }
     };
 
-    const handleToggleActive = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({ ...prev, isActive: e.target.checked }));
-    };
-
     const handleSave = async () => {
         if (!validateForm()) {
             toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc");

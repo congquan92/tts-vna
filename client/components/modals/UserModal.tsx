@@ -8,6 +8,7 @@ import TopHero from "@/components/TopHero";
 import { Camera, Save, Calendar } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { ROLE_OPTIONS } from "@/utils/display";
 
 interface Ward {
     ward_code: string;
@@ -24,10 +25,26 @@ interface Province {
     wards: Ward[];
 }
 
+interface UserFormData {
+    username: string;
+    password?: string;
+    fullName: string;
+    email: string;
+    roleId: string;
+    position: string;
+    isActive: boolean;
+    gender: string;
+    dob: string;
+    province: string;
+    ward: string;
+    address: string;
+    avatarUrl: string;
+}
+
 type UserFormProps = {
     editingItem: User | null;
     onClose: () => void;
-    onSave: (payload: any) => Promise<void>;
+    onSave: (payload: Record<string, any>) => Promise<void>;
 };
 
 const roleNameToId: Record<string, string> = {
@@ -39,7 +56,7 @@ const roleNameToId: Record<string, string> = {
     USER_DN: "6",
 };
 
-const formatDateToYYYYMMDD = (dateVal: any) => {
+const formatDateToYYYYMMDD = (dateVal: string | Date | null | undefined) => {
     if (!dateVal) return "";
     const date = new Date(dateVal);
     if (isNaN(date.getTime())) return "";
@@ -50,7 +67,7 @@ const formatDateToYYYYMMDD = (dateVal: any) => {
 };
 
 export default function UserForm({ editingItem, onClose, onSave }: UserFormProps) {
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<UserFormData>({
         username: "",
         password: "",
         fullName: "",
@@ -92,24 +109,25 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         fetchGeoData().then((geoData) => {
             if (editingItem) {
                 // Determine account data from API (plural 'accounts' array)
-                const account = editingItem.account || (editingItem as any).accounts?.[0];
+                const itemAny = editingItem as any;
+                const account = editingItem.account || itemAny.accounts?.[0];
 
                 // Determine role ID
                 let rId = account?.role?.id?.toString() || account?.roleId?.toString() || "";
                 if (!rId && account?.role?.name) {
                     rId = roleNameToId[account.role.name] || "";
-                } else if (!rId && (editingItem as any).role) {
-                    rId = roleNameToId[(editingItem as any).role] || "";
+                } else if (!rId && itemAny.role) {
+                    rId = roleNameToId[itemAny.role] || "";
                 }
 
                 setFormData({
-                    username: account?.username || (editingItem as any).username || "",
+                    username: account?.username || itemAny.username || "",
                     password: "************",
                     fullName: editingItem.fullName || "",
                     email: editingItem.email || "",
                     roleId: rId,
                     position: editingItem.position || "",
-                    isActive: editingItem.isActive ?? (editingItem as any).status === "Active",
+                    isActive: editingItem.isActive ?? itemAny.status === "Active",
                     gender: editingItem.gender || "",
                     dob: formatDateToYYYYMMDD(editingItem.dob),
                     province: editingItem.province || "",
@@ -126,13 +144,17 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                 }
             }
         });
-        setErrors({});
-        setPreviewUrl(null);
+
+        const timer = setTimeout(() => {
+            setErrors({});
+            setPreviewUrl(null);
+        }, 0);
+        return () => clearTimeout(timer);
     }, [editingItem]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
 
         if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -143,10 +165,10 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                 const province = provincesData.find((p: Province) => p.name === value);
                 const wards = province?.wards?.map((w: Ward) => ({ label: w.name, value: w.name })) || [];
                 setAvailableWards(wards);
-                setFormData((prev: any) => ({ ...prev, ward: "" }));
+                setFormData((prev) => ({ ...prev, ward: "" }));
             } else {
                 setAvailableWards([]);
-                setFormData((prev: any) => ({ ...prev, ward: "" }));
+                setFormData((prev) => ({ ...prev, ward: "" }));
             }
         }
     };
@@ -200,9 +222,9 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         setSubmitting(true);
         try {
             // Remove avatarUrl and handle password dynamically
-            const { avatarUrl, password, ...cleanData } = formData;
+            const { avatarUrl: _avatarUrl, password, ...cleanData } = formData;
 
-            const payload: any = {
+            const payload: Record<string, any> = {
                 ...cleanData,
                 roleId: Number(formData.roleId),
             };
@@ -244,7 +266,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
             <div className="flex flex-col md:flex-row gap-5 items-start">
                 {/* Left Sidebar - Avatar & Kích hoạt */}
-                <div className="w-full md:w-[280px] bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center shrink-0">
+                <div className="w-full md:w-70 bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col items-center shrink-0">
                     <input type="file" id="modalAvatarInput" className="hidden" accept=".jpeg,.jpg,.png" onChange={handleAvatarChange} />
                     <div
                         className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
@@ -275,8 +297,8 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                     <div className="flex items-center justify-between w-full mt-auto pt-4 border-t border-gray-50">
                         <span className="text-sm font-bold text-gray-800">Kích hoạt</span>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev: any) => ({ ...prev, isActive: e.target.checked }))} />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))} />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
                 </div>
@@ -315,14 +337,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                     value={formData.roleId}
                                     isSelect
                                     placeholder="Chọn vai trò"
-                                    options={[
-                                        { label: "Quản trị viên Sở", value: "1" },
-                                        { label: "Lãnh đạo Sở", value: "2" },
-                                        { label: "Chuyên viên", value: "3" },
-                                        { label: "Giám đốc Doanh nghiệp", value: "4" },
-                                        { label: "Quản lý Doanh nghiệp", value: "5" },
-                                        { label: "Nhân viên Doanh nghiệp", value: "6" },
-                                    ]}
+                                    options={ROLE_OPTIONS}
                                     onChange={handleChange}
                                     error={errors.roleId}
                                 />
@@ -363,14 +378,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                                     value={formData.roleId}
                                     isSelect
                                     placeholder="Chọn vai trò"
-                                    options={[
-                                        { label: "Quản trị viên Sở", value: "1" },
-                                        { label: "Lãnh đạo Sở", value: "2" },
-                                        { label: "Chuyên viên", value: "3" },
-                                        { label: "Giám đốc Doanh nghiệp", value: "4" },
-                                        { label: "Quản lý Doanh nghiệp", value: "5" },
-                                        { label: "Nhân viên Doanh nghiệp", value: "6" },
-                                    ]}
+                                    options={ROLE_OPTIONS}
                                     onChange={handleChange}
                                     error={errors.roleId}
                                 />

@@ -1,4 +1,16 @@
 /**
+ * Danh sách các tùy chọn vai trò chuẩn của hệ thống
+ */
+export const ROLE_OPTIONS = [
+    { label: "Quản trị viên Sở", value: "1" },
+    { label: "Lãnh đạo Sở", value: "2" },
+    { label: "Chuyên viên", value: "3" },
+    { label: "Giám đốc Doanh nghiệp", value: "4" },
+    { label: "Quản lý Doanh nghiệp", value: "5" },
+    { label: "Nhân viên Doanh nghiệp", value: "6" },
+];
+
+/**
  * Chuyển đổi mã vai trò sang tên hiển thị tiếng Việt
  */
 export const getRoleDisplayName = (roleName?: string) => {
