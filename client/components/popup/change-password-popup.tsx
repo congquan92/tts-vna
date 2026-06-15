@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import PasswordInput from "@/components/form/PasswordInput";
 import { AuthApi } from "@/api/auth";
-import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import { validateStrongPassword } from "@/utils/validation";
+import { toast } from "sonner";
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -19,14 +19,12 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
         confirmPass: "",
     });
     const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     // Reset form data when modal closes
     useEffect(() => {
         if (!isOpen) {
             const timer = setTimeout(() => {
                 setFormData({ oldPass: "", newPass: "", confirmPass: "" });
-                setAlert(null);
             }, 200); // Wait for transition if any
             return () => clearTimeout(timer);
         }
@@ -36,7 +34,6 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
 
     const handleFieldChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-        if (alert) setAlert(null); // Clear alert when user starts typing
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -44,23 +41,22 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
 
         // Basic validation
         if (!formData.oldPass.trim() || !formData.newPass.trim() || !formData.confirmPass.trim()) {
-            setAlert({ type: "error", message: "Vui lòng nhập đầy đủ các trường thông tin" });
+            toast.error("Vui lòng nhập đầy đủ các trường thông tin");
             return;
         }
 
         if (formData.newPass !== formData.confirmPass) {
-            setAlert({ type: "error", message: "Mật khẩu mới và xác nhận mật khẩu không khớp" });
+            toast.error("Mật khẩu mới và xác nhận mật khẩu không khớp");
             return;
         }
 
         const passwordValidation = validateStrongPassword(formData.newPass);
         if (!passwordValidation.isValid) {
-            setAlert({ type: "error", message: passwordValidation.message });
+            toast.error(passwordValidation.message);
             return;
         }
 
         setLoading(true);
-        setAlert(null);
 
         try {
             const response = await AuthApi.changePassword({
@@ -69,7 +65,7 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
                 confirmPass: formData.confirmPass,
             });
 
-            setAlert({ type: "success", message: response.message || "Đổi mật khẩu thành công!" });
+            toast.success(response.message || "Đổi mật khẩu thành công!");
 
             // Auto close after success
             setTimeout(() => {
@@ -78,10 +74,7 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
         } catch (error: unknown) {
             console.error("Error changing password:", error);
             const errorMessage = (error as any).response?.data?.message || "Mật khẩu cũ không chính xác hoặc có lỗi xảy ra";
-            setAlert({
-                type: "error",
-                message: errorMessage,
-            });
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -98,8 +91,6 @@ export default function ChangePasswordPopup({ isOpen, onClose }: ChangePasswordM
 
                 {/* Form Body */}
                 <div className="p-6 flex flex-col gap-5">
-                    {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
-
                     <form onSubmit={handleSave} className="flex flex-col gap-6 text-black">
                         <PasswordInput label="Mật khẩu cũ" required value={formData.oldPass} onChange={handleFieldChange("oldPass")} disabled={loading} />
                         <PasswordInput label="Mật khẩu mới" required value={formData.newPass} onChange={handleFieldChange("newPass")} disabled={loading} />
