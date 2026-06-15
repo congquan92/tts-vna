@@ -23,15 +23,53 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
 
-    // Fetch parent options (not level 4)
+    const calculateLevel = (codeStr: string): number => {
+        const trimmed = codeStr.trim();
+        if (trimmed.length >= 1 && trimmed.length <= 5) {
+            return trimmed.length;
+        }
+        return 0;
+    };
+
+    // Initialize form data when isOpen changes to avoid cascading renders in useEffect
+    const [lastOpened, setLastOpened] = useState(false);
+    if (isOpen && !lastOpened) {
+        setLastOpened(true);
+        if (editingItem) {
+            setCode(editingItem.code);
+            setName(editingItem.name);
+            setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
+            setStatus(editingItem.status);
+        } else {
+            setCode("");
+            setName("");
+            setParentId("");
+            setStatus(BusinessStatus.ACTIVE);
+        }
+        setErrors({});
+    } else if (!isOpen && lastOpened) {
+        setLastOpened(false);
+    }
+
+    // Fetch parent options based on current level
     useEffect(() => {
         const fetchParents = async () => {
             try {
-                const list = await BusinessIndustryApi.findNotLevel4();
-                // Filter out current editing item to prevent self-parenting
-                const filtered = list.filter((item) => !editingItem || item.id !== editingItem.id);
+                const list = await BusinessIndustryApi.findAll();
+                const currentLevel = calculateLevel(code);
+
+                // Filter options based on rules:
+                const filtered = list.filter((item) => {
+                    // Prevent self-parenting
+                    if (editingItem && item.id === editingItem.id) return false;
+
+                    // Level calculation for filtering
+                    if (currentLevel <= 1) return false; // Level 1 has no parent
+                    return (item.level ?? 0) < currentLevel;
+                });
+
                 const options = filtered.map((item) => ({
-                    label: `${item.code} - ${item.name}`,
+                    label: `${item.code} - ${item.name} (Cấp ${item.level ?? "?"})`,
                     value: String(item.id),
                 }));
                 setParentOptions(options);
@@ -43,24 +81,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         if (isOpen) {
             fetchParents();
         }
-    }, [isOpen, editingItem]);
-
-    useEffect(() => {
-        if (isOpen) {
-            if (editingItem) {
-                setCode(editingItem.code);
-                setName(editingItem.name);
-                setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
-                setStatus(editingItem.status);
-            } else {
-                setCode("");
-                setName("");
-                setParentId("");
-                setStatus(BusinessStatus.ACTIVE);
-            }
-            setErrors({});
-        }
-    }, [isOpen, editingItem]);
+    }, [isOpen, editingItem, code]);
 
     if (!isOpen) return null;
 
@@ -137,7 +158,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
                     <button
                         type="button"
                         onClick={handleSave}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-w-[80px]"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-w-20"
                         disabled={submitting}
                     >
                         <Save className="size-4 shrink-0" />
