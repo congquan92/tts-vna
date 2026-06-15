@@ -209,7 +209,21 @@ const AccountPage = () => {
             }
 
             if (failed > 0) {
-                toast.error(`Có ${failed} người dùng import thất bại. Vui lòng kiểm tra lại dữ liệu.`);
+                const firstErrors = res.data.errors.slice(0, 3);
+                const errorMsg = firstErrors.map((err: any) => `• Dòng ${err.row}: ${err.errors.join(", ")}`).join("\n");
+                
+                toast.error(`Có ${failed}/${total} người dùng import thất bại`, {
+                    description: (
+                        <div className="flex flex-col gap-1 mt-1 text-[11px] leading-relaxed">
+                            <p className="font-medium text-red-600">Chi tiết lỗi:</p>
+                            <div className="whitespace-pre-wrap opacity-90 italic">
+                                {errorMsg}
+                                {failed > 3 && `\n... và ${failed - 3} lỗi khác`}
+                            </div>
+                        </div>
+                    ),
+                    duration: 6000,
+                });
             }
 
             if (total === 0) {

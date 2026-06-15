@@ -11,6 +11,7 @@ import * as ExcelJS from 'exceljs';
 
 import { UserRepository } from '../repositories/user.repository';
 import { User } from '../entities/user.entity';
+import { Role } from '../entities/role.entity';
 import { CreateUserDto, UpdateUserDto } from '../dto/user/user.dto';
 import { SearchUserDto } from '../dto/user/search-user.dto';
 import { AccountRepository } from '../repositories/account.repository';
@@ -218,10 +219,8 @@ export class UserService {
           }
         }
 
-        if (!position) rowErrors.push('Chức danh không được để trống');
-
         // ================= XỬ LÝ VAI TRÒ =================
-        let role = null;
+        let role: Role | null = null;
         if (!roleValue) {
           rowErrors.push('Vai trò không được để trống');
         } else {
@@ -279,8 +278,15 @@ export class UserService {
           continue;
         }
 
+        // Satisfy TypeScript: role cannot be null here because if it were, rowErrors.length would be > 0
+        if (!role) continue;
+
         // ================= CREATE USER =================
         const hashedPassword = await bcrypt.hash('12345678', 10);
+
+        if (!role.orgType) {
+          throw new Error(`Vai trò ${role.name} không có thông tin orgType`);
+        }
 
         await this.userRepository.createFullUser(
           {
@@ -288,6 +294,7 @@ export class UserService {
             email,
             position,
             isActive,
+            orgType: role.orgType,
           },
           {
             username,
@@ -303,7 +310,7 @@ export class UserService {
         errors.push({
           row: index + 2,
           data: row,
-          errors: [`Lỗi hệ thống: ${err.message || 'Không rõ nguyên nhân'}`],
+          errors: [`Lỗi hệ thống: ${err.message || 'Không rõ nguyên nhân'}`, `Chi tiết: ${err.detail || ''}`.trim()],
         });
       }
     }
