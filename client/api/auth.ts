@@ -33,8 +33,8 @@ export const AuthApi = {
     },
 
     updateProfile: async (payload: UpdateProfilePayload): Promise<User> => {
-        const res = await axiosInstance.patch<User>("/auth/profile", payload);
-        return res.data;
+        const res = await axiosInstance.patch<{ message: string; data: User }>("/auth/profile", payload);
+        return res.data.data;
     },
 
     changePassword: async (payload: ChangePasswordPayload): Promise<{ message: string }> => {

@@ -7,6 +7,7 @@ import { Calendar, Camera, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AuthApi } from "@/api/auth";
 import { User, UpdateProfilePayload } from "@/types/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ type FormErrors = {
 };
 
 const AccountPage = () => {
+    const { updateUser } = useAuth();
     const [profile, setProfile] = useState<User | null>(null);
     const [formData, setFormData] = useState<UpdateProfilePayload>({});
     const [errors, setErrors] = useState<FormErrors>({});
@@ -177,7 +179,8 @@ const AccountPage = () => {
             const payload = { ...formData, avatarUrl: currentAvatarUrl };
             const updatedProfile = await AuthApi.updateProfile(payload);
 
-            setProfile({ ...updatedProfile, account: profile?.account });
+            setProfile(updatedProfile);
+            updateUser(updatedProfile);
             setFormData((prev) => ({
                 ...prev,
                 avatarUrl: updatedProfile.avatarUrl,
@@ -218,6 +221,7 @@ const AccountPage = () => {
     const handleEmailChanged = () => {
         AuthApi.getProfile().then((data) => {
             setProfile(data);
+            updateUser(data);
             setFormData((prev) => ({ ...prev, email: data.email }));
         });
     };
@@ -299,8 +303,8 @@ const AccountPage = () => {
 
                     <div className="flex items-center justify-between w-full mt-auto pt-4">
                         <span className="text-sm font-bold text-gray-800">Kích hoạt</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={handleToggleActive} />
+                        <label className="relative inline-flex items-center opacity-60">
+                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} disabled />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>

@@ -9,7 +9,7 @@ import TextInput from "@/components/form/TextInput";
 import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
 // import Alert from "@/components/ui/Alert";
-import { AuthApi } from "@/api/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type FormErrors = {
@@ -18,12 +18,12 @@ type FormErrors = {
 };
 
 export default function LoginPage() {
+    const { login } = useAuth();
     const router = useRouter();
     const [account, setAccount] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
-    // const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
     const [loading, setLoading] = useState(false);
 
     // Load saved credentials on mount
@@ -62,45 +62,27 @@ export default function LoginPage() {
         e.preventDefault();
 
         if (!validateForm()) {
-            // setAlert({
-            //     type: "error",
-            //     message: "Vui lòng nhập đầy đủ thông tin",
-            // });
             toast.error("Vui lòng nhập đầy đủ thông tin");
             return;
         }
 
         setLoading(true);
         try {
-            const res = await AuthApi.login(account, password);
-            if (res && res.accessToken) {
-                // Lưu token vào localStorage
-                localStorage.setItem("auth_token", res.accessToken);
+            await login(account, password);
 
-                // Xử lý Ghi nhớ đăng nhập
-                if (rememberMe) {
-                    localStorage.setItem("remembered_account", account);
-                    localStorage.setItem("remembered_password", password);
-                } else {
-                    localStorage.removeItem("remembered_account");
-                    localStorage.removeItem("remembered_password");
-                }
-
-                // setAlert({
-                //     type: "success",
-                //     message: "Đăng nhập thành công! Đang chuyển hướng...",
-                // });
-                toast.success("Đăng nhập thành công! Đang chuyển hướng...");
-                setTimeout(() => {
-                    router.push("/accounts");
-                }, 1500);
+            // Xử lý Ghi nhớ đăng nhập
+            if (rememberMe) {
+                localStorage.setItem("remembered_account", account);
+                localStorage.setItem("remembered_password", password);
+            } else {
+                localStorage.removeItem("remembered_account");
+                localStorage.removeItem("remembered_password");
             }
+
+            toast.success("Đăng nhập thành công!");
+            // Redirect is handled inside login function in AuthContext
         } catch (error: unknown) {
             const axiosError = error as { response?: { data?: { message?: string } } };
-            // setAlert({
-            //     type: "error",
-            //     message: axiosError.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại",
-            // });
             toast.error(axiosError.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng. Vui lòng nhập lại");
         } finally {
             setLoading(false);
