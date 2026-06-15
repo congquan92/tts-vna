@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, Typography, Box } from "@mui/material";
 import { AuthApi } from "@/api/auth";
-import Alert from "@/components/ui/Alert";
 import { AxiosError } from "axios";
 import Button from "@/components/ui/Button";
 import { InputField } from "@/components/form/InputField";
+import { toast } from "sonner";
 
 interface ChangeEmailPopupProps {
     open: boolean;
@@ -21,38 +21,48 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
     const [newEmail, setNewEmail] = useState("");
     const [timeLeft, setTimeLeft] = useState(60);
     const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+    const [hasSentOtp, setHasSentOtp] = useState(false);
 
     // Gửi OTP khi mở popup (hoặc khi người dùng yêu cầu gửi lại)
     const handleSendOtp = useCallback(async () => {
         setLoading(true);
-        setAlert(null);
         try {
             await AuthApi.requestChangeEmail();
             setTimeLeft(60);
-            setAlert({ type: "success", message: "Mã OTP đã được gửi tới email của bạn" });
+            setHasSentOtp(true);
+            toast.success("Mã OTP đã được gửi tới email của bạn");
         } catch (error: unknown) {
             console.error("Error sending OTP:", error);
             const axiosError = error as AxiosError<{ message: string }>;
             const errorMessage = axiosError.response?.data?.message || "Không thể gửi mã OTP, vui lòng thử lại sau";
-            setAlert({
-                type: "error",
-                message: errorMessage,
-            });
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        if (open && step === 1) {
-            // Use timeout to avoid synchronous setState in effect warning
+        if (open && step === 1 && !hasSentOtp) {
             const timer = setTimeout(() => {
                 handleSendOtp();
             }, 0);
             return () => clearTimeout(timer);
         }
-    }, [open, step, handleSendOtp]);
+    }, [open, step, hasSentOtp, handleSendOtp]);
+
+    // Reset state when dialog closes
+    useEffect(() => {
+        if (!open) {
+            const timer = setTimeout(() => {
+                setStep(1);
+                setOtp("");
+                setNewEmail("");
+                setTimeLeft(60);
+                setHasSentOtp(false);
+            }, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
 
     // Đếm ngược thời gian gửi mã OTP
     useEffect(() => {
@@ -62,53 +72,61 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
         }
     }, [timeLeft, step, open]);
 
-    const handleConfirmOtp = () => {
+    const handleConfirmOtp = async () => {
         if (!otp) {
-            setAlert({ type: "error", message: "Vui lòng nhập mã OTP" });
+            toast.error("Vui lòng nhập mã OTP");
             return;
         }
-        setStep(2); // Chuyển sang form email mới
-        setAlert(null);
-    };
+        if (timeLeft === 0) {
+            toast.error("Mã OTP đã hết hạn, vui lòng gửi lại mã mới");
+            return;
+        }
 
-    const handleSaveEmail = async () => {
-        if (!newEmail) {
-            setAlert({ type: "error", message: "Vui lòng nhập email mới" });
+        if (!currentEmail) {
+            toast.error("Không xác định được email hiện tại");
             return;
         }
 
         setLoading(true);
-        setAlert(null);
+        try {
+            await AuthApi.verifyOtp(currentEmail, otp);
+            setStep(2); // Chuyển sang form email mới
+        } catch (error: unknown) {
+            console.error("Error verifying OTP:", error);
+            const axiosError = error as AxiosError<{ message: string }>;
+            const errorMessage = axiosError.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn";
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveEmail = async () => {
+        if (!newEmail) {
+            toast.error("Vui lòng nhập email mới");
+            return;
+        }
+
+        setLoading(true);
         try {
             await AuthApi.verifyAndChangeEmail({ newEmail, otp });
-            setAlert({ type: "success", message: "Đổi email thành công" });
+            toast.success("Đổi email thành công");
 
             // Tự động đóng sau khi thành công
             setTimeout(() => {
-                onClose();
-                // Reset state
-                setStep(1);
-                setOtp("");
-                setNewEmail("");
+                handleClose();
             }, 1500);
         } catch (error: unknown) {
             console.error("Error changing email:", error);
             const axiosError = error as AxiosError<{ message: string }>;
             const errorMessage = axiosError.response?.data?.message || "Mã OTP không đúng hoặc email đã tồn tại";
-            setAlert({
-                type: "error",
-                message: errorMessage,
-            });
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
     const handleClose = () => {
-        setStep(1);
-        setOtp("");
-        setNewEmail("");
-        setAlert(null);
         onClose();
     };
 
@@ -140,8 +158,6 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
             </Typography>
 
             <DialogContent sx={{ p: 1, overflow: "hidden" }}>
-                <Box sx={{ mb: 2 }}>{alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}</Box>
-
                 {step === 1 ? (
                     /* ----- FORM 1: XÁC NHẬN OTP ----- */
                     <Box className="flex flex-col gap-2 rounded-none">
@@ -178,7 +194,7 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                         </Box>
 
                         <Button onClick={handleConfirmOtp} disabled={loading || !otp} loading={loading} className="w-full">
-                            Tiếp theo
+                            Tiếp tục
                         </Button>
                     </Box>
                 ) : (
@@ -192,10 +208,6 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                             <Button onClick={handleSaveEmail} disabled={loading || !newEmail} loading={loading} className="w-full">
                                 Lưu thay đổi
                             </Button>
-
-                            <button type="button" onClick={() => setStep(1)} disabled={loading} className="text-sm text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-50">
-                                Quay lại nhập OTP
-                            </button>
                         </Box>
                     </Box>
                 )}
@@ -204,19 +216,6 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 <Button variant="outline" onClick={handleClose} disabled={loading} className="w-full border-none text-gray-500 hover:text-gray-700 mt-2">
                     <strong>Hủy bỏ</strong>
                 </Button>
-                {/* <Typography
-                    variant="body1"
-                    color="#90949c"
-                    sx={{
-                        fontWeight: "700",
-                        cursor: loading ? "default" : "pointer",
-                        mt: 4,
-                        "&:hover": { color: loading ? "#90949c" : "#60646c" },
-                    }}
-                    onClick={() => !loading && handleClose()}
-                >
-                    Hủy bỏ
-                </Typography> */}
             </DialogContent>
         </Dialog>
     );
