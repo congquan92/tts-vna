@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { User } from "@/types/auth";
 import { Save } from "lucide-react"; // Đổi icon thành Save (đĩa mềm)
 import { validateStrongPassword } from "@/utils/validation";
@@ -16,13 +16,15 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
     const [password, setPassword] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-    useEffect(() => {
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             setPassword("");
             setErrors({});
         }
-    }, [isOpen]);
+    }
 
     if (!isOpen || !user) return null;
 
@@ -53,7 +55,7 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-            <div className="w-full max-w-[400px] rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
+            <div className="w-full max-w-100 rounded-xl bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.25s_ease-out]">
                 {/* Header */}
                 <div className="bg-[#2f65ff] px-6 py-3 text-center">
                     <h2 className="text-white text-[17px] font-semibold tracking-wide">Xác nhận</h2>
@@ -62,7 +64,7 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
                 <div className="px-6 py-6 space-y-4">
                     {/* Text miêu tả */}
                     <p className="text-[15px] text-gray-800">
-                        Khởi tạo mật khẩu cho tài khoản <strong className="font-bold text-black">{user.account?.username || (user as any).username}</strong>
+                        Khởi tạo mật khẩu cho tài khoản <strong className="font-bold text-black">{user.account?.username || (user as unknown as { username?: string }).username}</strong>
                     </p>
 
                     {/* Ô nhập mật khẩu */}
