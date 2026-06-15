@@ -40,7 +40,7 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [types, inds] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll()]);
+                const [types, inds] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findLevel4()]);
                 setBusinessTypes(types);
                 setIndustries(inds);
             } catch (error) {

@@ -19,7 +19,7 @@ import AccountInfoPopup from "@/components/popup/account-info-popup";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
-const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 120px 150px 200px 200px 110px" };
+const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 140px 150px 200px 200px 110px" };
 
 interface ApiBusiness extends Business {
     typeOfBusiness?: { name: string } | string;
@@ -137,7 +137,7 @@ export default function BusinessManagementsPage() {
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findAll(), fetch("/address.json")]);
+                const [types, inds, geoRes] = await Promise.all([TypeOfBusinessApi.findAll(), BusinessIndustryApi.findLevel4(), fetch("/address.json")]);
                 setBusinessTypes(types);
                 setIndustries(inds);
 
