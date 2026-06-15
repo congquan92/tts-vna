@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, Typography, Box } from "@mui/material";
 import { AuthApi } from "@/api/auth";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import Button from "@/components/ui/Button";
 import { InputField } from "@/components/form/InputField";
 import { toast } from "sonner";
@@ -32,9 +32,10 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
             setHasSentOtp(true);
             toast.success("Mã OTP đã được gửi tới email của bạn");
         } catch (error: unknown) {
-            console.error("Error sending OTP:", error);
-            const axiosError = error as AxiosError<{ message: string }>;
-            const errorMessage = axiosError.response?.data?.message || "Không thể gửi mã OTP, vui lòng thử lại sau";
+            let errorMessage = "Không thể gửi mã OTP, vui lòng thử lại sau";
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -90,11 +91,13 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
         setLoading(true);
         try {
             await AuthApi.verifyOtp(currentEmail, otp);
+            toast.success("Xác thực mã OTP thành công");
             setStep(2); // Chuyển sang form email mới
         } catch (error: unknown) {
-            console.error("Error verifying OTP:", error);
-            const axiosError = error as AxiosError<{ message: string }>;
-            const errorMessage = axiosError.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn";
+            let errorMessage = "Mã OTP không đúng hoặc đã hết hạn";
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -117,9 +120,10 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 handleClose();
             }, 1500);
         } catch (error: unknown) {
-            console.error("Error changing email:", error);
-            const axiosError = error as AxiosError<{ message: string }>;
-            const errorMessage = axiosError.response?.data?.message || "Mã OTP không đúng hoặc email đã tồn tại";
+            let errorMessage = "Mã OTP không đúng hoặc email đã tồn tại";
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
             toast.error(errorMessage);
         } finally {
             setLoading(false);
