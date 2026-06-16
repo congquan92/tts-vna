@@ -14,15 +14,19 @@ import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusines
 
 @Injectable()
 export class BusinessIndustryService {
-  constructor(private readonly repo: BusinessIndustryRepository) { }
+  constructor(private readonly repo: BusinessIndustryRepository) {}
 
-  async create(dto: CreateBusinessIndustryDto): Promise<BusinessIndustryResponseDto> {
+  async create(
+    dto: CreateBusinessIndustryDto,
+  ): Promise<BusinessIndustryResponseDto> {
     const level = this.calculateLevel(dto.code);
 
     // Kiểm tra xem mã ngành đã tồn tại chưa
     const existing = await this.repo.findByCode(dto.code);
     if (existing) {
-      throw new ConflictException(`Mã ngành '${dto.code}' đã tồn tại trong hệ thống`);
+      throw new ConflictException(
+        `Mã ngành '${dto.code}' đã tồn tại trong hệ thống`,
+      );
     }
 
     // Resolve parentId if provided (accept id or code)
@@ -37,6 +41,12 @@ export class BusinessIndustryService {
         throw new BadRequestException(
           'parentId does not refer to an existing BusinessIndustry',
         );
+
+      // Kiểm tra level con không cao hơn level cha
+      if (level < parent.level) {
+        throw new BadRequestException('cấp con cao hơn cấp cha');
+      }
+
       parentId = parent.id;
     }
 
@@ -60,7 +70,12 @@ export class BusinessIndustryService {
 
   async findAll(): Promise<BusinessIndustryListDto[]> {
     const items = await this.repo.findAll();
-    return items.map((i) => ({ id: i.id, code: i.code, name: i.name, level: i.level }));
+    return items.map((i) => ({
+      id: i.id,
+      code: i.code,
+      name: i.name,
+      level: i.level,
+    }));
   }
 
   async findOne(idOrCode: string): Promise<BusinessIndustryResponseDto | null> {
@@ -90,14 +105,21 @@ export class BusinessIndustryService {
       // Kiểm tra xem mã mới đã được sử dụng chưa
       const existing = await this.repo.findByCode(dto.code);
       if (existing && existing.id !== item.id) {
-        throw new ConflictException(`Mã ngành '${dto.code}' đã được sử dụng bởi ngành nghề khác`);
+        throw new ConflictException(
+          `Mã ngành '${dto.code}' đã được sử dụng bởi ngành nghề khác`,
+        );
       }
       item.code = dto.code;
       item.level = this.calculateLevel(dto.code);
     }
 
     if (dto.parentId !== undefined) {
-      if (dto.parentId === null || dto.parentId === 0 || dto.parentId === '0' || dto.parentId === '') {
+      if (
+        dto.parentId === null ||
+        dto.parentId === 0 ||
+        dto.parentId === '0' ||
+        dto.parentId === ''
+      ) {
         item.parentId = undefined;
       } else {
         const parent = await this.repo.findByIdOrCode(String(dto.parentId));

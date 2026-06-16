@@ -131,11 +131,29 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
 
                     {/* Form Fields */}
                     <div className="px-6 py-6 space-y-6">
-                        <InputField name="code" label="Mã ngành *" value={code} placeholder="Nhập mã ngành" onChange={(e) => setCode(e.target.value)} error={errors.code} />
+                        <InputField
+                            name="code"
+                            label="Mã ngành *"
+                            value={code}
+                            placeholder="Nhập mã ngành"
+                            onChange={(e) => setCode(e.target.value)}
+                            error={errors.code}
+                            disabled={!!editingItem}
+                        />
 
                         <InputField name="name" label="Tên ngành *" value={name} placeholder="Nhập tên ngành" onChange={(e) => setName(e.target.value)} error={errors.name} />
 
-                        <InputField name="parentId" label="Nhóm ngành cha" value={parentId} isSelect isSearchable placeholder="Chọn nhóm ngành cha" options={parentOptions} onChange={(e) => setParentId(e.target.value)} />
+                        <InputField
+                            name="parentId"
+                            label="Nhóm ngành cha"
+                            value={parentId}
+                            isSelect
+                            isSearchable
+                            placeholder="Chọn nhóm ngành cha"
+                            options={parentOptions}
+                            onChange={(e) => setParentId(e.target.value)}
+                            disabled={!!editingItem}
+                        />
 
                         <InputField
                             name="status"

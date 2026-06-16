@@ -8,7 +8,7 @@ export class UpdateBusinessIndustryDto {
   code?: string;
 
   @IsString()
-  @IsOptional()
+  // @IsOptional()
   @MaxLength(30)
   name?: string;
 
@@ -16,6 +16,6 @@ export class UpdateBusinessIndustryDto {
   parentId?: string | number;
 
   @IsEnum(BusinessStatus)
-  @IsOptional()
+  // @IsOptional()
   status?: BusinessStatus;
 }
