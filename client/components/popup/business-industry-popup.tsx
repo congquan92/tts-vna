@@ -58,15 +58,18 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
             try {
                 const list = await BusinessIndustryApi.findAll();
                 const currentLevel = calculateLevel(code);
+                const parentLevel = currentLevel - 1;
 
-                // Filter options based on rules:
                 const filtered = list.filter((item) => {
-                    // Prevent self-parenting
-                    if (editingItem && item.id === editingItem.id) return false;
+                    if (editingItem && item.id === editingItem.id) {
+                        return false;
+                    }
 
-                    // Level calculation for filtering
-                    if (currentLevel <= 1) return false; // Level 1 has no parent
-                    return (item.level ?? 0) < currentLevel;
+                    if (currentLevel <= 1) {
+                        return false;
+                    }
+
+                    return item.level === parentLevel;
                 });
 
                 const options = filtered.map((item) => ({

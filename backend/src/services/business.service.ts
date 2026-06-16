@@ -131,6 +131,12 @@ export class BusinessService {
             );
         }
 
+        if (businessIndustry.level !== 4) {
+            throw new BadRequestException(
+                'Chỉ được chọn ngành nghề kinh doanh cấp 4',
+            );
+        }
+
         // const role = await this.roleRepository.findRoleById(
         //     dto.roleId,
         // );
@@ -341,8 +347,13 @@ export class BusinessService {
                 );
             }
 
-            business.businessIndustry =
-                businessIndustry;
+            if (businessIndustry.level !== 4) {
+                throw new BadRequestException(
+                    'Chỉ được chọn ngành nghề kinh doanh cấp 4',
+                );
+            }
+
+            business.businessIndustry = businessIndustry;
         }
 
         const { taxCode, typeOfBusinessId, businessIndustryId, ...safeDto } = dto;

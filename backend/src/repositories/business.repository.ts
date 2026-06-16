@@ -51,7 +51,7 @@ export class BusinessRepository {
         const [businesses, total] =
             await this.businessRepository.findAndCount({
                 relations: { typeOfBusiness: true, businessIndustry: true, },
-                order: { id: 'DESC', },
+                order: { id: 'DESC' },
                 skip: (page - 1) * limit,
                 take: limit,
             });
@@ -160,6 +160,7 @@ export class BusinessRepository {
                 });
             }
 
+            qb.orderBy('business.id', 'DESC');
             qb.skip(skip).take(limit);
 
             const [businesses, total] = await qb.getManyAndCount();

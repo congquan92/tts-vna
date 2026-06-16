@@ -21,7 +21,11 @@ export class BusinessIndustryRepository {
   }
 
   findAll(): Promise<BusinessIndustry[]> {
-    return this.repo.find();
+    return this.repo.find({
+      order: {
+        id: 'DESC',
+      },
+    });
   }
 
   findById(id: number) {

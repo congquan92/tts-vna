@@ -129,6 +129,8 @@ export class UserRepository {
                 qb.andWhere('user.isActive = :isActive', { isActive });
             }
 
+            qb.orderBy('user.id', 'DESC');
+
             qb.skip(skip).take(limit);
 
             const [users, total] = await qb.getManyAndCount();
