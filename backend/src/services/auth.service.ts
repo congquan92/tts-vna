@@ -222,7 +222,9 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Mật khẩu cũ không chính xác');
     }
-    account.password = await bcrypt.hash(dto.newPass, 10);
+    const isSamePassword = await bcrypt.compare(dto.newPass, account.password,);
+    if (isSamePassword) { throw new BadRequestException('Mật khẩu mới không được trùng với mật khẩu hiện tại',); }
+    account.password = await bcrypt.hash(dto.newPass, 10,);
     await this.authRepository.updateAccount(account);
     return {
       message: 'Đổi mật khẩu thành công',

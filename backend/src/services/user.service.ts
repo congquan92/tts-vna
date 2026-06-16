@@ -307,10 +307,11 @@ export class UserService {
       } catch (err) {
         console.error('IMPORT ERROR ROW:', index + 2, err);
 
+        const error = err as any;
         errors.push({
           row: index + 2,
           data: row,
-          errors: [`Lỗi hệ thống: ${err.message || 'Không rõ nguyên nhân'}`, `Chi tiết: ${err.detail || ''}`.trim()],
+          errors: [`Lỗi hệ thống: ${error.message || 'Không rõ nguyên nhân'}`, `Chi tiết: ${error.detail || ''}`.trim()],
         });
       }
     }

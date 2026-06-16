@@ -42,8 +42,8 @@ export class SeedService implements OnModuleInit {
             { name: 'MANAGER_SO', orgType: 'SO' },
             { name: 'CHUYENVIEN_SO', orgType: 'SO' },
             { name: 'CEO_DN', orgType: 'DOANH_NGHIEP' },
-            { name: 'MANAGER_DN', orgType: 'DOANH_NGHIEP' },
-            { name: 'USER_DN', orgType: 'DOANH_NGHIEP' },
+            // { name: 'MANAGER_DN', orgType: 'DOANH_NGHIEP' },
+            // { name: 'USER_DN', orgType: 'DOANH_NGHIEP' },
         ];
 
         for (const roleData of roles) {
@@ -67,8 +67,8 @@ export class SeedService implements OnModuleInit {
             { role: 'MANAGER_SO', perms: ['USER_VIEW', 'USER_UPDATE', 'REPORT_VIEW'] },
             { role: 'CHUYENVIEN_SO', perms: ['USER_VIEW'] },
             { role: 'CEO_DN', perms: ['REPORT_VIEW', 'USER_VIEW'] },
-            { role: 'MANAGER_DN', perms: ['USER_VIEW', 'USER_UPDATE'] },
-            { role: 'USER_DN', perms: ['USER_VIEW'] },
+            // { role: 'MANAGER_DN', perms: ['USER_VIEW', 'USER_UPDATE'] },
+            // { role: 'USER_DN', perms: ['USER_VIEW'] },
         ];
 
         // 3. Thực hiện lưu vào bảng role_permissions

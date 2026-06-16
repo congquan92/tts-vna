@@ -2,18 +2,18 @@ import { IsString, IsEmail, IsNotEmpty, ValidateIf, MinLength, Matches } from 'c
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ForgotPasswordDto {
-  @ApiProperty({ 
-    description: 'Email cần khôi phục mật khẩu', 
+  @ApiProperty({
+    description: 'Email cần khôi phục mật khẩu',
     example: 'nguyenvana@gmail.com',
-    required: true 
+    required: true
   })
   @IsNotEmpty({ message: 'Email không được để trống' })
   @IsEmail({}, { message: 'Email không đúng định dạng' })
   email!: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Mã OTP nhận được qua email (Bắt buộc nếu muốn đổi mật khẩu)', 
-    example: '123456' 
+  @ApiPropertyOptional({
+    description: 'Mã OTP nhận được qua email (Bắt buộc nếu muốn đổi mật khẩu)',
+    example: '123456'
   })
   @ValidateIf(o => o.newPassword || o.confirmNewPassword)
   @IsNotEmpty({ message: 'Mã OTP không được để trống' })
