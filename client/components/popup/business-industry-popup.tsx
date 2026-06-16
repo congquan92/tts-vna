@@ -6,6 +6,7 @@ import { BusinessStatus } from "@/types/businessIndustry";
 import type { BusinessIndustry } from "@/types/businessIndustry";
 import { BusinessIndustryApi } from "@/api/businessIndustry";
 import { Save } from "lucide-react";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type BusinessIndustryPopupProps = {
     isOpen: boolean;
@@ -23,15 +24,53 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
 
-    // Fetch parent options (not level 4)
+    const calculateLevel = (codeStr: string): number => {
+        const trimmed = codeStr.trim();
+        if (trimmed.length >= 1 && trimmed.length <= 5) {
+            return trimmed.length;
+        }
+        return 0;
+    };
+
+    // Initialize form data when isOpen changes to avoid cascading renders in useEffect
+    const [lastOpened, setLastOpened] = useState(false);
+    if (isOpen && !lastOpened) {
+        setLastOpened(true);
+        if (editingItem) {
+            setCode(editingItem.code);
+            setName(editingItem.name);
+            setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
+            setStatus(editingItem.status);
+        } else {
+            setCode("");
+            setName("");
+            setParentId("");
+            setStatus(BusinessStatus.ACTIVE);
+        }
+        setErrors({});
+    } else if (!isOpen && lastOpened) {
+        setLastOpened(false);
+    }
+
+    // Fetch parent options based on current level
     useEffect(() => {
         const fetchParents = async () => {
             try {
-                const list = await BusinessIndustryApi.findNotLevel4();
-                // Filter out current editing item to prevent self-parenting
-                const filtered = list.filter((item) => !editingItem || item.id !== editingItem.id);
+                const list = await BusinessIndustryApi.findAll();
+                const currentLevel = calculateLevel(code);
+
+                // Filter options based on rules:
+                const filtered = list.filter((item) => {
+                    // Prevent self-parenting
+                    if (editingItem && item.id === editingItem.id) return false;
+
+                    // Level calculation for filtering
+                    if (currentLevel <= 1) return false; // Level 1 has no parent
+                    return (item.level ?? 0) < currentLevel;
+                });
+
                 const options = filtered.map((item) => ({
-                    label: `${item.code} - ${item.name}`,
+                    label: `${item.code} - ${item.name} (Cấp ${item.level ?? "?"})`,
                     value: String(item.id),
                 }));
                 setParentOptions(options);
@@ -43,24 +82,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         if (isOpen) {
             fetchParents();
         }
-    }, [isOpen, editingItem]);
-
-    useEffect(() => {
-        if (isOpen) {
-            if (editingItem) {
-                setCode(editingItem.code);
-                setName(editingItem.name);
-                setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
-                setStatus(editingItem.status);
-            } else {
-                setCode("");
-                setName("");
-                setParentId("");
-                setStatus(BusinessStatus.ACTIVE);
-            }
-            setErrors({});
-        }
-    }, [isOpen, editingItem]);
+    }, [isOpen, editingItem, code]);
 
     if (!isOpen) return null;
 
@@ -98,53 +120,55 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-            <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
-                {/* Header */}
-                <div className="bg-blue-600 px-6 py-3.5 text-center rounded-t-xl">
-                    <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>
-                </div>
+        <>
+            <LoadingOverlay isLoading={submitting} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
+                <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
+                    {/* Header */}
+                    <div className="bg-blue-600 px-6 py-3.5 text-center rounded-t-xl">
+                        <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>
+                    </div>
 
-                {/* Form Fields */}
-                <div className="px-6 py-6 space-y-6">
-                    <InputField name="code" label="Mã ngành *" value={code} placeholder="Nhập mã ngành" onChange={(e) => setCode(e.target.value)} error={errors.code} />
+                    {/* Form Fields */}
+                    <div className="px-6 py-6 space-y-6">
+                        <InputField name="code" label="Mã ngành *" value={code} placeholder="Nhập mã ngành" onChange={(e) => setCode(e.target.value)} error={errors.code} />
 
-                    <InputField name="name" label="Tên ngành *" value={name} placeholder="Nhập tên ngành" onChange={(e) => setName(e.target.value)} error={errors.name} />
+                        <InputField name="name" label="Tên ngành *" value={name} placeholder="Nhập tên ngành" onChange={(e) => setName(e.target.value)} error={errors.name} />
 
-                    <InputField name="parentId" label="Nhóm ngành cha" value={parentId} isSelect isSearchable placeholder="Chọn nhóm ngành cha" options={parentOptions} onChange={(e) => setParentId(e.target.value)} />
+                        <InputField name="parentId" label="Nhóm ngành cha" value={parentId} isSelect isSearchable placeholder="Chọn nhóm ngành cha" options={parentOptions} onChange={(e) => setParentId(e.target.value)} />
 
-                    <InputField
-                        name="status"
-                        label="Trạng thái *"
-                        value={status}
-                        isSelect
-                        placeholder="Chọn trạng thái"
-                        options={[
-                            { label: "Sử dụng", value: BusinessStatus.ACTIVE },
-                            { label: "Ngừng sử dụng", value: BusinessStatus.INACTIVE },
-                        ]}
-                        onChange={(e) => setStatus(e.target.value)}
-                        error={errors.status}
-                        disabled={!editingItem}
-                    />
-                </div>
+                        <InputField
+                            name="status"
+                            label="Trạng thái *"
+                            value={status}
+                            isSelect
+                            placeholder="Chọn trạng thái"
+                            options={[
+                                { label: "Sử dụng", value: BusinessStatus.ACTIVE },
+                                { label: "Ngừng sử dụng", value: BusinessStatus.INACTIVE },
+                            ]}
+                            onChange={(e) => setStatus(e.target.value)}
+                            error={errors.status}
+                            disabled={!editingItem}
+                        />
+                    </div>
 
-                {/* Footer Buttons */}
-                <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-4">
-                    <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer" disabled={submitting}>
-                        Huỷ bỏ
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSave}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-w-[80px]"
-                        disabled={submitting}
-                    >
-                        <Save className="size-4 shrink-0" />
-                        <span>{submitting ? "Đang lưu..." : "Lưu"}</span>
-                    </button>
+                    {/* Footer Buttons */}
+                    <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-semibold text-gray-500 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
+                            Huỷ bỏ
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-[14px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-w-20"
+                        >
+                            <Save className="size-4 shrink-0" />
+                            <span>Lưu</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

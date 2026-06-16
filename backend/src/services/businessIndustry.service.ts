@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { BusinessIndustryRepository } from '../repositories/businessIndustry.repository';
 import { CreateBusinessIndustryDto } from '../dto/businessIndustry/createBusinessIndustry.dto';
@@ -17,6 +18,12 @@ export class BusinessIndustryService {
 
   async create(dto: CreateBusinessIndustryDto): Promise<BusinessIndustryResponseDto> {
     const level = this.calculateLevel(dto.code);
+
+    // Kiểm tra xem mã ngành đã tồn tại chưa
+    const existing = await this.repo.findByCode(dto.code);
+    if (existing) {
+      throw new ConflictException(`Mã ngành '${dto.code}' đã tồn tại trong hệ thống`);
+    }
 
     // Resolve parentId if provided (accept id or code)
     let parentId: number | undefined;
@@ -80,6 +87,11 @@ export class BusinessIndustryService {
     }
 
     if (dto.code && dto.code !== item.code) {
+      // Kiểm tra xem mã mới đã được sử dụng chưa
+      const existing = await this.repo.findByCode(dto.code);
+      if (existing && existing.id !== item.id) {
+        throw new ConflictException(`Mã ngành '${dto.code}' đã được sử dụng bởi ngành nghề khác`);
+      }
       item.code = dto.code;
       item.level = this.calculateLevel(dto.code);
     }
