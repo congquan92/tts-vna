@@ -9,6 +9,7 @@ import { Camera, Save, Calendar } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/utils/display";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 interface Ward {
     ward_code: string;
@@ -276,14 +277,15 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
     return (
         <div className="space-y-5 pb-10">
+            <LoadingOverlay isLoading={submitting} />
             <TopHero
                 lable={editingItem ? "Chi tiết người dùng" : "Thêm mới người dùng"}
                 component={
                     <div className="flex gap-3">
-                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={onClose} disabled={submitting}>
+                        <Button variant="outline" size="sm" className="border-none font-bold text-gray-500 hover:bg-gray-100" onClick={onClose}>
                             Hủy Bỏ
                         </Button>
-                        <Button variant="primary" size="sm" className="pl-2 font-bold" onClick={handleSave} loading={submitting}>
+                        <Button variant="primary" size="sm" className="pl-2 font-bold" onClick={handleSave}>
                             <Save className="size-5 mr-2" /> Lưu
                         </Button>
                     </div>
@@ -322,8 +324,8 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
                     <div className="flex items-center justify-between w-full mt-auto pt-4 border-t border-gray-50">
                         <span className="text-sm font-bold text-gray-800">Kích hoạt</span>
-                        <label className="relative inline-flex items-center cursor-not-allowed opacity-50">
-                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))} disabled={true} />
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={formData.isActive} onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))} />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>

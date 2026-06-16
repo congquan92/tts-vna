@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 // import Alert from "@/components/ui/Alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 type FormErrors = {
     account?: string;
@@ -91,6 +92,7 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-white">
+            <LoadingOverlay isLoading={loading} />
             <div className="flex w-full max-w-[550px] flex-col items-center justify-center rounded-lg shadow-lg p-5">
                 {/* Logo  */}
                 <div className="mb-6 h-32 w-32">
@@ -141,7 +143,7 @@ export default function LoginPage() {
 
                     <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-2">
-                            <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 cursor-pointer accent-blue-600 rounded border-gray-300" />
+                            <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 cursor-pointer accent-blue-600 rounded border-gray-300" disabled={loading} />
                             <label htmlFor="rememberMe" className="cursor-pointer text-[15px] text-gray-700">
                                 Nhớ đăng nhập
                             </label>
@@ -155,7 +157,7 @@ export default function LoginPage() {
 
                     {/* Buttons */}
                     <div className="mt-4 flex flex-col gap-4 mb-4">
-                        <Button variant="primary" type="submit" loading={loading}>
+                        <Button variant="primary" type="submit" disabled={loading}>
                             Đăng nhập
                         </Button>
 

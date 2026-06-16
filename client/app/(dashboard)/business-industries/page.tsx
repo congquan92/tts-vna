@@ -89,7 +89,8 @@ export default function BusinessIndustriesPage() {
             closeModal();
         } catch (error: any) {
             if (axios.isAxiosError(error) && error.response?.status === 409) {
-                toast.error("Mã đã được sử dụng. Vui lòng nhập mã khác");
+                const serverMessage = error.response?.data?.message;
+                toast.error(serverMessage || "Mã đã được sử dụng. Vui lòng nhập mã khác");
             } else {
                 toast.error("Có lỗi xảy ra khi lưu");
             }
