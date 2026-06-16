@@ -57,7 +57,8 @@ export default function EnterpriseStepConfirm({ form, attachmentGroups }: Props)
 
     const industryLabel = useMemo(() => {
         const ind = industries.find((i) => i.id?.toString() === form.industry);
-        return ind ? `${ind.code} - ${ind.name}` : form.industry;
+        if (!ind) return "—";
+        return `${ind.code ?? ""} - ${ind.name ?? ""}`.trim();
     }, [form.industry, industries]);
 
     // Build address string
