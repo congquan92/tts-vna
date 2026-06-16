@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import type { User } from "@/types/auth";
-import { Save } from "lucide-react"; // Đổi icon thành Save (đĩa mềm)
-import { validateStrongPassword } from "@/utils/validation";
+import { Save } from "lucide-react";
 import LoadingOverlay from "@/components/LoadingOverlay";
 
 type CreatePasswordModalProps = {
@@ -15,7 +14,6 @@ type CreatePasswordModalProps = {
 
 export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: CreatePasswordModalProps) {
     const [password, setPassword] = useState("");
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -23,26 +21,12 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
         setPrevIsOpen(isOpen);
         if (isOpen) {
             setPassword("");
-            setErrors({});
         }
     }
 
     if (!isOpen || !user) return null;
 
-    const validate = () => {
-        const nextErrors: Record<string, string> = {};
-        const passwordValidation = validateStrongPassword(password);
-        if (!passwordValidation.isValid) {
-            nextErrors.password = passwordValidation.message;
-        }
-
-        setErrors(nextErrors);
-        return Object.keys(nextErrors).length === 0;
-    };
-
     const handleSave = async () => {
-        if (!validate()) return;
-
         setSubmitting(true);
         try {
             await onSave(password);
@@ -77,11 +61,8 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
                                 placeholder="Nhập mật khẩu mới mong muốn"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={`w-full px-3 py-2.5 text-[15px] border rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-gray-400 ${
-                                    errors.password ? "border-red-500" : "border-gray-200"
-                                }`}
+                                className="w-full px-3 py-2.5 text-[15px] border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-gray-400"
                             />
-                            {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>}
                         </div>
                     </div>
 
