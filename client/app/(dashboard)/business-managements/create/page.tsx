@@ -145,10 +145,7 @@ export default function CreateBusinessPage() {
         }
 
         // --- Section: Thông tin liên hệ ---
-        if (!form.foreignName.trim()) {
-            next.foreignName = "Tên viết bằng tiếng nước ngoài là bắt buộc";
-            valid = false;
-        } else if (form.foreignName.trim().length > 255) {
+        if (form.foreignName.trim() && form.foreignName.trim().length > 255) {
             next.foreignName = "Tên tiếng nước ngoài tối đa 255 ký tự";
             valid = false;
         }
@@ -161,36 +158,12 @@ export default function CreateBusinessPage() {
             valid = false;
         }
 
-        if (!form.phone.trim()) {
-            next.phone = "Số điện thoại cơ quan là bắt buộc";
-            valid = false;
-        } else if (!PHONE_REGEX.test(form.phone.trim())) {
+        if (form.phone.trim() && !PHONE_REGEX.test(form.phone.trim())) {
             next.phone = "Số điện thoại cơ quan không hợp lệ (8-15 chữ số)";
             valid = false;
         }
 
-        if (!form.businessProvince) {
-            next.businessProvince = "Tỉnh/TP hoạt động là bắt buộc";
-            valid = false;
-        }
-        if (!form.businessWard) {
-            next.businessWard = "Phường/Xã hoạt động là bắt buộc";
-            valid = false;
-        }
-        if (!form.businessAddress.trim()) {
-            next.businessAddress = "Địa điểm kinh doanh là bắt buộc";
-            valid = false;
-        }
-
-        if (!form.representative.trim()) {
-            next.representative = "Người đứng đầu là bắt buộc";
-            valid = false;
-        }
-
-        if (!form.representativePhone.trim()) {
-            next.representativePhone = "SĐT người đứng đầu là bắt buộc";
-            valid = false;
-        } else if (!MOBILE_REGEX.test(form.representativePhone.trim())) {
+        if (form.representativePhone.trim() && !MOBILE_REGEX.test(form.representativePhone.trim())) {
             next.representativePhone = "SĐT không hợp lệ (10-11 chữ số)";
             valid = false;
         }

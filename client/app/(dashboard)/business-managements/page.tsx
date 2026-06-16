@@ -52,8 +52,13 @@ export default function BusinessManagementsPage() {
     const [wardOptions, setWardOptions] = useState<{ label: string; value: string }[]>([]);
 
     const businessTypeOptions = useMemo(() => businessTypes.map((t) => ({ label: t.name, value: t.id.toString() })), [businessTypes]);
-    const industryOptions = useMemo(() => industries.filter((i) => i.level === 4 || i.level === 1).map((t) => ({ label: t.name, value: t.id.toString() })), [industries]);
-
+    const industryOptions = useMemo(() =>
+        industries.map((t) => ({
+            label: t.name,
+            value: t.id.toString(),
+        })),
+        [industries]);
+        
     // Filter states
     const [filters, setFilters] = useState({
         businessName: "",
@@ -341,9 +346,8 @@ export default function BusinessManagementsPage() {
                         </div>
                         <div className="px-3 relative" ref={wardDropdownRef}>
                             <div
-                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${
-                                    isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
-                                }`}
+                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
+                                    }`}
                                 onClick={() => {
                                     if (isWardOpen) setWardSearch("");
                                     setIsWardOpen(!isWardOpen);

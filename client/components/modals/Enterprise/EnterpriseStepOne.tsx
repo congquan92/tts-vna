@@ -262,7 +262,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                         <h3 className="text-[17px] font-bold text-gray-950 mb-4">Thông tin liên hệ</h3>
                         <div className="grid grid-cols-3 gap-4">
                             <InputField
-                                label="Tên viết bằng tiếng nước ngoài *"
+                                label="Tên viết bằng tiếng nước ngoài"
                                 value={form.foreignName}
                                 onChange={(e) => onChange("foreignName", e.target.value)}
                                 placeholder="Tên viết bằng tiếng nước ngoài"
@@ -270,11 +270,11 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 error={errors.foreignName}
                             />
                             <InputField label="Email *" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Nhập email" disabled={isEmailDisabled} error={errors.email} />
-                            <InputField label="Số điện thoại cơ quan *" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Số điện thoại cơ quan" disabled={isViewMode} error={errors.phone} />
+                            <InputField label="Số điện thoại cơ quan" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Số điện thoại cơ quan" disabled={isViewMode} error={errors.phone} />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
                             <InputField
-                                label="Tỉnh/TP hoạt động KD *"
+                                label="Tỉnh/TP hoạt động KD"
                                 isSelect
                                 isSearchable
                                 value={form.businessProvince}
@@ -285,7 +285,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 error={errors.businessProvince}
                             />
                             <InputField
-                                label="Phường/Xã hoạt động KD *"
+                                label="Phường/Xã hoạt động KD"
                                 isSelect
                                 isSearchable
                                 value={form.businessWard}
@@ -295,11 +295,11 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 placeholder="Chọn phường/xã"
                                 error={errors.businessWard}
                             />
-                            <InputField label="Địa điểm kinh doanh *" value={form.businessAddress} onChange={(e) => onChange("businessAddress", e.target.value)} placeholder="Địa điểm kinh doanh" disabled={isViewMode} error={errors.businessAddress} />
+                            <InputField label="Địa điểm kinh doanh" value={form.businessAddress} onChange={(e) => onChange("businessAddress", e.target.value)} placeholder="Địa điểm kinh doanh" disabled={isViewMode} error={errors.businessAddress} />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">
                             <InputField
-                                label="Người đứng đầu doanh nghiệp *"
+                                label="Người đứng đầu doanh nghiệp"
                                 value={form.representative}
                                 onChange={(e) => onChange("representative", e.target.value)}
                                 placeholder="Người đứng đầu doanh nghiệp"
@@ -307,7 +307,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 error={errors.representative}
                             />
                             <InputField
-                                label="SĐT liên hệ người đứng đầu *"
+                                label="SĐT liên hệ người đứng đầu"
                                 value={form.representativePhone}
                                 onChange={(e) => onChange("representativePhone", e.target.value)}
                                 placeholder="SĐT liên hệ người đứng đầu"

@@ -196,7 +196,7 @@ export default function BusinessTypesPage() {
                                 }}
                                 className="w-full appearance-none bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none focus:border-primary transition-colors cursor-pointer"
                             >
-                                <option value="">Trạng thái</option>
+                                <option value="">Tất cả</option>
                                 <option value="active">Sử dụng</option>
                                 <option value="inactive">Ngừng sử dụng</option>
                             </select>
