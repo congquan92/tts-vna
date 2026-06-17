@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsInt, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class SearchBusinessDto {
     @ApiPropertyOptional({ example: 1 })
@@ -44,7 +44,11 @@ export class SearchBusinessDto {
 
     @ApiPropertyOptional({ example: true })
     @IsOptional()
-    @Type(() => Boolean)
+    @Transform(({ value }) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        return value;
+    })
     @IsBoolean()
     status?: boolean;
 }

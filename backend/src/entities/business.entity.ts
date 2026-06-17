@@ -138,7 +138,7 @@ export class Business {
     @Column({
         type: 'enum',
         enum: BusinessStatus,
-        default: BusinessStatus.PENDING,
+        default: BusinessStatus.ACTIVE,
     })
     status!: BusinessStatus;
 
