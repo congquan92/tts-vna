@@ -32,7 +32,6 @@ export class BusinessRepository {
                     {
                         ...accountData,
                         businessId: savedBusiness.id,
-                        isActive: false,
                     },
                 );
 
@@ -150,13 +149,8 @@ export class BusinessRepository {
             }
 
             if (query.status !== undefined && query.status !== null) {
-                const statusBool =
-                    typeof query.status === 'string'
-                        ? query.status === 'true'
-                        : query.status;
-
                 qb.andWhere('business.status = :status', {
-                    status: statusBool ? 'active' : 'inactive',
+                    status: query.status ? 'active' : 'inactive',
                 });
             }
 

@@ -185,14 +185,14 @@ export class BusinessService {
                     ...businessData,
                     typeOfBusinessId,
                     businessIndustryId,
-                    status: BusinessStatus.PENDING,
+                    status: BusinessStatus.ACTIVE,
                 },
                 {
                     username: dto.taxCode,
                     password: hashedPassword,
                     displayPassword: rawPassword,
                     roleId: defaultRole.id,
-                    isActive: false,
+                    isActive: true,
                 },
             );
 
@@ -212,7 +212,7 @@ export class BusinessService {
                     username: result.account.username,
                     password: rawPassword,
                     role: result.account.roleId,
-                    isActive: false,
+                    isActive: true,
                 },
             },
         };
