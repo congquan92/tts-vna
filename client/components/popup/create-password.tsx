@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { User } from "@/types/auth";
-import { Save } from "lucide-react";
+import { Save, Eye, EyeOff } from "lucide-react";
 import LoadingOverlay from "@/components/LoadingOverlay";
 
 type CreatePasswordModalProps = {
@@ -14,6 +14,7 @@ type CreatePasswordModalProps = {
 
 export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: CreatePasswordModalProps) {
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -21,6 +22,7 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
         setPrevIsOpen(isOpen);
         if (isOpen) {
             setPassword("");
+            setShowPassword(false);
         }
     }
 
@@ -55,14 +57,21 @@ export default function CreatePasswordModal({ isOpen, user, onClose, onSave }: C
                         </p>
 
                         {/* Ô nhập mật khẩu */}
-                        <div>
+                        <div className="relative">
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Nhập mật khẩu mới mong muốn"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2.5 text-[15px] border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-gray-400"
+                                className="w-full pl-3 pr-10 py-2.5 text-[15px] border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-gray-400"
                             />
+                            <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                            </button>
                         </div>
                     </div>
 
