@@ -105,9 +105,13 @@ export default function CreateBusinessPage() {
         if (!form.taxCode.trim()) {
             next.taxCode = "Mã số thuế là bắt buộc";
             valid = false;
-        } else if (!TAX_CODE_REGEX.test(form.taxCode.trim())) {
-            next.taxCode = "Mã số thuế không hợp lệ. Định dạng: 10 chữ số hoặc 10 chữ số-3 chữ số (VD: 0123456789 hoặc 0123456789-001)";
-            valid = false;
+        } else {
+            const digitCount = form.taxCode.replace(/\D/g, "").length;
+            const onlyDigitsAndDash = /^[0-9]+(-[0-9]+)?$/.test(form.taxCode.trim());
+            if (!onlyDigitsAndDash || digitCount < 10 || digitCount > 15 || form.taxCode.startsWith("-")) {
+                next.taxCode = "Mã số thuế phải từ 10 đến 15 số (không cho nhập âm)";
+                valid = false;
+            }
         }
 
         if (!form.businessType) {
@@ -248,14 +252,20 @@ export default function CreateBusinessPage() {
     const handleAddFiles = (groupIndex: number, files: FileList) => {
         if (files.length === 0) return;
 
+        const file = files[0];
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+        if (!isImage && !isPdf) {
+            toast.error("Chỉ chấp nhận file hình ảnh hoặc PDF");
+            return;
+        }
+
         // Clean up old object URLs for this group
         const currentGroup = attachmentGroups[groupIndex];
         currentGroup.files.forEach((f) => {
             if (f.url) URL.revokeObjectURL(f.url);
         });
 
-        // Only take the first file
-        const file = files[0];
         const id = nextFileIdRef.current++;
         const newFile: UploadedFile = {
             id,
