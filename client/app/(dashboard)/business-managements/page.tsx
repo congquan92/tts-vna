@@ -15,7 +15,6 @@ import Button from "@/components/ui/Button";
 import { Plus, Eye, Pencil, Key, ChevronLeft, ChevronRight, ChevronDown, Upload } from "lucide-react";
 
 import CreatePasswordModal from "@/components/popup/create-password";
-import AccountInfoPopup from "@/components/popup/account-info-popup";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
@@ -42,9 +41,7 @@ export default function BusinessManagementsPage() {
     const [selectedEnterprise, setSelectedEnterprise] = useState<Business | null>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
-    // Account details modal state
-    const [selectedAccountDetails, setSelectedAccountDetails] = useState<{ accountNumber: string; password?: string } | null>(null);
-    const [isAccountInfoOpen, setIsAccountInfoOpen] = useState(false);
+
 
     // Dropdown data
     const [businessTypes, setBusinessTypes] = useState<TypeOfBusiness[]>([]);
@@ -52,13 +49,15 @@ export default function BusinessManagementsPage() {
     const [wardOptions, setWardOptions] = useState<{ label: string; value: string }[]>([]);
 
     const businessTypeOptions = useMemo(() => businessTypes.map((t) => ({ label: t.name, value: t.id.toString() })), [businessTypes]);
-    const industryOptions = useMemo(() =>
-        industries.map((t) => ({
-            label: t.name,
-            value: t.id.toString(),
-        })),
-        [industries]);
-        
+    const industryOptions = useMemo(
+        () =>
+            industries.map((t) => ({
+                label: t.name,
+                value: t.id.toString(),
+            })),
+        [industries],
+    );
+
     // Filter states
     const [filters, setFilters] = useState({
         businessName: "",
@@ -171,21 +170,8 @@ export default function BusinessManagementsPage() {
         router.push(`/business-managements/edit/${item.id}`);
     };
 
-    const handleView = async (item: Business) => {
-        try {
-            setLoading(true);
-            const detail = (await BusinessApi.getById(item.id)) as ApiBusiness;
-            const account = detail.accounts?.[0];
-            setSelectedAccountDetails({
-                accountNumber: account?.username || detail.taxCode,
-                password: account?.displayPassword,
-            });
-            setIsAccountInfoOpen(true);
-        } catch {
-            toast.error("Không thể tải thông tin tài khoản");
-        } finally {
-            setLoading(false);
-        }
+    const handleView = (item: Business) => {
+        router.push(`/business-managements/view/${item.id}`);
     };
 
     const handleOpenPasswordReset = (item: Business) => {
@@ -346,8 +332,9 @@ export default function BusinessManagementsPage() {
                         </div>
                         <div className="px-3 relative" ref={wardDropdownRef}>
                             <div
-                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
-                                    }`}
+                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${
+                                    isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
+                                }`}
                                 onClick={() => {
                                     if (isWardOpen) setWardSearch("");
                                     setIsWardOpen(!isWardOpen);
@@ -499,7 +486,6 @@ export default function BusinessManagementsPage() {
                 onSave={handleSavePassword}
             />
 
-            <AccountInfoPopup isOpen={isAccountInfoOpen} onClose={() => setIsAccountInfoOpen(false)} accountNumber={selectedAccountDetails?.accountNumber || ""} password={selectedAccountDetails?.password} />
         </main>
     );
 }

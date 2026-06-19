@@ -323,6 +323,14 @@ export default function EditBusinessPage() {
     const handleAddFiles = (groupIndex: number, files: FileList) => {
         if (files.length === 0) return;
 
+        const file = files[0];
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+        if (!isImage && !isPdf) {
+            toast.error("Chỉ chấp nhận file hình ảnh hoặc PDF");
+            return;
+        }
+
         // Clean up old object URLs for this group
         const currentGroup = attachmentGroups[groupIndex];
         currentGroup.files.forEach((f) => {
@@ -336,8 +344,6 @@ export default function EditBusinessPage() {
             }
         });
 
-        // Only take the first file
-        const file = files[0];
         const id = nextFileIdRef.current++;
         const newFile: UploadedFile = {
             id,

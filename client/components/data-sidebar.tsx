@@ -10,7 +10,7 @@ export type SidebarMenuItem = {
     items?: { id: string; label: string; path: string }[];
 };
 
-export const menuData: SidebarMenuItem[] = [
+export const menuDataSO: SidebarMenuItem[] = [
     {
         id: "system",
         label: "Quản trị phần mềm",
@@ -33,5 +33,22 @@ export const menuData: SidebarMenuItem[] = [
             { id: "category", label: "Danh mục chung", path: "/category" },
             { id: "accident-types", label: "TNLĐ theo HĐLĐ", path: "/accident-types" },
         ],
+    },
+];
+
+export const menuDataDONGHIEP: SidebarMenuItem[] = [
+    {
+        id: "system",
+        label: "Hệ Thống",
+        icon: <Settings size={20} className="opacity-90" />,
+        isOpen: true,
+        items: [{ id: "company-info", label: "Thông tin doanh nghiệp", path: "/company-info" }],
+    },
+    {
+        id: "accidents",
+        label: "Tai nạn lao động",
+        icon: <Settings size={20} className="opacity-90" />,
+        isOpen: true,
+        items: [{ id: "accident-types", label: "TNLĐ theo HĐLĐ", path: "/company-accidents" }],
     },
 ];

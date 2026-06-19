@@ -1,52 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TopHero from "@/components/TopHero";
 import BusinessIndustryPopup from "@/components/popup/business-industry-popup";
 import { BusinessIndustryApi } from "@/api/businessIndustry";
-import type { BusinessIndustry } from "@/types/businessIndustry";
+import type { BusinessIndustry, CreateBusinessIndustryPayload } from "@/types/businessIndustry";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import axios from "axios";
-import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
+import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, ChevronDown, Trash2, X } from "lucide-react";
+
+interface TreeNode extends BusinessIndustry {
+    children: TreeNode[];
+}
 
 export default function BusinessIndustriesPage() {
-    const [data, setData] = useState<BusinessIndustry[]>([]);
-    const [total, setTotal] = useState(0);
+    const [allIndustries, setAllIndustries] = useState<BusinessIndustry[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<BusinessIndustry | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [userExpandedIds, setUserExpandedIds] = useState<Record<number, boolean>>({});
 
     // Filter states
     const [filterCode, setFilterCode] = useState("");
     const [filterName, setFilterName] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
 
-    // Pagination
+    // Pagination (Pages the root-level categories to ensure parents & children stay together)
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const levelNum = filterLevel ? parseInt(filterLevel) : undefined;
-            const res = await BusinessIndustryApi.search({
-                page: currentPage,
-                limit: pageSize,
-                code: filterCode || undefined,
-                name: filterName || undefined,
-                level: isNaN(Number(levelNum)) ? undefined : levelNum,
-            });
-
-            setData(res.data || []);
-            // Handle backend meta wrapping
-            const meta = (res as any).meta;
-            if (meta) {
-                setTotal(meta.total ?? 0);
-            } else {
-                setTotal(res.total ?? 0);
-            }
+            const res = await BusinessIndustryApi.findAll();
+            setAllIndustries(res || []);
         } catch (error) {
             console.error("Error fetching business industries:", error);
             toast.error("Không thể tải danh sách ngành nghề kinh doanh");
@@ -56,11 +45,131 @@ export default function BusinessIndustriesPage() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchData();
-        }, 300); // Debounce search
-        return () => clearTimeout(timer);
-    }, [filterCode, filterName, filterLevel, currentPage, pageSize]);
+        // Defer state update inside effect to avoid cascading renders warning
+        Promise.resolve().then(fetchData);
+    }, []);
+
+    // Build hierarchical tree structure from flat list
+    const treeData = useMemo(() => {
+        const nodeMap: Record<number, TreeNode> = {};
+        allIndustries.forEach((item) => {
+            nodeMap[item.id] = { ...item, children: [] };
+        });
+
+        const rootNodes: TreeNode[] = [];
+        allIndustries.forEach((item) => {
+            const node = nodeMap[item.id];
+            if (item.parentId && nodeMap[item.parentId]) {
+                nodeMap[item.parentId].children.push(node);
+            } else {
+                rootNodes.push(node);
+            }
+        });
+
+        // Sort nodes by code alphabetically
+        const sortTree = (nodes: TreeNode[]) => {
+            nodes.sort((a, b) => a.code.localeCompare(b.code));
+            nodes.forEach((node) => {
+                if (node.children && node.children.length > 0) {
+                    sortTree(node.children);
+                }
+            });
+        };
+        sortTree(rootNodes);
+
+        return rootNodes;
+    }, [allIndustries]);
+
+    // Filter tree client-side
+    const filteredTree = useMemo(() => {
+        if (!filterCode && !filterName && !filterLevel) {
+            return treeData;
+        }
+
+        const filterNodes = (nodes: TreeNode[]): TreeNode[] => {
+            return nodes
+                .map((node) => {
+                    const matchesCode = !filterCode || node.code.toLowerCase().includes(filterCode.toLowerCase());
+                    const matchesName = !filterName || node.name.toLowerCase().includes(filterName.toLowerCase());
+                    const matchesLevel = !filterLevel || String(node.level) === filterLevel;
+                    const matches = matchesCode && matchesName && matchesLevel;
+
+                    const filteredChildren = node.children ? filterNodes(node.children) : [];
+
+                    if (matches || filteredChildren.length > 0) {
+                        return {
+                            ...node,
+                            children: filteredChildren,
+                        };
+                    }
+                    return null;
+                })
+                .filter((node): node is TreeNode => node !== null);
+        };
+
+        return filterNodes(treeData);
+    }, [treeData, filterCode, filterName, filterLevel]);
+
+    // Auto expand parents of matching nodes when filters are applied (derived state, avoids useEffect set-state warning)
+    const isFilterActive = !!(filterCode || filterName || filterLevel);
+
+    const autoExpandedIds = useMemo(() => {
+        if (!isFilterActive) return {};
+
+        const newExpanded: Record<number, boolean> = {};
+        const collectExpanded = (nodes: TreeNode[]): boolean => {
+            let anyMatch = false;
+            nodes.forEach((node) => {
+                const matchesCode = !filterCode || node.code.toLowerCase().includes(filterCode.toLowerCase());
+                const matchesName = !filterName || node.name.toLowerCase().includes(filterName.toLowerCase());
+                const matchesLevel = !filterLevel || String(node.level) === filterLevel;
+                const matches = matchesCode && matchesName && matchesLevel;
+
+                const childrenMatch = node.children ? collectExpanded(node.children) : false;
+
+                if (childrenMatch) {
+                    newExpanded[node.id] = true;
+                }
+                if (matches || childrenMatch) {
+                    anyMatch = true;
+                }
+            });
+            return anyMatch;
+        };
+
+        collectExpanded(treeData);
+        return newExpanded;
+    }, [treeData, filterCode, filterName, filterLevel, isFilterActive]);
+
+    const expandedIds = useMemo(() => {
+        return { ...userExpandedIds, ...autoExpandedIds };
+    }, [userExpandedIds, autoExpandedIds]);
+
+    const total = filteredTree.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Get paginated root nodes
+    const paginatedRootNodes = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        return filteredTree.slice(start, end);
+    }, [filteredTree, currentPage, pageSize]);
+
+    // Flatten tree structure of paginated nodes for grid display
+    const displayData = useMemo(() => {
+        const flatten = (nodes: TreeNode[]): TreeNode[] => {
+            const list: TreeNode[] = [];
+            nodes.forEach((node) => {
+                list.push(node);
+                const isExpanded = expandedIds[node.id];
+                if (isExpanded && node.children && node.children.length > 0) {
+                    list.push(...flatten(node.children));
+                }
+            });
+            return list;
+        };
+        return flatten(paginatedRootNodes);
+    }, [paginatedRootNodes, expandedIds]);
 
     const openNew = () => {
         setEditingItem(null);
@@ -76,7 +185,7 @@ export default function BusinessIndustriesPage() {
         setIsModalOpen(false);
     };
 
-    const handleSave = async (payload: any) => {
+    const handleSave = async (payload: CreateBusinessIndustryPayload) => {
         try {
             if (editingItem) {
                 await BusinessIndustryApi.update(editingItem.id, payload);
@@ -87,7 +196,7 @@ export default function BusinessIndustriesPage() {
             }
             fetchData();
             closeModal();
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (axios.isAxiosError(error) && error.response?.status === 409) {
                 const serverMessage = error.response?.data?.message;
                 toast.error(serverMessage || "Mã đã được sử dụng. Vui lòng nhập mã khác");
@@ -98,12 +207,33 @@ export default function BusinessIndustriesPage() {
         }
     };
 
+    const getDescendantIds = (nodeId: number): number[] => {
+        const ids: number[] = [];
+        const findDescendants = (id: number) => {
+            const children = allIndustries.filter((item) => item.parentId === id);
+            children.forEach((child) => {
+                ids.push(child.id);
+                findDescendants(child.id);
+            });
+        };
+        findDescendants(nodeId);
+        return ids;
+    };
+
     const handleSelectOne = (id: number) => {
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+        const isSelected = selectedIds.includes(id);
+        const descendantIds = getDescendantIds(id);
+        const targetIds = [id, ...descendantIds];
+
+        if (isSelected) {
+            setSelectedIds((prev) => prev.filter((x) => !targetIds.includes(x)));
+        } else {
+            setSelectedIds((prev) => [...new Set([...prev, ...targetIds])]);
+        }
     };
 
     const handleSelectAll = () => {
-        const pageIds = data.map((item) => item.id);
+        const pageIds = displayData.map((item) => item.id);
         const allSelected = pageIds.every((id) => selectedIds.includes(id));
         if (allSelected) {
             setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
@@ -124,7 +254,7 @@ export default function BusinessIndustriesPage() {
             try {
                 await BusinessIndustryApi.delete(id);
                 successCount++;
-            } catch (error) {
+            } catch {
                 failCount++;
             }
         }
@@ -140,13 +270,12 @@ export default function BusinessIndustriesPage() {
         fetchData();
     };
 
-    const formatNameWithDashes = (name: string, level?: number) => {
-        if (!level || level <= 1) return name;
-        const dashes = "-".repeat(level);
-        return `${dashes} ${name}`;
+    const toggleExpand = (id: number) => {
+        setUserExpandedIds((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
     };
-
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     return (
         <main className="h-screen flex flex-col py-2">
@@ -182,7 +311,12 @@ export default function BusinessIndustriesPage() {
                     {/* Filter Row */}
                     <div className="grid pb-3 px-4 bg-[#F4F6F8] gap-3" style={{ gridTemplateColumns: "40px 40px 120px 1fr 140px" }}>
                         <div className="flex items-center justify-center">
-                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={data.length > 0 && data.every((item) => selectedIds.includes(item.id))} onChange={handleSelectAll} />
+                            <input
+                                type="checkbox"
+                                className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300"
+                                checked={displayData.length > 0 && displayData.every((item) => selectedIds.includes(item.id))}
+                                onChange={handleSelectAll}
+                            />
                         </div>
                         <div />
                         <div>
@@ -230,24 +364,52 @@ export default function BusinessIndustriesPage() {
                         <div className="text-center py-10 text-gray-500">Đang tải...</div>
                     ) : (
                         <>
-                            {data.map((item) => (
-                                <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-xs text-gray-700 items-center px-4 py-2.5" style={{ gridTemplateColumns: "40px 40px 120px 1fr 140px" }}>
-                                    <div className="flex items-center justify-center">
-                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
-                                    </div>
+                            {displayData.map((item) => {
+                                const hasChildren = item.children && item.children.length > 0;
+                                const isExpanded = !!expandedIds[item.id];
+                                const isLevel1 = item.level === 1;
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`grid gap-3 border-b border-gray-100 transition-colors text-xs items-stretch px-4 ${
+                                            isLevel1
+                                                ? "bg-gray-50/60 hover:bg-gray-100/80 text-gray-900 font-semibold"
+                                                : "bg-white hover:bg-blue-50/30 text-gray-700 font-normal"
+                                        }`}
+                                        style={{ gridTemplateColumns: "40px 40px 120px 1fr 140px" }}
+                                    >
+                                        <div className="flex items-center justify-center py-2.5">
+                                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                        </div>
 
-                                    <div className="flex items-center justify-center">
-                                        <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
-                                            <Pencil className="size-3.5" />
-                                        </button>
-                                    </div>
+                                        <div className="flex items-center justify-center py-2.5">
+                                            <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
+                                                <Pencil className="size-3.5" />
+                                            </button>
+                                        </div>
 
-                                    <div className="truncate font-medium">{item.code}</div>
-                                    <div className="truncate font-medium">{formatNameWithDashes(item.name, item.level)}</div>
-                                    <div className="truncate text-gray-500">Cấp {item.level}</div>
-                                </div>
-                            ))}
-                            {data.length === 0 && <div className="flex items-center justify-center py-12 text-sm text-gray-400">Không có dữ liệu</div>}
+                                        <div className="truncate font-medium flex items-center py-2.5">{item.code}</div>
+                                        <div className="relative flex items-center gap-1.5 py-2.5 min-w-0" style={{ paddingLeft: `${((item.level || 1) - 1) * 24}px` }}>
+                                            {hasChildren ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleExpand(item.id)}
+                                                    className="p-0.5 hover:bg-gray-100 rounded text-gray-500 focus:outline-none transition-colors"
+                                                >
+                                                    {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                                                </button>
+                                            ) : (
+                                                <div style={{ width: "18px" }} className="flex items-center justify-center">
+                                                    <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                </div>
+                                            )}
+                                            <span className="truncate">{item.name}</span>
+                                        </div>
+                                        <div className="truncate text-gray-500 flex items-center py-2.5">Cấp {item.level}</div>
+                                    </div>
+                                );
+                            })}
+                            {displayData.length === 0 && <div className="flex items-center justify-center py-12 text-sm text-gray-400">Không có dữ liệu</div>}
                         </>
                     )}
                 </div>
@@ -297,7 +459,7 @@ export default function BusinessIndustriesPage() {
             {/* Selection Banner */}
             {selectedIds.length > 0 && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
-                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-[40px]">{selectedIds.length}</div>
+                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-10">{selectedIds.length}</div>
                     <div className="px-4 text-xs font-semibold text-gray-700 select-none">dữ liệu được chọn</div>
                     <div className="pr-3 flex items-center gap-3">
                         <button type="button" onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors">

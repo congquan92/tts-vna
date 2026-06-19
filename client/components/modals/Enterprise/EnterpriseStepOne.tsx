@@ -171,11 +171,20 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
         }
     };
 
-    // Handle tax code input - only allow digits and dash
+    // Handle tax code input - only allow digits and dash, max 15 digits, no leading minus (no negative)
     const handleTaxCodeChange = (value: string) => {
         if (isTaxCodeDisabled) return;
-        const cleaned = value.replace(/[^0-9-]/g, "");
-        onChange("taxCode", cleaned);
+        // Strip any character that is not a digit or dash
+        let cleaned = value.replace(/[^0-9-]/g, "");
+        // Prevent leading dash (no negative number)
+        if (cleaned.startsWith("-")) {
+            cleaned = cleaned.substring(1);
+        }
+        // Limit digit count to 15
+        const digitCount = cleaned.replace(/\D/g, "").length;
+        if (digitCount <= 15) {
+            onChange("taxCode", cleaned);
+        }
     };
 
     const sectionTitle = mode === "create" ? "Thêm mới doanh nghiệp" : mode === "edit" ? "Chỉnh sửa doanh nghiệp" : "Chi tiết doanh nghiệp";
@@ -361,7 +370,7 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                                 type="file"
                                                 className="hidden"
                                                 onChange={(e) => handleFileChange(groupIdx, e)}
-                                                accept=".pdf,.doc,.docx,image/*"
+                                                accept=".pdf,image/*"
                                             />
                                         </div>
                                     </div>

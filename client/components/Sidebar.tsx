@@ -14,7 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Collapse from "@mui/material/Collapse";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
-import { menuData } from "@/components/data-sidebar";
+import { menuDataSO, menuDataDONGHIEP } from "@/components/data-sidebar";
 import { Menu as MenuIcon, ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import AccountPopup from "@/components/popup/account-popup";
 
@@ -29,7 +29,10 @@ export default function SidebarMUI() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => {
+            setMounted(true);
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Helper for avatar URL
@@ -46,7 +49,9 @@ export default function SidebarMUI() {
 
     const activeMenu = pathname;
 
-    const sidebarMenus = menuData.map((menu) => {
+    const baseMenus = user?.orgType === "DOANH_NGHIEP" ? menuDataDONGHIEP : menuDataSO;
+
+    const sidebarMenus = baseMenus.map((menu) => {
         if (!menu.items) return menu;
         const menuStateFromUrl = searchParams.get(menu.id);
         return {
@@ -179,7 +184,7 @@ export default function SidebarMUI() {
                             <Avatar src={getAvatarUrl(user?.avatarUrl)} alt="Avatar" sx={{ width: 44, height: 44 }} />
                         </ListItemIcon>
 
-                        <ListItemText primary={<Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>{mounted ? (user?.fullName || "Người dùng") : "Người dùng"}</Typography>} />
+                        <ListItemText primary={<Typography sx={{ fontSize: "16px", fontWeight: 400, color: "white" }}>{mounted ? user?.fullName || "Người dùng" : "Người dùng"}</Typography>} />
 
                         <ChevronRight size={22} strokeWidth={2.5} className="text-white" />
                     </ListItemButton>
