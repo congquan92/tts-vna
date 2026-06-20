@@ -405,6 +405,7 @@ export class AuthService {
     }
 
     account.password = await bcrypt.hash(newPassword as string, 10);
+    account.displayPassword = newPassword as string;
 
     await this.authRepository.updateAccount(account);
 
