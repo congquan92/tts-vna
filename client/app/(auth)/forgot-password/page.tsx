@@ -1,6 +1,7 @@
 "use client";
 
 import TextInput from "@/components/form/TextInput";
+import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import Link from "next/link";
@@ -94,7 +95,10 @@ export default function ForgotPasswordPage() {
         }
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return {
+            isValid: Object.keys(newErrors).length === 0,
+            firstMessage: newErrors.newPassword || newErrors.confirmPassword,
+        };
     };
 
     const handleSendEmail = async (e: React.FormEvent) => {
@@ -167,8 +171,11 @@ export default function ForgotPasswordPage() {
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateNewPassword()) {
-            toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ");
+        const validation = validateNewPassword();
+        if (!validation.isValid) {
+            if (validation.firstMessage) {
+                toast.error(validation.firstMessage);
+            }
             return;
         }
 
@@ -301,11 +308,10 @@ export default function ForgotPasswordPage() {
                     <>
                         <p className="text-sm text-gray-600 text-center mb-4">Nhập mật khẩu mới cho tài khoản của bạn</p>
                         <form onSubmit={handleResetPassword} className="flex flex-col gap-4 w-full">
-                            <TextInput
+                            <PasswordInput
                                 label="Mật khẩu mới"
                                 placeholder="Nhập mật khẩu mới"
                                 required={true}
-                                type="password"
                                 value={newPassword}
                                 onChange={(e) => {
                                     setNewPassword(e.target.value);
@@ -316,11 +322,10 @@ export default function ForgotPasswordPage() {
                                 error={errors.newPassword}
                             />
 
-                            <TextInput
+                            <PasswordInput
                                 label="Xác nhận mật khẩu"
                                 placeholder="Nhập lại mật khẩu"
                                 required={true}
-                                type="password"
                                 value={confirmPassword}
                                 onChange={(e) => {
                                     setConfirmPassword(e.target.value);

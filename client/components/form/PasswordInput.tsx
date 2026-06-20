@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 type PasswordInputProps = {
     label: string;
     required?: boolean;
+    placeholder?: string;
     classname?: string;
     value?: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -13,14 +14,14 @@ type PasswordInputProps = {
     error?: string;
 };
 
-export default function PasswordInput({ label, required, classname, value, onChange, disabled = false, error }: PasswordInputProps) {
+export default function PasswordInput({ label, required, placeholder = "Nhập mật khẩu", classname, value, onChange, disabled = false, error }: PasswordInputProps) {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
         <FormField label={label} required={required} error={error}>
             <div className="flex justify-between items-center px-2 pb-1">
                 <input
-                    placeholder="Nhập mật khẩu"
+                    placeholder={placeholder}
                     className={clsx(
                         "outline-none py-1 w-full disabled:bg-gray-100 disabled:cursor-not-allowed",
                         {
