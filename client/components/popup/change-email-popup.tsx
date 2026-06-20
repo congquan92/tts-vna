@@ -95,9 +95,14 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
             toast.success("Xác thực mã OTP thành công");
             setStep(2); // Chuyển sang form email mới
         } catch (error: unknown) {
-            let errorMessage = "Mã OTP không đúng hoặc đã hết hạn";
+            let errorMessage = "Mã OTP không chính xác, vui lòng kiểm tra lại";
             if (axios.isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
+                const msg = error.response.data.message;
+                if (msg.includes("OTP")) {
+                    errorMessage = "Mã OTP không chính xác, vui lòng kiểm tra lại";
+                } else {
+                    errorMessage = msg;
+                }
             }
             toast.error(errorMessage);
         } finally {
@@ -111,6 +116,17 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
             return;
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+            toast.error("Email không hợp lệ, vui lòng kiểm tra lại dữ liệu");
+            return;
+        }
+
+        if (currentEmail && newEmail.trim().toLowerCase() === currentEmail.trim().toLowerCase()) {
+            toast.error("Email mới không được trùng với email hiện tại, vui lòng kiểm tra lại dữ liệu");
+            return;
+        }
+
         setLoading(true);
         try {
             await AuthApi.verifyAndChangeEmail({ newEmail, otp });
@@ -121,9 +137,20 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 handleClose();
             }, 1500);
         } catch (error: unknown) {
-            let errorMessage = "Mã OTP không đúng hoặc email đã tồn tại";
+            let errorMessage = "Có lỗi xảy ra, vui lòng kiểm tra lại";
             if (axios.isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
+                const msg = error.response.data.message;
+                if (msg.includes("OTP")) {
+                    errorMessage = "Mã OTP không chính xác, vui lòng kiểm tra lại";
+                } else if (msg.includes("trùng")) {
+                    errorMessage = "Email mới không được trùng với email hiện tại, vui lòng kiểm tra lại dữ liệu";
+                } else if (msg.includes("tồn tại")) {
+                    errorMessage = "Email mới đã tồn tại trên hệ thống, vui lòng kiểm tra lại dữ liệu";
+                } else if (msg.includes("hợp lệ")) {
+                    errorMessage = "Email không hợp lệ, vui lòng kiểm tra lại dữ liệu";
+                } else {
+                    errorMessage = msg;
+                }
             }
             toast.error(errorMessage);
         } finally {

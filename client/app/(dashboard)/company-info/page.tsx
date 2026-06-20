@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import EnterpriseStepOne from "@/components/modals/Enterprise/EnterpriseStepOne";
 import EnterpriseStepConfirm from "@/components/modals/Enterprise/EnterpriseStepConfirm";
+import ChangeEmailPopup from "@/components/popup/change-email-popup";
 import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, UploadedFile } from "@/components/modals/Enterprise/EnterpriseStepOne";
 import { BusinessApi } from "@/api/business";
 import { BusinessFileApi } from "@/api/businessFile";
@@ -113,6 +114,7 @@ export default function CompanyInfoPage() {
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
 
     const fetchBusiness = useCallback(async () => {
         if (!user || !user.profileId) return;
@@ -475,10 +477,30 @@ export default function CompanyInfoPage() {
 
                 {/* Content - Scrollable */}
                 <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0 bg-[#F4F6F8]">
-                    {currentStep === 1 && <EnterpriseStepOne form={form} errors={errors} attachmentGroups={attachmentGroups} onChange={handleChange} onAddFiles={handleAddFiles} onRemoveFile={handleRemoveFile} mode="edit" />}
+                    {currentStep === 1 && (
+                        <EnterpriseStepOne
+                            form={form}
+                            errors={errors}
+                            attachmentGroups={attachmentGroups}
+                            onChange={handleChange}
+                            onAddFiles={handleAddFiles}
+                            onRemoveFile={handleRemoveFile}
+                            mode="edit"
+                            disableEmail={true}
+                            onEmailChangeClick={() => setIsChangeEmailOpen(true)}
+                        />
+                    )}
                     {currentStep === 2 && <EnterpriseStepConfirm form={form} attachmentGroups={attachmentGroups} />}
                 </div>
             </div>
+            <ChangeEmailPopup
+                open={isChangeEmailOpen}
+                onClose={() => {
+                    setIsChangeEmailOpen(false);
+                    fetchBusiness();
+                }}
+                currentEmail={business.email}
+            />
         </div>
     );
 }
