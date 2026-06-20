@@ -15,6 +15,9 @@ export interface User {
     orgType?: string;
     account?: Account;
     profileId?: number;
+    username?: string;
+    role?: string;
+    status?: string;
 }
 
 export interface Role {

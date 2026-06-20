@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import type { User } from "@/types/auth";
 import type { UpdateUserPayload } from "@/types/user";
 
+import { getErrorMessage } from "@/utils/error-handle";
+
 export default function EditUserPage() {
     const router = useRouter();
     const params = useParams();
@@ -43,10 +45,9 @@ export default function EditUserPage() {
             const res = await UserApi.update(user.id, payload);
             toast.success(res.message || "Cập nhật người dùng thành công");
             router.push("/accounts-managements");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Lỗi khi lưu người dùng:", error);
-            const message = error.response?.data?.message || "Không thể lưu người dùng";
-            toast.error(message);
+            toast.error(getErrorMessage(error, "Không thể lưu người dùng"));
             throw error;
         }
     };

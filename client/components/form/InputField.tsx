@@ -17,6 +17,7 @@ export const InputField = ({
     readOnly = false,
     disabled = false,
     error,
+    size = "md",
     ...rest
 }: {
     label?: string;
@@ -32,6 +33,7 @@ export const InputField = ({
     readOnly?: boolean;
     disabled?: boolean;
     error?: string;
+    size?: "sm" | "md";
     [key: string]: any;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -94,7 +96,9 @@ export const InputField = ({
                             onFocus={handleFocus}
                             onBlur={handleBlur}
                             disabled={disabled || readOnly}
-                            className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent appearance-none cursor-pointer disabled:bg-gray-50 ${
+                            className={`w-full border text-gray-700 focus:outline-none bg-transparent appearance-none cursor-pointer disabled:bg-gray-50 ${
+                                size === "sm" ? "px-2.5 py-1.5 text-xs rounded" : "px-3 py-2.5 text-sm rounded-md"
+                            } ${
                                 error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
                             }`}
                             {...rest}
@@ -126,7 +130,9 @@ export const InputField = ({
                                     (e.target as any).showPicker?.();
                                 }
                             }}
-                            className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text ${
+                            className={`w-full border text-gray-700 focus:outline-none bg-transparent read-only:bg-gray-50 disabled:bg-gray-50 cursor-text ${
+                                size === "sm" ? "px-2.5 py-1.5 text-xs rounded" : "px-3 py-2.5 text-sm rounded-md"
+                            } ${
                                 error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
                             }`}
                             {...rest}
@@ -159,7 +165,9 @@ export const InputField = ({
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                     tabIndex={disabled || readOnly ? -1 : 0}
-                    className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer flex justify-between items-center min-h-[42px] ${
+                    className={`w-full border text-gray-700 focus:outline-none bg-transparent cursor-pointer flex justify-between items-center ${
+                        size === "sm" ? "px-2.5 py-1.5 text-xs rounded min-h-[32px]" : "px-3 py-2.5 text-sm rounded-md min-h-[42px]"
+                    } ${
                         disabled || readOnly ? "bg-gray-50 cursor-not-allowed" : "hover:border-blue-500"
                     } ${error ? "border-red-500" : "border-gray-200"}`}
                 >

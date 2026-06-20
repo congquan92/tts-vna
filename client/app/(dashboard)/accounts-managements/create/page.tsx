@@ -18,7 +18,7 @@ export default function CreateUserPage() {
             // Note: In a real app, we might store the new user ID in a temporary state/query
             // to show the password popup on the list page. For now, we just redirect.
             router.push("/accounts-managements?newUserId=" + res.data.id);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Lỗi khi lưu người dùng:", error);
             toast.error(getErrorMessage(error, "Không thể lưu người dùng"));
             throw error;

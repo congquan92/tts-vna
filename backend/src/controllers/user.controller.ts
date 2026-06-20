@@ -157,12 +157,15 @@ export class UserController {
     async import(
         @UploadedFile() file: Express.Multer.File,
         @Query('preview') preview: string,
+        @Body() body?: { rows?: any[] },
     ) {
         const isPreview = preview === 'true';
+        const rows = body?.rows;
 
         const data = await this.userService.importFromExcel(
             file,
             isPreview,
+            rows,
         );
 
         return {

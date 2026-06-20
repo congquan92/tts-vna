@@ -198,40 +198,50 @@ const AccountPage = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const loadingToast = toast.loading("Đang import dữ liệu...");
+        const loadingToast = toast.loading("Đang đọc file preview...");
         try {
-            const res = await UserApi.importUsers(file);
-            const { success, failed, total } = res.data;
-
-            if (success > 0) {
-                toast.success(`Đã import thành công ${success}/${total} người dùng`);
-                fetchUsers(1);
-            }
-
-            if (failed > 0) {
-                const firstErrors = res.data.errors.slice(0, 3);
-                const errorMsg = firstErrors.map((err: any) => `• Dòng ${err.row}: ${err.errors.join(", ")}`).join("\n");
-
-                toast.error(`Có ${failed}/${total} người dùng import thất bại`, {
-                    description: (
-                        <div className="flex flex-col gap-1 mt-1 text-[11px] leading-relaxed">
-                            <p className="font-medium text-red-600">Chi tiết lỗi:</p>
-                            <div className="whitespace-pre-wrap opacity-90 italic">
-                                {errorMsg}
-                                {failed > 3 && `\n... và ${failed - 3} lỗi khác`}
-                            </div>
-                        </div>
-                    ),
-                    duration: 6000,
-                });
-            }
+            const res = await UserApi.importUsers(file, true);
+            const { total, errors, rows } = res.data;
 
             if (total === 0) {
                 toast.warning("File import không có dữ liệu người dùng.");
+                return;
             }
+
+            // Normalize data into single array sorted by original excel row index
+            const successRows = (rows || []).map((r) => ({
+                row: r.row,
+                fullName: r.fullName || "",
+                username: r.username || "",
+                email: r.email || "",
+                role: r.role || "",
+                position: r.position || "",
+                isActive: r.isActive !== undefined ? !!r.isActive : true,
+                errors: [] as string[],
+            }));
+
+            const errorRows = (errors || []).map((err) => {
+                const r = err.data || {};
+                return {
+                    row: err.row,
+                    fullName: String(r["Họ tên"] || r.fullName || "").trim(),
+                    username: String(r["Tài khoản"] || r.username || "").trim(),
+                    email: String(r["Email"] || r.email || "").trim(),
+                    role: String(r["Vai trò"] || r.role || "").trim(),
+                    position: String(r["Chức danh"] || r.position || "").trim(),
+                    isActive: r.isActive !== undefined ? !!r.isActive : true,
+                    errors: err.errors || [],
+                };
+            });
+
+            const allRows = [...successRows, ...errorRows].sort((a, b) => a.row - b.row);
+
+            sessionStorage.setItem("import_preview_rows", JSON.stringify(allRows));
+            toast.success("Đọc file xem trước thành công.");
+            router.push("/accounts-managements/import-preview");
         } catch (error: unknown) {
-            console.error("Lỗi khi import dữ liệu:", error);
-            let message = "Không thể import dữ liệu";
+            console.error("Lỗi khi preview dữ liệu:", error);
+            let message = "Không thể đọc dữ liệu file";
             if (axios.isAxiosError(error) && error.response?.data?.message) {
                 message = error.response.data.message;
             }
@@ -391,9 +401,9 @@ const AccountPage = () => {
                                         </button>
                                     </div>
                                     <div className="truncate font-medium">{user.fullName}</div>
-                                    <div className="truncate">{(user as any).username || "-"}</div>
+                                    <div className="truncate">{user.username || "-"}</div>
                                     <div className="truncate text-gray-500">{user.email}</div>
-                                    <div className="truncate">{getRoleDisplayName((user as any).role)}</div>
+                                    <div className="truncate">{getRoleDisplayName(user.role)}</div>
                                     <div className="truncate">{user.position || "-"}</div>
                                     <div className="flex items-center">
                                         <ToggleSwitch checked={user.isActive ?? false} onChange={() => handleToggleStatus(user.id)} />
