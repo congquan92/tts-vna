@@ -14,6 +14,7 @@ export interface User {
     updatedAt?: string;
     orgType?: string;
     account?: Account;
+    profileId?: number;
 }
 
 export interface Role {
