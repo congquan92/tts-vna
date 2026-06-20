@@ -161,7 +161,7 @@ export default function LoginPage() {
                             Đăng nhập
                         </Button>
 
-                        <Button variant="outline" type="button" disabled={loading}>
+                        <Button variant="outline" type="button" disabled={loading} onClick={() => router.push("/register-business")}>
                             Đăng ký tài khoản doanh nghiệp
                         </Button>
                     </div>

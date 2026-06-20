@@ -10,7 +10,7 @@ interface AuthContextType {
     loading: boolean;
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    refreshProfile: () => Promise<void>;
+    refreshProfile: () => Promise<User | null>;
     updateUser: (userData: User) => void;
 }
 
@@ -26,10 +26,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = await AuthApi.getProfile();
             setUser(userData);
             localStorage.setItem("user_info", JSON.stringify(userData));
+            return userData;
         } catch (error) {
             console.error("Failed to fetch profile:", error);
             setUser(null);
             localStorage.removeItem("user_info");
+            return null;
         } finally {
             setLoading(false);
         }
@@ -44,15 +46,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const token = localStorage.getItem("auth_token");
         const storedUser = localStorage.getItem("user_info");
 
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error("Failed to parse stored user", e);
-            }
-        }
-
         const timer = setTimeout(() => {
+            if (storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser));
+                } catch (e) {
+                    console.error("Failed to parse stored user", e);
+                }
+            }
+
             if (token) {
                 refreshProfile();
             } else {
@@ -67,8 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await AuthApi.login(username, password);
         localStorage.setItem("auth_token", res.accessToken);
         localStorage.setItem("refresh_token", res.refreshToken);
-        await refreshProfile();
-        router.push("/accounts"); // Hoặc trang dashboard bất kỳ
+        const profile = await refreshProfile();
+        if (profile?.orgType === "DOANH_NGHIEP") {
+            router.push("/company-info");
+        } else {
+            router.push("/accounts-managements");
+        }
     };
 
     const logout = async () => {
