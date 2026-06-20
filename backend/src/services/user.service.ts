@@ -172,7 +172,7 @@ export class UserService {
   }
 
   // Xóa người dùng
-  async deleteUser(id: number, currentAccountId = 0) {
+  async deleteUser(id: number, currentAccountId: number) {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
@@ -197,7 +197,13 @@ export class UserService {
   }
 
   // Import danh sách người dùng
-  async importFromExcel(file: Express.Multer.File) {
+  async importFromExcel(file: Express.Multer.File, preview: boolean = false,) {
+
+    // ================= CHECK FILE =================
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn file Excel để import');
+    }
+
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
@@ -292,6 +298,21 @@ export class UserService {
 
         // Satisfy TypeScript: role cannot be null here because if it were, rowErrors.length would be > 0
         if (!role) continue;
+
+        // Preview danh sách import
+        if (preview) {
+          success.push({
+            row: index + 2,
+            fullName,
+            username,
+            email,
+            role: role?.name,
+            position,
+            isActive,
+          });
+
+          continue;
+        }
 
         // ================= CREATE USER =================
         const hashedPassword = await bcrypt.hash('12345678', 10);
@@ -398,7 +419,7 @@ export class UserService {
   }
 
   // Bật/Tắt trạng thái
-  async toggleUserStatus(userId: number, currentAccountId = 0) {
+  async toggleUserStatus(userId: number, currentAccountId: number) {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {

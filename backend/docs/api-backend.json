@@ -410,7 +410,7 @@
               ]
             },
             "url": {
-              "raw": "http://localhost:3001/users/import",
+              "raw": "http://localhost:3001/users/import?preview=true",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -419,6 +419,12 @@
               "path": [
                 "users",
                 "import"
+              ],
+              "query": [
+                {
+                  "key": "preview",
+                  "value": "true"
+                }
               ]
             }
           },
@@ -1441,7 +1447,7 @@
     "bearer": [
       {
         "key": "token",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE2LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjksImJ1c2luZXNzSWQiOm51bGwsImlhdCI6MTc4MTkyNjczNSwiZXhwIjoxNzgxOTMwMzM1fQ.pSUuxrnUajk456DKAZg-v-OJF4KxbVc9nmxPzk1dRi0",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE4LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjEwLCJidXNpbmVzc0lkIjpudWxsLCJpYXQiOjE3ODE5MzkxNjEsImV4cCI6MTc4MTk0Mjc2MX0.r80FptYMcuv02tvjFtRGJckWum3rLoJX5Sj2rF_eZNE",
         "type": "string"
       }
     ]

@@ -131,6 +131,12 @@ export class UserController {
         summary: 'Import người dùng từ Excel',
     })
     @ApiConsumes('multipart/form-data')
+    @ApiQuery({
+        name: 'preview',
+        required: false,
+        type: Boolean,
+        description: 'true = preview, false = import thật',
+    })
     @ApiBody({
         schema: {
             type: 'object',
@@ -143,29 +149,26 @@ export class UserController {
             },
         },
     })
-    @ApiResponse({
-        status: 201,
-        description: 'Import thành công',
-    })
-    @ApiResponse({
-        status: 400,
-        description: 'File không hợp lệ',
-    })
     @UseInterceptors(
         FileInterceptor('file', {
             storage: multer.memoryStorage(),
         }),
     )
     async import(
-        @UploadedFile()
-        file: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File,
+        @Query('preview') preview: string,
     ) {
+        const isPreview = preview === 'true';
+
         const data = await this.userService.importFromExcel(
             file,
+            isPreview,
         );
 
         return {
-            message: 'Import danh sách người dùng thành công',
+            message: isPreview
+                ? 'Preview dữ liệu import'
+                : 'Import danh sách người dùng thành công',
             data,
         };
     }
@@ -259,14 +262,13 @@ export class UserController {
         status: 404,
         description: 'Không tìm thấy người dùng',
     })
-    async delete(
-        @Param('id', ParseIntPipe) id: number,
+    async deleteUser(
+        @Param('id') id: number,
         @Req() req,
     ) {
-        return this.userService.deleteUser(
-            id,
-            req.user.accountId || req.user.sub,
-        );
+        const currentAccountId = req.user.accountId;
+
+        return this.userService.deleteUser(id, currentAccountId);
     }
 
     // Khởi tạo mật khẩu người dùng
@@ -328,13 +330,12 @@ export class UserController {
         status: 404,
         description: 'Không tìm thấy user',
     })
-    async toggleStatus(
-        @Param('id', ParseIntPipe) id: number,
+    async toggleUserStatus(
+        @Param('id') userId: number,
         @Req() req,
     ) {
-        return this.userService.toggleUserStatus(
-            id,
-            req.user.accountId || req.user.sub,
-        );
+        const currentAccountId = req.user.accountId;
+
+        return this.userService.toggleUserStatus(userId, currentAccountId);
     }
 }

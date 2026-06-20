@@ -40,6 +40,14 @@ import { AccountRepository } from './repositories/account.repository';
 import { BusinessFileRepository } from './repositories/businessFile.repository';
 import { BusinessFileController } from './controllers/businessFile.controller';
 import { BusinessFileService } from './services/businessFile.service';
+import { Report } from './entities/report.entity';
+import { CompanyInfo } from './entities/company-info.entity';
+import { LaborAccidentReport } from './entities/labor-accident-report.entity';
+import { LaborAccidentSupportReport } from './entities/labor-accident-support-report.entity';
+import { AccidentDetail } from './entities/accident-detail.entity';
+import { ReportController } from './controllers/report.controller';
+import { ReportService } from './services/report.service';
+import { ReportRepository } from './repositories/report.repository';
 
 @Module({
   imports: [
@@ -91,9 +99,9 @@ import { BusinessFileService } from './services/businessFile.service';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository],
 })
 export class AppModule { }
