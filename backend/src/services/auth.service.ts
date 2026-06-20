@@ -81,76 +81,151 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
-    const userId = account.userId;
-    if (userId === undefined) {
-      throw new InternalServerErrorException('Tài khoản không hợp lệ');
-    }
+    const accountType = account.userId ? 'USER' : 'BUSINESS';
+
+    const profileId = account.userId ?? account.businessId;
 
     const payload = {
-      sub: userId,
+      sub: account.id,
       username: account.username,
-      role: account.roleId,
-      orgType: account.user.orgType,
+      roleId: account.roleId,
+      orgType: account.role?.orgType,
+
+      accountType,
+      userId: account.userId ?? null,
+      businessId: account.businessId ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    await this.authRepository.updateRefreshToken(userId, refreshToken);
-
-    return { accessToken, refreshToken };
-  }
-
-  async logout(userId: number) {
-    await this.authRepository.updateRefreshToken(
-      userId,
-      null as any,
-    );
+    await this.authRepository.updateRefreshToken(account.id, refreshToken);
 
     return {
-      message: 'Đăng xuất thành công',
+      accessToken,
+      refreshToken,
+      account: {
+        id: account.id,
+        username: account.username,
+        accountType,
+      },
     };
   }
 
-  async refresh(userId: number, refreshToken: string) {
-    const account = await this.authRepository.findAccountByUserId(userId);
+  async logout(accountId: number) {
+    await this.authRepository.updateRefreshToken(accountId, null as any);
+
+    return { message: 'Đăng xuất thành công' };
+  }
+
+  async refresh(accountId: number, refreshToken: string) {
+    const account = await this.authRepository.findAccountById(accountId);
 
     if (!account || !account.isActive) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
-    // Xác thực refresh token trong DB
-    if (!account || account.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Phiên đăng nhập đã hết hạn');
+    if (account.refreshToken !== refreshToken) {
+      throw new UnauthorizedException('Refresh token không hợp lệ');
     }
 
-    const payload = { sub: account.userId, username: account.username, role: account.role };
-    const newAccessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const accountType = account.userId ? 'USER' : 'BUSINESS';
+
+    const payload = {
+      sub: account.id,
+      username: account.username,
+      roleId: account.roleId,
+      orgType: account.role?.orgType,
+      accountType,
+      userId: account.userId,
+      businessId: account.businessId,
+    };
+
+    const newAccessToken = this.jwtService.sign(payload, {
+      expiresIn: '15m',
+    });
 
     return { accessToken: newAccessToken };
   }
 
-  async getProfile(userId: number) {
-    const user = await this.authRepository.findUserById(userId);
-    const account = await this.authRepository.findAccountByUserId(userId);
+  async getProfile(accountId: number) {
+    const account = await this.authRepository.findAccountById(accountId);
 
-    if (!user || !account) throw new NotFoundException('Người dùng không tồn tại');
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
 
-    // Loại bỏ password, giữ lại refreshToken và role
-    const { password, ...accountData } = account;
+    let profile: any = null;
+
+    // lấy profile đúng loại
+    if (account.userId) {
+      profile = await this.authRepository.findUserById(account.userId);
+    } else if (account.businessId) {
+      profile = await this.authRepository.findBusinessById(account.businessId);
+    }
+
+    if (!profile) {
+      throw new NotFoundException('Không tìm thấy thông tin profile');
+    }
+
+    const accountInfo = {
+      accountId: account.id,
+      username: account.username,
+      roleId: account.roleId,
+      isActive: account.isActive,
+      accountType: account.userId ? 'USER' : 'BUSINESS',
+    };
+
+    const roleInfo = {
+      id: account.role?.id,
+      name: account.role?.name,
+      orgType: account.role?.orgType,
+    };
+
+    const profileInfo = {
+      profileId: profile.id,
+      fullName: profile.fullName ?? profile.businessName,
+      email: profile.email,
+      avatarUrl: profile.avatarUrl ?? null,
+
+      gender: profile.gender ?? null,
+      dob: profile.dob ?? null,
+      address: profile.address ?? null,
+      position: profile.position ?? null,
+
+      province: profile.province ?? null,
+      ward: profile.ward ?? null,
+    };
 
     return {
-      ...user,
-      account: accountData
+      ...accountInfo,
+      role: roleInfo.name,
+      orgType: roleInfo.orgType,
+
+      account: {
+        ...accountInfo,
+        role: roleInfo,
+      },
+
+      profile: profileInfo,
+
+      ...profileInfo,
     };
   }
 
-  async updateProfile(userId: number, updateDto: UpdateProfileDto) {
-    const user = await this.authRepository.findUserById(userId);
-    const account = await this.authRepository.findAccountByUserId(userId);
+  async updateProfile(accountId: number, updateDto: UpdateProfileDto) {
+    const account = await this.authRepository.findAccountById(accountId);
 
-    if (!user || !account) {
-      throw new NotFoundException('Người dùng hoặc tài khoản không tồn tại');
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+
+    const user = account.userId
+      ? await this.authRepository.findUserById(account.userId)
+      : null;
+
+    if (!user) {
+      throw new NotFoundException('Người dùng không tồn tại');
     }
 
     if (updateDto.email && updateDto.email !== user.email) {
@@ -160,29 +235,25 @@ export class AuthService {
       }
     }
 
-    const updateData = { ...updateDto };
-
-    if (updateData.dob) {
+    if (updateDto.dob) {
       let dobDate: Date;
 
-      // Nếu là định dạng DD/MM/YYYY
-      if (typeof updateData.dob === 'string' && updateData.dob.includes('/')) {
-        const [day, month, year] = updateData.dob.split('/').map(Number);
-        dobDate = new Date(year, month - 1, day);
-      }
-      // Nếu là định dạng YYYY-MM-DD (ISO)
-      else {
-        dobDate = new Date(updateData.dob);
+      if (typeof updateDto.dob === 'string' && updateDto.dob.includes('/')) {
+        const [d, m, y] = updateDto.dob.split('/').map(Number);
+        dobDate = new Date(y, m - 1, d);
+      } else {
+        dobDate = new Date(updateDto.dob);
       }
 
       if (isNaN(dobDate.getTime())) {
         throw new BadRequestException('Ngày sinh không hợp lệ');
       }
+
       if (dobDate > new Date()) {
-        throw new BadRequestException('Ngày sinh không thể là ngày trong tương lai');
+        throw new BadRequestException('Ngày sinh không thể trong tương lai');
       }
 
-      updateData.dob = dobDate as any;
+      updateDto.dob = dobDate as any;
     }
 
     const { roleId, ...userFields } = updateDto as any;
@@ -195,26 +266,22 @@ export class AuthService {
       await this.authRepository.updateAccount(account);
     }
 
-    const updatedAccount = await this.authRepository.findAccountByUserId(userId);
-
-    const { password, ...safeUser } = user as any;
-
-    const { password: accPassword, ...safeAccount } = updatedAccount as any;
+    const { password, ...safeAccount } = account;
 
     return {
       message: 'Cập nhật thông tin thành công',
       data: {
-        ...safeUser,
+        ...user,
         account: safeAccount,
       },
     };
   }
 
-  async changePassword(userId: number, dto: ChangePasswordDto) {
+  async changePassword(accountId: number, dto: ChangePasswordDto) {
     if (dto.newPass !== dto.confirmPass) {
       throw new BadRequestException('Mật khẩu xác nhận không khớp');
     }
-    const account = await this.authRepository.findAccountByUserId(userId);
+    const account = await this.authRepository.findAccountById(accountId);
     if (!account) {
       throw new NotFoundException('Không tìm thấy tài khoản để đổi mật khẩu');
     }
@@ -232,27 +299,50 @@ export class AuthService {
   }
 
   async requestPasswordReset(forgotDto: ForgotPasswordDto) {
-    const user = await this.authRepository.findUserByEmail(forgotDto.email);
-    if (!user)
-      throw new NotFoundException('Email không tồn tại trong hệ thống');
+    const account = await this.authRepository.findAccountByEmail(forgotDto.email);
 
-    const account = await this.authRepository.findAccountByUserId(user.id);
-    if (!account) throw new NotFoundException('Tài khoản không tồn tại');
+    if (!account) {
+      throw new NotFoundException('Email không tồn tại trong hệ thống');
+    }
+
+    const isBusiness = !!account.businessId;
+    const isUser = !!account.userId;
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60000);
 
-    await this.authRepository.saveOtp(user.id, otp, expiresAt);
+    await this.authRepository.saveOtp(account.id, otp, expiresAt);
+
+    let email = '';
+    let name = '';
+
+    if (isBusiness) {
+      const business = await this.authRepository.findBusinessById(account.businessId!);
+      if (!business) {
+        throw new NotFoundException('Không tìm thấy thông tin doanh nghiệp');
+      }
+      email = business.email;
+      name = business.businessName;
+    } else if (isUser) {
+      const user = await this.authRepository.findUserById(account.userId!);
+      if (!user) {
+        throw new NotFoundException('Không tìm thấy thông tin người dùng');
+      }
+      email = user.email;
+      name = user.fullName;
+    } else {
+      throw new NotFoundException('Không tìm thấy loại tài khoản hợp lệ');
+    }
 
     try {
       await this.mailerService.sendMail({
-        to: user.email,
+        to: email,
         subject: 'Mã xác thực khôi phục mật khẩu',
         template: 'otp-email',
         context: {
-          fullName: user.fullName,
+          fullName: name,
           username: account.username,
-          otp: otp,
+          otp,
         },
         attachments: [
           {
@@ -273,10 +363,14 @@ export class AuthService {
   }
 
   async verifyOtp(email: string, otp: string) {
-    const user = await this.authRepository.findUserByEmail(email);
-    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+    const account = await this.authRepository.findAccountByEmail(email);
 
-    const otpRecord = await this.authRepository.findOtp(user.id);
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+
+    const otpRecord = await this.authRepository.findOtp(account.id);
+
     if (
       !otpRecord ||
       otpRecord.otp !== otp ||
@@ -285,94 +379,160 @@ export class AuthService {
       throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
     }
 
-    return { message: 'Mã OTP hợp lệ' };
+    return {
+      message: 'Mã OTP hợp lệ',
+      accountId: account.id,
+    };
   }
 
   async verifyOtpAndReset(forgotDto: ForgotPasswordDto) {
     const { email, otp, newPassword, confirmNewPassword } = forgotDto;
 
-    if (!otp) {
-      return { message: 'OTP đã được gửi' };
-    }
-
     if (newPassword !== confirmNewPassword) {
       throw new BadRequestException('Mật khẩu xác nhận không khớp');
     }
 
-    const user = await this.authRepository.findUserByEmail(email);
-    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+    const account = await this.authRepository.findAccountByEmail(email);
 
-    const otpRecord = await this.authRepository.findOtp(user.id);
-    if (
-      !otpRecord ||
-      otpRecord.otp !== otp ||
-      otpRecord.expiresAt < new Date()
-    ) {
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+
+    const otpRecord = await this.authRepository.findOtp(account.id);
+
+    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < new Date()) {
       throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
     }
 
-    const account = await this.authRepository.findAccountByUserId(user.id);
-    if (!account) throw new NotFoundException('Không tìm thấy tài khoản');
-
-    account.password = await bcrypt.hash(newPassword!, 10);
+    account.password = await bcrypt.hash(newPassword as string, 10);
 
     await this.authRepository.updateAccount(account);
-    await this.authRepository.deleteOtp(user.id);
 
-    return { message: 'Đặt lại mật khẩu thành công' };
+    await this.authRepository.deleteOtp(account.id);
+
+    return {
+      message: 'Đặt lại mật khẩu thành công',
+    };
   }
 
-  async requestOtpToCurrentEmail(userId: number) {
-    try {
-      const user = await this.authRepository.findUserById(userId);
-      if (!user) throw new NotFoundException('Người dùng không tồn tại');
+  async requestOtpToCurrentEmail(accountId: number) {
+    const account = await this.authRepository.findAccountById(accountId);
 
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 5 * 60000);
-
-      await this.authRepository.saveOtp(userId, otp, expiresAt);
-
-      await this.mailerService.sendMail({
-        to: user.email,
-        subject: 'Xác thực thay đổi email',
-        template: 'change-email-otp',
-        context: { otp },
-        attachments: [
-          {
-            filename: 'logo-VNA.png',
-            path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'),
-            cid: 'vna-logo',
-          },
-        ],
-      });
-      return { message: 'Mã OTP đã được gửi tới email hiện tại của bạn' };
-    } catch (error) {
-      console.error('Lỗi gửi email thay đổi email:', error);
-      throw new InternalServerErrorException('Không thể gửi email xác thực');
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
     }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60000);
+
+    await this.authRepository.saveOtp(account.id, otp, expiresAt);
+
+    let email = '';
+    let name = '';
+
+    if (account.userId) {
+      const user = await this.authRepository.findUserById(account.userId);
+      if (user) {
+        email = user.email;
+        name = user.fullName;
+      }
+    }
+
+    if (account.businessId) {
+      const business = await this.authRepository.findBusinessById(account.businessId);
+      if (business) {
+        email = business.email;
+        name = business.businessName;
+      }
+    }
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Xác thực thay đổi email',
+      template: 'change-email-otp',
+      context: {
+        otp,
+        fullName: name,
+        username: account.username,
+      },
+      attachments: [
+        {
+          filename: 'logo-VNA.png',
+          path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'),
+          cid: 'vna-logo',
+        },
+      ],
+    });
+
+    return { message: 'Mã OTP đã được gửi tới email hiện tại của bạn' };
   }
 
-  async verifyAndChangeEmail(userId: number, dto: ChangeEmailDto) {
+  async verifyAndChangeEmail(accountId: number, dto: ChangeEmailDto) {
     const { newEmail, otp } = dto;
 
-    const otpRecord = await this.authRepository.findOtp(userId);
+    // 1. Lấy account
+    const account = await this.authRepository.findAccountById(accountId);
+
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+
+    const otpRecord = await this.authRepository.findOtp(account.id);
+
     if (
       !otpRecord ||
       otpRecord.otp !== otp ||
       otpRecord.expiresAt < new Date()
     ) {
-      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn, vui lòng kiểm tra lại');
     }
 
-    const emailExists = await this.authRepository.findUserByEmail(newEmail);
+    // CASE 2: email không hợp lệ
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      throw new BadRequestException('Email không hợp lệ, vui lòng kiểm tra lại dữ liệu');
+    }
+
+    // lấy email hiện tại
+    let currentEmail = '';
+
+    if (account.userId) {
+      const user = await this.authRepository.findUserById(account.userId);
+      if (user) currentEmail = user.email;
+    }
+
+    if (account.businessId) {
+      const business = await this.authRepository.findBusinessById(account.businessId);
+      if (business) currentEmail = business.email;
+    }
+
+    // CASE 3: email mới trùng email hiện tại
+    if (newEmail === currentEmail) {
+      throw new BadRequestException('Email mới không được trùng email hiện tại, vui lòng kiểm tra lại dữ liệu');
+    }
+
+    // CASE 4: email đã tồn tại trong hệ thống
+    const emailExists =
+      await this.authRepository.findAccountByEmail(newEmail);
+
     if (emailExists) {
-      throw new ConflictException('Email mới đã được sử dụng bởi người khác');
+      throw new ConflictException('Email mới đã tồn tại trên hệ thống, vui lòng kiểm tra lại dữ liệu');
     }
 
-    await this.authRepository.updateUserEmail(userId, newEmail);
-    await this.authRepository.deleteOtp(userId);
+    // update email
+    if (account.userId) {
+      await this.authRepository.updateUserEmail(account.userId, newEmail);
+    }
 
-    return { message: 'Đổi email thành công' };
+    if (account.businessId) {
+      await this.authRepository.updateBusinessEmail(account.businessId, newEmail);
+    }
+
+    await this.authRepository.deleteOtp(account.id);
+
+    return {
+      message: 'Đổi email thành công',
+    };
   }
 
   async updateUserAvatar(

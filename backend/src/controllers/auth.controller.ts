@@ -59,9 +59,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Làm mới Access Token bằng Refresh Token' })
   async refresh(@Body('refreshToken') refreshToken: string) {
     const payload = this.jwtService.verify(refreshToken);
-    const userId = payload.sub;
+    const accountId = payload.sub;
 
-    return await this.authService.refresh(userId, refreshToken);
+    return await this.authService.refresh(accountId, refreshToken);
   }
 
   @Post('forgot-password')

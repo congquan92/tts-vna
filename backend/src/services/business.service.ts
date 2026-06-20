@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { BusinessRepository } from "../repositories/business.repository";
 import { BusinessStatus } from "../entities/business.entity";
 import { CreateBusinessDto, UpdateBusinessDto } from "../dto/business/business.dto";
@@ -9,6 +9,9 @@ import { AccountRepository } from "../repositories/account.repository";
 import { RoleRepository } from "../repositories/role.repository";
 import { SearchBusinessDto } from "../dto/business/search-business.dto";
 import { BusinessFileRepository } from "../repositories/businessFile.repository";
+import { AuthRepository } from "../repositories/auth.repository";
+import { MailerService } from '@nestjs-modules/mailer';
+import path from 'path';
 
 @Injectable()
 export class BusinessService {
@@ -19,6 +22,8 @@ export class BusinessService {
         private readonly accountRepository: AccountRepository,
         private readonly roleRepository: RoleRepository,
         private readonly businessFileRepository: BusinessFileRepository,
+        private readonly authRepository: AuthRepository,
+        private readonly mailerService: MailerService,
     ) { }
 
     // Lấy danh sách doanh nghiệp 
@@ -547,5 +552,94 @@ export class BusinessService {
     // Tìm kiếm doanh nghiệp
     async search(query: SearchBusinessDto) {
         return this.businessRepository.search(query);
+    }
+
+    // Yêu cầu gửi mã otp đến email đăng ký
+    async requestOtpToRegisterBusiness(email: string, businessName: string) {
+        // CASE 1: validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            throw new BadRequestException('Email không hợp lệ. Xin vui lòng nhập lại');
+        }
+
+        // CASE 2: email đã tồn tại trong hệ thống
+        const emailExists = await this.authRepository.findAccountByEmail(email);
+        if (emailExists) {
+            throw new ConflictException('Email đã tồn tại trên hệ thống');
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 5 * 60000);
+
+        await this.authRepository.saveOtpByEmail(email, otp, expiresAt);
+
+        try {
+            await this.mailerService.sendMail({
+                to: email,
+                subject: 'Xác thực OTP đăng ký doanh nghiệp',
+                template: 'business-otp',
+                context: {
+                    otp,
+                    businessName,
+                },
+                attachments: [
+                    {
+                        filename: 'logo-VNA.png',
+                        path: path.join(process.cwd(), 'dist/src/assets/logo-VNA.png'),
+                        cid: 'vna-logo',
+                    },
+                ],
+            });
+
+        }
+        catch (error) {
+            console.error('Lỗi khi gửi email:', error);
+            throw new InternalServerErrorException(
+                'Không thể gửi email xác thực, vui lòng kiểm tra lại cấu hình hệ thống',
+            );
+        }
+        
+        return {
+            message: 'Mã OTP đã được gửi tới email đăng ký',
+        };
+    }
+
+    // Xác thực thông tin đăng ký qua mã otp
+    async verifyOtpRegisterBusiness(email: string, otp: string) {
+        const otpRecord = await this.authRepository.findRegisterOtpByEmail(email);
+
+        if (!otpRecord) {
+            throw new BadRequestException('Không tìm thấy OTP');
+        }
+
+        if (otpRecord.expiresAt < new Date()) {
+            throw new BadRequestException('Mã OTP đã hết hạn');
+        }
+
+        // sai OTP
+        if (otpRecord.otp !== otp) {
+            const newAttempt = otpRecord.attemptCount + 1;
+
+            await this.authRepository.updateOtp(email, {
+                attemptCount: newAttempt,
+            });
+
+            if (newAttempt >= 5) {
+                throw new ForbiddenException(
+                    'Bạn nhập sai quá 5 lần, vui lòng yêu cầu OTP mới',
+                );
+            }
+
+            throw new BadRequestException('Mã OTP không đúng');
+        }
+
+        // đúng OTP
+        await this.authRepository.deleteOtpByEmail(email);
+
+        return {
+            success: true,
+            message: 'Xác thực OTP thành công',
+            verifiedEmail: email,
+        };
     }
 }

@@ -7,6 +7,7 @@ import {
     IsDateString,
     MaxLength,
     Matches,
+    MinLength,
 } from 'class-validator';
 import {
     ApiProperty,
@@ -24,8 +25,9 @@ export class CreateBusinessDto {
     @IsNotEmpty({
         message: 'Mã số thuế không được để trống',
     })
-    @Matches(/^(\d{10})$|^(\d{10}-\d{3})$/, {
-        message: 'Mã số thuế không hợp lệ',
+    @Matches(/^\d{10,15}$/, {
+        message:
+            'Mã số thuế chỉ được chứa chữ số, không được âm và phải có từ 10 đến 15 chữ số',
     })
     taxCode!: string;
 

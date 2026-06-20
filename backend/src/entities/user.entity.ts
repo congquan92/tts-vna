@@ -51,7 +51,4 @@ export class User {
 
   @OneToMany(() => Account, (account) => account.user)
   accounts!: Account[];
-
-  @OneToMany(() => Otp, (otp) => otp.user)
-  otps!: Otp[];
 }

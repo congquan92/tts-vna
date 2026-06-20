@@ -173,12 +173,12 @@ export class BusinessIndustryService {
   private calculateLevel(code: string): number {
     const trimmed = code.trim();
 
-    if (trimmed.length >= 1 && trimmed.length <= 5) {
+    if (trimmed.length >= 1 && trimmed.length <= 4) {
       return trimmed.length;
     }
 
     throw new BadRequestException(
-      'code không hợp lệ. Quy tắc: độ dài từ 1 đến 5 ký tự',
+      'code không hợp lệ. Quy tắc: độ dài từ 1 đến 4 ký tự (tối đa 4 cấp)',
     );
   }
 

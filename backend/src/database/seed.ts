@@ -64,11 +64,57 @@ export class SeedService implements OnModuleInit {
 
         // 2. Định nghĩa cấu trúc quyền (Mapping)
         const mappings = [
-            { role: 'MANAGER_SO', perms: ['USER_VIEW', 'USER_UPDATE', 'REPORT_VIEW'] },
-            { role: 'CHUYENVIEN_SO', perms: ['USER_VIEW'] },
-            { role: 'CEO_DN', perms: ['REPORT_VIEW', 'USER_VIEW'] },
-            // { role: 'MANAGER_DN', perms: ['USER_VIEW', 'USER_UPDATE'] },
-            // { role: 'USER_DN', perms: ['USER_VIEW'] },
+            // ADMIN_SO - full quyền
+            {
+                role: 'ADMIN_SO',
+                perms: perms.map(p => p.code),
+            },
+
+            // MANAGER_SO - quản lý + xem + report sở
+            {
+                role: 'MANAGER_SO',
+                perms: [
+                    'USER_VIEW',
+                    'USER_CREATE',
+                    'USER_UPDATE',
+                    'USER_TOGGLE_STATUS',
+                    'USER_RESET_PASSWORD',
+
+                    'BUSINESS_VIEW',
+
+                    'REPORT_SO_VIEW',
+                ],
+            },
+
+            // CHUYENVIEN_SO - chỉ xem
+            {
+                role: 'CHUYENVIEN_SO',
+                perms: [
+                    'USER_VIEW',
+                    'BUSINESS_VIEW',
+                    'REPORT_SO_VIEW',
+                ],
+            },
+
+            // CEO_DN - doanh nghiệp (full nghiệp vụ DN)
+            {
+                role: 'CEO_DN',
+                perms: [
+                    // BUSINESS
+                    'BUSINESS_VIEW',
+                    'BUSINESS_CREATE',
+                    'BUSINESS_UPDATE',
+                    'BUSINESS_UPLOAD_FILE',
+                    'BUSINESS_TOGGLE_STATUS',
+                    'BUSINESS_RESET_PASSWORD',
+
+                    // REPORT DOANH NGHIỆP
+                    'REPORT_DN_VIEW',
+                    'REPORT_DN_CREATE',
+                    'REPORT_DN_UPDATE',
+                    'REPORT_DN_EXPORT',
+                ],
+            },
         ];
 
         // 3. Thực hiện lưu vào bảng role_permissions

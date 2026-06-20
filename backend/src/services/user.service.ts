@@ -23,7 +23,7 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly accountRepository: AccountRepository,
     private readonly roleRepository: RoleRepository,
-  ) {}
+  ) { }
 
   // Thêm mới người dùng
   async createUser(dto: CreateUserDto) {
@@ -172,16 +172,28 @@ export class UserService {
   }
 
   // Xóa người dùng
-  async deleteUser(id: number) {
+  async deleteUser(id: number, currentAccountId = 0) {
+    const user = await this.userRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    const account = user.accounts?.[0];
+
+    if (account?.id === currentAccountId) {
+      throw new BadRequestException(
+        'Không thể xóa chính tài khoản đang đăng nhập',
+      );
+    }
+
     const result = await this.userRepository.delete(id);
 
     if (!result.affected) {
       throw new NotFoundException('Không tìm thấy người dùng');
     }
 
-    return {
-      message: 'Xóa thành công',
-    };
+    return { message: 'Xóa người dùng thành công' };
   }
 
   // Import danh sách người dùng
@@ -386,25 +398,30 @@ export class UserService {
   }
 
   // Bật/Tắt trạng thái
-  async toggleUserStatus(userId: number) {
+  async toggleUserStatus(userId: number, currentAccountId = 0) {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      throw new BadRequestException('Không tìm thấy user');
+      throw new BadRequestException('Không tìm thấy người dùng');
+    }
+
+    const account = user.accounts?.[0];
+
+    if (account?.id === currentAccountId) {
+      throw new BadRequestException(
+        'Không thể khóa chính tài khoản đang đăng nhập',
+      );
     }
 
     const newStatus = !user.isActive;
 
-    // update user
     user.isActive = newStatus;
     const updated = await this.userRepository.save(user);
 
-    // update account
     if (updated.accounts?.length) {
-      const account = updated.accounts[0];
-
-      account.isActive = newStatus;
-      await this.accountRepository.save(account);
+      const acc = updated.accounts[0];
+      acc.isActive = newStatus;
+      await this.accountRepository.save(acc);
     }
 
     return {

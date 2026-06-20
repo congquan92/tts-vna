@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
+import { Account } from './account.entity';
 
 @Entity('otps')
 export class Otp {
@@ -12,10 +13,16 @@ export class Otp {
   @Column()
   expiresAt!: Date;
 
-  @Column()
-  userId!: number;
+  @Column({ nullable: true, })
+  email!: string;
 
-  @ManyToOne(() => User, (user) => user.otps, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user!: User;
+  @Column({ nullable: true, })
+  accountId!: number;
+
+  @Column({ type: 'int', default: 0 })
+  attemptCount!: number;
+
+  @ManyToOne(() => Account)
+  @JoinColumn({ name: 'accountId' })
+  account!: Account;
 }

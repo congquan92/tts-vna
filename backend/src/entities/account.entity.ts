@@ -1,7 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 import { Role } from './role.entity';
 import { Business } from './business.entity';
+import { Otp } from './otp.entity';
 
 @Entity('accounts')
 export class Account {
@@ -48,4 +49,7 @@ export class Account {
   @ManyToOne(() => Role, (role) => role.accounts)
   @JoinColumn({ name: 'roleId' })
   role!: Role;
+
+  @OneToMany(() => Otp, (otp) => otp.account)
+  otps!: Otp[];
 }

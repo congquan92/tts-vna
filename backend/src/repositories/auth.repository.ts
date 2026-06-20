@@ -6,17 +6,20 @@ import { Account } from '../entities/account.entity';
 import { Otp } from '../entities/otp.entity';
 import { RolePermission } from '../entities/role-permission.entity';
 import { Role } from '../entities/role.entity';
+import { Business } from '../entities/business.entity';
 
 @Injectable()
 export class AuthRepository {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Business)
+        private readonly businessRepository: Repository<Business>,
         @InjectRepository(Account)
         private readonly accountRepository: Repository<Account>,
         @InjectRepository(Otp)
         private readonly otpRepository: Repository<Otp>,
-        @InjectRepository(Role) 
+        @InjectRepository(Role)
         private roleRepository: Repository<Role>,
         private readonly dataSource: DataSource,
     ) { }
@@ -39,6 +42,10 @@ export class AuthRepository {
         return await this.userRepository.findOne({ where: { id } });
     }
 
+    async findBusinessById(id: number): Promise<Business | null> {
+        return await this.businessRepository.findOne({ where: { id } });
+    }
+
     async findUserByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOneBy({ email });
     }
@@ -47,73 +54,83 @@ export class AuthRepository {
         return await this.userRepository.save(user);
     }
 
-    async findAccountByUserId(userId: number): Promise<Account | null> {
-        return await this.accountRepository.findOne({
-            where: { userId },
-            relations: ['role'],
-            select: {
-                id: true,
-                username: true,
-                password: true,
-                userId: true,
-                refreshToken: true,
-                roleId: true,
-                role: {
-                    id: true,
-                    name: true
-                }
-            }
-        });
+    async findAccountById(id: number): Promise<Account | null> {
+        return this.accountRepository
+            .createQueryBuilder('account')
+            .addSelect('account.password')
+            .leftJoinAndSelect('account.role', 'role')
+            .leftJoinAndSelect('account.user', 'user')
+            .leftJoinAndSelect('account.business', 'business')
+            .where('account.id = :id', { id })
+            .getOne();
     }
 
     async updateAccount(account: Account): Promise<Account> {
         return await this.accountRepository.save(account);
     }
 
-    async saveOtp(userId: number, otp: string, expiresAt: Date): Promise<Otp> {
-        let otpRecord = await this.otpRepository.findOneBy({ userId });
+    async saveOtp(accountId: number, otp: string, expiresAt: Date): Promise<Otp> {
+        let otpRecord = await this.otpRepository.findOneBy({ accountId });
         if (otpRecord) {
             otpRecord.otp = otp;
             otpRecord.expiresAt = expiresAt;
+            otpRecord.attemptCount = 0;
         } else {
-            otpRecord = this.otpRepository.create({ userId, otp, expiresAt });
+            otpRecord = this.otpRepository.create({ accountId, otp, expiresAt, attemptCount: 0, });
         }
         return await this.otpRepository.save(otpRecord);
     }
 
-    async findOtp(userId: number): Promise<Otp | null> {
-        return await this.otpRepository.findOneBy({ userId });
+    async findOtp(accountId: number): Promise<Otp | null> {
+        return await this.otpRepository.findOneBy({ accountId });
     }
 
-    async deleteOtp(userId: number): Promise<void> {
-        await this.otpRepository.delete({ userId });
+    async updateOtp(email: string, data: Partial<Otp>): Promise<void> {
+        await this.otpRepository.update(
+            { email } as any,
+            data,
+        );
+    }
+
+    async deleteOtp(accountId: number): Promise<void> {
+        await this.otpRepository.delete({ accountId });
     }
 
     async findOtpByEmail(email: string): Promise<Otp | null> {
-        return await this.otpRepository.findOne({
-            where: { user: { email } },
-            relations: ['user']
-        });
+        return await this.otpRepository
+            .createQueryBuilder('otp')
+            .leftJoin('otp.account', 'account')
+            .leftJoin('account.user', 'user')
+            .leftJoin('account.business', 'business')
+            .where('user.email = :email OR business.email = :email', { email })
+            .getOne();
     }
 
-    async findAccountByUsername(username: string): Promise<Account | null> {
-        return await this.accountRepository.findOne({
-            where: { username },
-            relations: ['role', 'user'],
-            select: {
-                id: true,
-                username: true,
-                password: true,
-                userId: true,
-                refreshToken: true,
-                roleId: true,
-                role: {
-                    id: true,
-                    name: true,
-                },
-                isActive: true,
-            },
-        });
+    async findRegisterOtpByEmail(email: string): Promise<Otp | null> {
+        return await this.otpRepository
+            .createQueryBuilder('otp')
+            .where('otp.email = :email', { email })
+            .getOne();
+    }
+
+    async findAccountByUsername(username: string) {
+        return this.accountRepository
+            .createQueryBuilder('account')
+            .addSelect('account.password')
+            .leftJoinAndSelect('account.role', 'role')
+            .where('account.username = :username', { username })
+            .getOne();
+    }
+
+    async findAccountByEmail(email: string): Promise<Account | null> {
+        return await this.accountRepository
+            .createQueryBuilder('account')
+            .leftJoinAndSelect('account.user', 'user')
+            .leftJoinAndSelect('account.business', 'business')
+            .leftJoinAndSelect('account.role', 'role')
+            .where('user.email = :email', { email })
+            .orWhere('business.email = :email', { email })
+            .getOne();
     }
 
     async updateUserEmail(userId: number, newEmail: string): Promise<User> {
@@ -124,26 +141,43 @@ export class AuthRepository {
         return await this.userRepository.save(user);
     }
 
-    async saveOtpByEmail(email: string, otp: string, expiresAt: Date): Promise<Otp> {
-        const user = await this.userRepository.findOneBy({ email });
-        if (!user) throw new Error('User not found');
+    async updateBusinessEmail(businessId: number, newEmail: string): Promise<Business> {
+        const business = await this.businessRepository.findOneBy({ id: businessId });
+        if (!business) throw new Error('Business not found');
 
-        let otpRecord = await this.otpRepository.findOneBy({ userId: user.id });
+        business.email = newEmail;
+        return await this.businessRepository.save(business);
+    }
+
+    async saveOtpByEmail(
+        email: string,
+        otp: string,
+        expiresAt: Date,
+    ): Promise<Otp> {
+        let otpRecord = await this.otpRepository.findOne({
+            where: { email },
+        });
 
         if (otpRecord) {
             otpRecord.otp = otp;
             otpRecord.expiresAt = expiresAt;
+            otpRecord.attemptCount = 0;
         } else {
-            otpRecord = this.otpRepository.create({ userId: user.id, otp, expiresAt });
+            otpRecord = this.otpRepository.create({
+                email,
+                otp,
+                expiresAt,
+                attemptCount: 0,
+            });
         }
 
-        return await this.otpRepository.save(otpRecord);
+        return this.otpRepository.save(otpRecord);
     }
 
     async deleteOtpByEmail(email: string): Promise<void> {
         const user = await this.userRepository.findOneBy({ email });
         if (!user) return;
-        await this.otpRepository.delete({ userId: user.id });
+        await this.otpRepository.delete({ accountId: user.id });
     }
 
     async updateRefreshToken(userId: number, refreshToken: string): Promise<void> {

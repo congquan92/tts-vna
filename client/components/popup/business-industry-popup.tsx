@@ -26,7 +26,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
 
     const calculateLevel = (codeStr: string): number => {
         const trimmed = codeStr.trim();
-        if (trimmed.length >= 1 && trimmed.length <= 5) {
+        if (trimmed.length >= 1 && trimmed.length <= 4) {
             return trimmed.length;
         }
         return 0;
@@ -91,15 +91,22 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
 
     const validate = () => {
         const nextErrors: Record<string, string> = {};
+
         if (!code.trim()) {
             nextErrors.code = "Mã ngành là bắt buộc";
+        } else if (code.trim().length > 4) {
+            nextErrors.code =
+                "Mã ngành nghề kinh doanh chỉ được tối đa 4 cấp (tối đa 4 ký tự)";
         }
+
         if (!name.trim()) {
             nextErrors.name = "Tên ngành là bắt buộc";
         }
+
         if (!status) {
             nextErrors.status = "Trạng thái là bắt buộc";
         }
+
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     };

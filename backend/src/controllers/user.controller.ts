@@ -12,7 +12,8 @@ import {
     UseInterceptors,
     UseGuards,
     Res,
-    Patch
+    Patch,
+    Req
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -35,11 +36,14 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CreateUserDto, UpdateUserDto } from '../dto/user/user.dto';
 import { SearchUserDto } from '../dto/user/search-user.dto';
 import { SetPasswordDto } from '../dto/user/set-password.dto';
+import { RequirePermissions } from '../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { Permission } from '../common/enums/permission.enum';
 import multer from 'multer';
 
 @ApiTags('User Management')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('users')
 export class UserController {
     constructor(
@@ -47,6 +51,7 @@ export class UserController {
     ) { }
 
     // Thêm mới người dùng
+    @RequirePermissions(Permission.USER_CREATE)
     @Post()
     @ApiOperation({
         summary: 'Tạo người dùng mới',
@@ -75,6 +80,7 @@ export class UserController {
     }
 
     // Lấy danh sách người dùng
+    @RequirePermissions(Permission.USER_VIEW)
     @Get()
     @ApiOperation({ summary: 'Lấy danh sách người dùng (có phân trang)' })
     @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -91,6 +97,7 @@ export class UserController {
     }
 
     // Tìm kiếm người dùng
+    @RequirePermissions(Permission.USER_VIEW)
     @Get('search')
     @ApiOperation({
         summary: 'Tìm kiếm người dùng (có phân trang)',
@@ -118,6 +125,7 @@ export class UserController {
     }
 
     // Import danh sách người dùng
+    @RequirePermissions(Permission.USER_IMPORT)
     @Post('import')
     @ApiOperation({
         summary: 'Import người dùng từ Excel',
@@ -163,6 +171,7 @@ export class UserController {
     }
 
     // Export danh sách người dùng
+    @RequirePermissions(Permission.USER_EXPORT)
     @Get('export')
     @ApiOperation({ summary: 'Export Excel' })
     async export(@Res() res: Response) {
@@ -182,6 +191,7 @@ export class UserController {
     }
 
     // Lấy chi tiết người dùng
+    @RequirePermissions(Permission.USER_VIEW)
     @Get(':id')
     @ApiOperation({ summary: 'Lấy chi tiết người dùng theo ID' })
     @ApiParam({ name: 'id', example: 1, description: 'ID người dùng' })
@@ -192,6 +202,7 @@ export class UserController {
     }
 
     // Cập nhật thông tin người dùng
+    @RequirePermissions(Permission.USER_UPDATE)
     @Put(':id')
     @ApiOperation({
         summary: 'Cập nhật người dùng',
@@ -231,6 +242,7 @@ export class UserController {
     }
 
     // Xóa người dùng
+    @RequirePermissions(Permission.USER_DELETE)
     @Delete(':id')
     @ApiOperation({
         summary: 'Xóa người dùng',
@@ -248,18 +260,17 @@ export class UserController {
         description: 'Không tìm thấy người dùng',
     })
     async delete(
-        @Param('id', ParseIntPipe)
-        id: number,
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req,
     ) {
-        const data = await this.userService.deleteUser(id);
-
-        return {
-            message: 'Xóa người dùng thành công',
-            data,
-        };
+        return this.userService.deleteUser(
+            id,
+            req.user.accountId || req.user.sub,
+        );
     }
 
     // Khởi tạo mật khẩu người dùng
+    @RequirePermissions(Permission.USER_RESET_PASSWORD)
     @Post(':id/set-password')
     @ApiOperation({
         summary: 'Khởi tạo mật khẩu người dùng',
@@ -287,6 +298,8 @@ export class UserController {
         return this.userService.setPassword(id, dto.password);
     }
 
+    // Bật/Tắt trạng thái
+    @RequirePermissions(Permission.USER_TOGGLE_STATUS)
     @Patch(':id/toggle-status')
     @ApiOperation({
         summary: 'Bật/Tắt trạng thái user',
@@ -315,7 +328,13 @@ export class UserController {
         status: 404,
         description: 'Không tìm thấy user',
     })
-    toggleStatus(@Param('id') id: string) {
-        return this.userService.toggleUserStatus(Number(id));
+    async toggleStatus(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req,
+    ) {
+        return this.userService.toggleUserStatus(
+            id,
+            req.user.accountId || req.user.sub,
+        );
     }
 }
