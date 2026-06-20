@@ -42,9 +42,9 @@ export class BusinessIndustryService {
           'parentId does not refer to an existing BusinessIndustry',
         );
 
-      // Kiểm tra level con không cao hơn level cha
-      if (level < parent.level) {
-        throw new BadRequestException('cấp con cao hơn cấp cha');
+      // Kiểm tra level con không thấp hơn level cha
+      if (level - parent.level !== 1 || level <= parent.level) {
+        throw new BadRequestException('cấp con không hợp lệ so với cấp cha');
       }
 
       parentId = parent.id;
