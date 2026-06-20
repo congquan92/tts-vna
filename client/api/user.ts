@@ -22,10 +22,11 @@ export const UserApi = {
         return res.data;
     },
 
-    importUsers: async (file: File): Promise<{ message: string; data: any }> => {
+    importUsers: async (file: File, preview?: boolean): Promise<{ message: string; data: any }> => {
         const formData = new FormData();
         formData.append("file", file);
         const res = await axiosInstance.post<{ message: string; data: any }>("/users/import", formData, {
+            params: { preview },
             headers: {
                 "Content-Type": "multipart/form-data",
             },
