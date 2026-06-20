@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ChevronRight, Check } from "lucide-react";
 import { getErrorMessage } from "@/utils/error-handle";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import AccountInfoPopup from "@/components/popup/account-info-popup";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -81,8 +82,8 @@ export default function CreateBusinessPage() {
     const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(defaultAttachmentGroups.map((g) => ({ ...g, files: [] })));
     const nextFileIdRef = useRef(1);
 
-    // const [showAccountPopup, setShowAccountPopup] = useState(false);
-    // const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
+    const [showAccountPopup, setShowAccountPopup] = useState(false);
+    const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
     const [submitting, setSubmitting] = useState(false);
 
     const handleChange = (field: keyof EnterpriseFormData, value: string) => {
@@ -209,6 +210,7 @@ export default function CreateBusinessPage() {
             };
             const res = await BusinessApi.create(payload);
             const business = (res as any).data.business;
+            const account = (res as any).data?.account;
 
             // Upload files
             const uploadPromises: Promise<unknown>[] = [];
@@ -231,7 +233,15 @@ export default function CreateBusinessPage() {
             }
 
             toast.success("Khai báo thành công");
-            router.push("/business-managements");
+            if (account) {
+                setAccountInfo({
+                    accountNumber: account.username || "",
+                    password: account.password || "",
+                });
+                setShowAccountPopup(true);
+            } else {
+                router.push("/business-managements");
+            }
         } catch (error: any) {
             console.error("Error saving business:", error);
             toast.error(getErrorMessage(error, "Có lỗi xảy ra khi lưu thông tin"));
@@ -240,10 +250,10 @@ export default function CreateBusinessPage() {
         }
     };
 
-    // const handleCloseAccountPopup = () => {
-    //     setShowAccountPopup(false);
-    //     router.push("/business-managements");
-    // };
+    const handleCloseAccountPopup = () => {
+        setShowAccountPopup(false);
+        router.push("/business-managements");
+    };
 
     const handleCancel = () => {
         router.push("/business-managements");
@@ -350,7 +360,7 @@ export default function CreateBusinessPage() {
                         </>
                     )}
                 </div>
-                {/* <AccountInfoPopup isOpen={showAccountPopup} onClose={handleCloseAccountPopup} accountNumber={accountInfo.accountNumber} password={accountInfo.password} /> */}
+                <AccountInfoPopup isOpen={showAccountPopup} onClose={handleCloseAccountPopup} accountNumber={accountInfo.accountNumber} password={accountInfo.password} />
             </div>
         </div>
     );
