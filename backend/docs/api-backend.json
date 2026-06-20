@@ -17,7 +17,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"123456\",\r\n  \"fullName\": \"Admin\",\r\n  \"email\": \"admin@gmail.com\",\r\n  \"roleId\": 1,\r\n  \"orgType\": \"SO\"\r\n}",
+              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"A12345678\",\r\n  \"fullName\": \"Admin\",\r\n  \"email\": \"admin@gmail.com\",\r\n  \"roleId\": 1,\r\n  \"orgType\": \"SO\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -81,7 +81,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"admin@gmail.com\",\r\n    \"otp\": \"572872\",\r\n    \"newPassword\": \"123456\",\r\n    \"confirmNewPassword\": \"123456\"\r\n}",
+              "raw": "{\r\n    \"email\": \"admin@gmail.com\",\r\n    \"otp\": \"251363\",\r\n    \"newPassword\": \"123456\",\r\n    \"confirmNewPassword\": \"123456\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -113,7 +113,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"123456\"\r\n}",
+              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"A12345678\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -174,7 +174,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"oldPass\": \"admin123\",\r\n    \"newPass\": \"admin123456\",\r\n    \"confirmPass\": \"admin123456\"\r\n}",
+              "raw": "{\r\n    \"oldPass\": \"A123456789\",\r\n    \"newPass\": \"A12345678\",\r\n    \"confirmPass\": \"A12345678\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -261,7 +261,7 @@
                   "key": "avatar",
                   "type": "file",
                   "uuid": "3ad5371e-7a65-481a-90ce-ba97699efa26",
-                  "src": "/D:/25-26_TT_VNA/tts-vna/backend/uploads/avatars/1781054727959-test.jpg"
+                  "src": "/D:/ChatGPT Image 16_46_55 21 thg 5, 2026.png"
                 }
               ]
             },
@@ -372,7 +372,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"username\": \"nguyenvanb\",\r\n  \"fullName\": \"Nguyễn Văn B\",\r\n  \"email\": \"nguyenvanb@gmail.com\",\r\n  \"roleId\": 2,\r\n  \"position\": \"Trưởng phòng\",\r\n  \"dob\": \"1999-06-01\",\r\n  \"gender\": \"Nam\",\r\n  \"province\": \"Thành phố Hồ Chí Minh\",\r\n  \"ward\": \"Phường Gò Vấp\",\r\n  \"address\": \"123 Đường số 1\",\r\n  \"isActive\": true\r\n}",
+              "raw": "{\r\n  \"username\": \"nguyenvand\",\r\n  \"fullName\": \"Nguyễn Văn D\",\r\n  \"email\": \"nguyenvand@gmail.com\",\r\n  \"roleId\": 2,\r\n  \"position\": \"Trưởng phòng\",\r\n  \"dob\": \"2026-06-18\",\r\n  \"gender\": \"Nam\",\r\n  \"province\": \"Thành phố Hồ Chí Minh\",\r\n  \"ward\": \"Phường Gò Vấp\",\r\n  \"address\": \"123 Đường số 1\",\r\n  \"isActive\": true\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -873,7 +873,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"code\": \"1234\",\r\n  \"name\": \"Lúa gạo\",\r\n  \"parentId\": 3,\r\n  \"status\": \"active\"\r\n}",
+              "raw": "{\r\n  \"code\": \"A1111\",\r\n  \"name\": \"Lúa gạo\",\r\n  \"parentId\": 3,\r\n  \"status\": \"active\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -926,7 +926,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/businessIndustries/level/4",
+              "raw": "http://localhost:3001/businessIndustries/level/3",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -935,7 +935,7 @@
               "path": [
                 "businessIndustries",
                 "level",
-                "4"
+                "3"
               ]
             }
           },
@@ -979,6 +979,14 @@
                 "1"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
           },
           "response": []
         },
@@ -1053,7 +1061,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"taxCode\": \"0312345678901\",\r\n    \"businessName\": \"Công ty TNHH ABCD\",\r\n    \"foreignName\": \"ABCD Company Limited\",\r\n    \"typeOfBusinessId\": 1,\r\n    \"businessIndustryId\": 1,\r\n    \"businessLicenseDate\": \"2025-01-01\",\r\n    \"registeredProvince\": \"TP. Hồ Chí Minh\",\r\n    \"registeredWard\": \"Phường Hiệp Bình\",\r\n    \"registeredAddress\": \"123 Quốc lộ 13\",\r\n    \"email\": \"abcd@gmail.com\",\r\n    \"officePhone\": \"02812345678\",\r\n    \"operatingProvince\": \"TP. Hồ Chí Minh\",\r\n    \"operatingWard\": \"Phường Linh Đông\",\r\n    \"businessLocation\": \"Khu công nghiệp ABC\",\r\n    \"legalRepresentative\": \"Nguyễn Văn A\",\r\n    \"representativePhone\": \"0909123456\"\r\n}",
+              "raw": "{\r\n    \"taxCode\": \"0312345677\",\r\n    \"businessName\": \"Công ty TNHH ABCDE\",\r\n    \"foreignName\": \"ABCDE Company Limited\",\r\n    \"typeOfBusinessId\": 1,\r\n    \"businessIndustryId\": 9,\r\n    \"businessLicenseDate\": \"2025-01-01\",\r\n    \"registeredProvince\": \"TP. Hồ Chí Minh\",\r\n    \"registeredWard\": \"Phường Hiệp Bình\",\r\n    \"registeredAddress\": \"123 Quốc lộ 13\",\r\n    \"email\": \"abcde@gmail.com\",\r\n    \"officePhone\": \"02812345678\",\r\n    \"operatingProvince\": \"TP. Hồ Chí Minh\",\r\n    \"operatingWard\": \"Phường Linh Đông\",\r\n    \"businessLocation\": \"Khu công nghiệp ABC\",\r\n    \"legalRepresentative\": \"Nguyễn Văn A\",\r\n    \"representativePhone\": \"0909123456\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1105,6 +1113,70 @@
           "response": []
         },
         {
+          "name": "request-otp",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"abc@gmail.com\",\r\n    \"businessName\": \"Công ty ABC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/business/request-otp",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "business",
+                "request-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify-otp",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"abc@gmail.com\",\r\n  \"otp\": \"332558\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/business/verify-otp",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "business",
+                "verify-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "get-all-businesses",
           "request": {
             "method": "GET",
@@ -1129,7 +1201,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/business/5",
+              "raw": "http://localhost:3001/business/4",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1137,7 +1209,7 @@
               "port": "3001",
               "path": [
                 "business",
-                "5"
+                "4"
               ]
             }
           },
@@ -1369,7 +1441,7 @@
     "bearer": [
       {
         "key": "token",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoxLCJvcmdUeXBlIjoiU08iLCJpYXQiOjE3ODEyNjExNTcsImV4cCI6MTc4MTI2NDc1N30.5ze-CNXUdpTj7riOjT20Wj3EFxhdb-oPN-myMHjNv6k",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE2LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjksImJ1c2luZXNzSWQiOm51bGwsImlhdCI6MTc4MTkyNjczNSwiZXhwIjoxNzgxOTMwMzM1fQ.pSUuxrnUajk456DKAZg-v-OJF4KxbVc9nmxPzk1dRi0",
         "type": "string"
       }
     ]
