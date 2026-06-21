@@ -7,11 +7,8 @@ import {
   throwIfValidationErrors,
 } from './report-validation.exception';
 
-/** Các trường số: tổng các chi tiết phải BẰNG báo cáo cha */
-export const LABOR_ACCIDENT_DETAIL_EQUAL_FIELDS = [
-  'totalAccidentCases',
-  'totalCasesWithDeath',
-  'totalCasesWithTwoOrMoreVictims',
+/** Tổng các chi tiết phải BẰNG báo cáo cha */
+export const LABOR_ACCIDENT_DETAIL_SUM_FIELDS = [
   'totalVictims',
   'totalFemaleVictims',
   'totalDeaths',
@@ -20,10 +17,6 @@ export const LABOR_ACCIDENT_DETAIL_EQUAL_FIELDS = [
   'unmanagedFemaleVictims',
   'unmanagedDeaths',
   'unmanagedSeriouslyInjured',
-] as const satisfies readonly (keyof LaborAccidentSummaryData)[];
-
-/** Các trường tiền: tổng các chi tiết không được VƯỢT QUÁ báo cáo cha */
-export const LABOR_ACCIDENT_DETAIL_MAX_FIELDS = [
   'medicalCost',
   'salaryDuringTreatment',
   'compensationCost',
@@ -42,7 +35,7 @@ export interface LaborAccidentReportInput extends LaborAccidentSummaryData {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  totalAccidentCases: 'Tổng số vụ',
+  totalAccidentCases: 'Tổng số vụ (số lượng chi tiết)',
   totalCasesWithDeath: 'Tổng số vụ có người chết',
   totalCasesWithTwoOrMoreVictims: 'Tổng số vụ có 2 người bị nạn trở lên',
   totalVictims: 'Tổng số người bị nạn',
@@ -54,7 +47,7 @@ const FIELD_LABELS: Record<string, string> = {
   unmanagedDeaths: 'Số người chết không quản lý',
   unmanagedSeriouslyInjured: 'Số người bị thương nặng không quản lý',
   medicalCost: 'Chi phí y tế',
-  salaryDuringTreatment: 'Chi trả lương trong thời gian điều trị',
+  salaryDuringTreatment: 'Chi phí trả lương trong thời gian điều trị',
   compensationCost: 'Chi phí bồi thường trợ cấp',
   totalCost: 'Tổng tiền chi phí',
   propertyDamage: 'Thiệt hại tài sản',
@@ -88,7 +81,22 @@ export function validateLaborAccidentReport(report: LaborAccidentReportInput) {
     return;
   }
 
-  for (const field of LABOR_ACCIDENT_DETAIL_EQUAL_FIELDS) {
+  // totalAccidentCases = số lượng bản ghi AccidentDetail
+  if (
+    report.totalAccidentCases != null &&
+    report.totalAccidentCases !== details.length
+  ) {
+    errors.push({
+      field: 'laborAccidentReport.totalAccidentCases',
+      code: 'DETAIL_COUNT_MISMATCH',
+      message:
+        'Tổng số vụ phải bằng số lượng chi tiết tai nạn (accidentDetails)',
+      expected: details.length,
+      actual: report.totalAccidentCases,
+    });
+  }
+
+  for (const field of LABOR_ACCIDENT_DETAIL_SUM_FIELDS) {
     const parentValue = report[field];
 
     if (parentValue == null) {
@@ -96,33 +104,24 @@ export function validateLaborAccidentReport(report: LaborAccidentReportInput) {
     }
 
     const childrenSum = sumDetailField(details, field);
+    const isMoneyField = [
+      'medicalCost',
+      'salaryDuringTreatment',
+      'compensationCost',
+      'totalCost',
+      'propertyDamage',
+    ].includes(field);
 
-    if (childrenSum !== Number(parentValue)) {
+    const isMismatch = isMoneyField
+      ? Math.abs(childrenSum - Number(parentValue)) > 0.01
+      : childrenSum !== Number(parentValue);
+
+    if (isMismatch) {
       errors.push({
         field: `laborAccidentReport.${field}`,
         code: 'DETAIL_SUM_MISMATCH',
         message: `${FIELD_LABELS[field]}: Tổng các chi tiết phải bằng báo cáo tổng`,
         expected: Number(parentValue),
-        actual: childrenSum,
-      });
-    }
-  }
-
-  for (const field of LABOR_ACCIDENT_DETAIL_MAX_FIELDS) {
-    const parentValue = report[field];
-
-    if (parentValue == null) {
-      continue;
-    }
-
-    const childrenSum = sumDetailField(details, field);
-
-    if (childrenSum > Number(parentValue) + 0.01) {
-      errors.push({
-        field: `laborAccidentReport.${field}`,
-        code: 'DETAIL_COST_EXCEEDS_PARENT',
-        message: `${FIELD_LABELS[field]}: Tổng các chi tiết không được vượt quá báo cáo tổng`,
-        expected: `<= ${parentValue}`,
         actual: childrenSum,
       });
     }

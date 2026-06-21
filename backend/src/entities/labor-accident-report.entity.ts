@@ -28,6 +28,7 @@ export class LaborAccidentReport {
   /**
    * =========================
    * MỤC 1: Tổng số tai nạn lao động và số nạn nhân
+   * totalAccidentCases = số lượng AccidentDetail thuộc báo cáo này
    * =========================
    */
   @Column({ nullable: true })

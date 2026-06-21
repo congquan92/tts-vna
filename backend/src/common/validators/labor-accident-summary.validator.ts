@@ -28,7 +28,8 @@ function fieldPath(prefix: string, field: string): string {
 }
 
 /**
- * Ràng buộc nội bộ trong cùng một báo cáo (LaborAccidentReport, SupportReport, AccidentDetail).
+ * Ràng buộc nội bộ trong cùng một báo cáo
+ * (LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail).
  */
 export function validateLaborAccidentSummaryFields(
   data: LaborAccidentSummaryData,
@@ -43,33 +44,43 @@ export function validateLaborAccidentSummaryFields(
   const totalFemaleVictims = data.totalFemaleVictims;
   const totalDeaths = data.totalDeaths;
   const totalSeriouslyInjured = data.totalSeriouslyInjured;
-  const unmanagedVictims = data.unmanagedVictims;
-  const unmanagedFemaleVictims = data.unmanagedFemaleVictims;
-  const unmanagedDeaths = data.unmanagedDeaths;
-  const unmanagedSeriouslyInjured = data.unmanagedSeriouslyInjured;
   const medicalCost = data.medicalCost;
   const salaryDuringTreatment = data.salaryDuringTreatment;
   const compensationCost = data.compensationCost;
   const totalCost = data.totalCost;
 
-  // 1. Tổng số vụ = vụ có người chết + vụ có 2 người bị nạn trở lên
+  // 1. Tổng số vụ có người chết <= tổng số vụ
   if (
     totalCases != null &&
     casesWithDeath != null &&
-    twoOrMoreVictims != null &&
-    totalCases !== casesWithDeath + twoOrMoreVictims
+    casesWithDeath > totalCases
   ) {
     errors.push({
-      field: fieldPath(prefix, 'totalAccidentCases'),
-      code: 'TOTAL_CASES_SUM_MISMATCH',
-      message:
-        'Tổng số vụ phải bằng tổng số vụ có người chết + tổng số vụ có 2 người bị nạn trở lên',
-      expected: casesWithDeath + twoOrMoreVictims,
-      actual: totalCases,
+      field: fieldPath(prefix, 'totalCasesWithDeath'),
+      code: 'CASES_WITH_DEATH_EXCEEDS_TOTAL',
+      message: 'Tổng số vụ có người chết không được vượt quá tổng số vụ',
+      expected: `<= ${totalCases}`,
+      actual: casesWithDeath,
     });
   }
 
-  // 2. Tổng chi phí = chi phí y tế + lương điều trị + bồi thường
+  // 2. Tổng số vụ có 2 người bị nạn trở lên <= tổng số vụ
+  if (
+    totalCases != null &&
+    twoOrMoreVictims != null &&
+    twoOrMoreVictims > totalCases
+  ) {
+    errors.push({
+      field: fieldPath(prefix, 'totalCasesWithTwoOrMoreVictims'),
+      code: 'TWO_OR_MORE_VICTIMS_EXCEEDS_TOTAL',
+      message:
+        'Tổng số vụ có 2 người bị nạn trở lên không được vượt quá tổng số vụ',
+      expected: `<= ${totalCases}`,
+      actual: twoOrMoreVictims,
+    });
+  }
+
+  // 3. Tổng tiền chi phí = chi phí y tế + chi trả lương điều trị + bồi thường trợ cấp
   if (
     totalCost != null &&
     (medicalCost != null ||
@@ -86,73 +97,56 @@ export function validateLaborAccidentSummaryFields(
         field: fieldPath(prefix, 'totalCost'),
         code: 'TOTAL_COST_SUM_MISMATCH',
         message:
-          'Tổng tiền chi phí phải bằng chi phí y tế + chi trả lương điều trị + chi phí bồi thường trợ cấp',
+          'Tổng tiền chi phí phải bằng chi phí y tế + chi phí trả lương trong thời gian điều trị + chi phí bồi thường trợ cấp',
         expected: expectedTotal,
         actual: Number(totalCost),
       });
     }
   }
 
-  // 3. Tổng số người bị nạn >= số người bị nạn không quản lý
+  // 4. Tổng số lao động nữ bị nạn <= tổng số người bị nạn
   if (
     totalVictims != null &&
-    unmanagedVictims != null &&
-    totalVictims < unmanagedVictims
-  ) {
-    errors.push({
-      field: fieldPath(prefix, 'totalVictims'),
-      code: 'VICTIMS_LESS_THAN_UNMANAGED',
-      message:
-        'Tổng số người bị nạn phải lớn hơn hoặc bằng số người bị nạn không quản lý',
-      expected: `>= ${unmanagedVictims}`,
-      actual: totalVictims,
-    });
-  }
-
-  // 4. Tổng số lao động nữ bị nạn >= lao động nữ bị nạn không quản lý
-  if (
     totalFemaleVictims != null &&
-    unmanagedFemaleVictims != null &&
-    totalFemaleVictims < unmanagedFemaleVictims
+    totalFemaleVictims > totalVictims
   ) {
     errors.push({
       field: fieldPath(prefix, 'totalFemaleVictims'),
-      code: 'FEMALE_VICTIMS_LESS_THAN_UNMANAGED',
+      code: 'FEMALE_VICTIMS_EXCEEDS_TOTAL',
       message:
-        'Tổng số lao động nữ bị nạn phải lớn hơn hoặc bằng lao động nữ bị nạn không quản lý',
-      expected: `>= ${unmanagedFemaleVictims}`,
+        'Tổng số lao động nữ bị nạn không được vượt quá tổng số người bị nạn',
+      expected: `<= ${totalVictims}`,
       actual: totalFemaleVictims,
     });
   }
 
-  // 5. Tổng số người chết >= số người chết không quản lý
+  // 5. Tổng số người chết <= tổng số người bị nạn
   if (
+    totalVictims != null &&
     totalDeaths != null &&
-    unmanagedDeaths != null &&
-    totalDeaths < unmanagedDeaths
+    totalDeaths > totalVictims
   ) {
     errors.push({
       field: fieldPath(prefix, 'totalDeaths'),
-      code: 'DEATHS_LESS_THAN_UNMANAGED',
-      message:
-        'Tổng số người chết phải lớn hơn hoặc bằng số người chết không quản lý',
-      expected: `>= ${unmanagedDeaths}`,
+      code: 'DEATHS_EXCEEDS_VICTIMS',
+      message: 'Tổng số người chết không được vượt quá tổng số người bị nạn',
+      expected: `<= ${totalVictims}`,
       actual: totalDeaths,
     });
   }
 
-  // 6. Tổng số người bị thương nặng >= số người bị thương nặng không quản lý
+  // 6. Tổng số người bị thương nặng <= tổng số người bị nạn
   if (
+    totalVictims != null &&
     totalSeriouslyInjured != null &&
-    unmanagedSeriouslyInjured != null &&
-    totalSeriouslyInjured < unmanagedSeriouslyInjured
+    totalSeriouslyInjured > totalVictims
   ) {
     errors.push({
       field: fieldPath(prefix, 'totalSeriouslyInjured'),
-      code: 'SERIOUSLY_INJURED_LESS_THAN_UNMANAGED',
+      code: 'SERIOUSLY_INJURED_EXCEEDS_VICTIMS',
       message:
-        'Tổng số người bị thương nặng phải lớn hơn hoặc bằng số người bị thương nặng không quản lý',
-      expected: `>= ${unmanagedSeriouslyInjured}`,
+        'Tổng số người bị thương nặng không được vượt quá tổng số người bị nạn',
+      expected: `<= ${totalVictims}`,
       actual: totalSeriouslyInjured,
     });
   }

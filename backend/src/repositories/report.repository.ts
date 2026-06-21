@@ -35,6 +35,32 @@ export class ReportRepository {
     };
   }
 
+  async findByCompanyAndYear(companyId: number, year: number, page = 1, limit = 10) {
+    const [reports, total] = await this.reportRepository.findAndCount({
+      where: {
+        year,
+        companyInfo: {
+          businessId: companyId,
+        },
+      },
+      relations: {
+        companyInfo: { business: true },
+        laborAccidentReport: { accidentDetails: true },
+        laborAccidentSupportReport: true,
+      },
+      order: { id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data: reports,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
   async findById(id: number): Promise<Report | null> {
     return this.reportRepository.findOne({
       where: { id },

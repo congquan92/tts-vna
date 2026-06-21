@@ -48,6 +48,10 @@ import { AccidentDetail } from './entities/accident-detail.entity';
 import { ReportController } from './controllers/report.controller';
 import { ReportService } from './services/report.service';
 import { ReportRepository } from './repositories/report.repository';
+import { ReportFile } from './entities/report-file.entity';
+import { ReportFileRepository } from './repositories/reportFile.repository';
+import { ReportFileController } from './controllers/reportFile.controller';
+import { ReportFileService } from './services/reportFile.service';
 
 @Module({
   imports: [
@@ -99,9 +103,9 @@ import { ReportRepository } from './repositories/report.repository';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository],
 })
 export class AppModule { }
