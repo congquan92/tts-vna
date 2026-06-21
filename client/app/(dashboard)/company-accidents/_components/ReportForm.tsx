@@ -46,7 +46,7 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
                 disabled={disabled}
                 value={value ?? ""}
                 onChange={(e) => onChange && onChange(e.target.value)}
-                className={`w-full bg-white border border-gray-200 rounded px-3 py-2 text-xs outline-none focus:border-blue-500 font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed ${suffix ? "pr-16" : ""}`}
+                className={`w-full bg-white border border-gray-200 rounded px-3 py-2 text-xs outline-none focus:border-primary font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed ${suffix ? "pr-16" : ""}`}
             />
             {suffix && <span className="absolute right-3 text-[10px] text-gray-400 font-semibold pointer-events-none">{suffix}</span>}
         </div>
@@ -73,7 +73,7 @@ const FormSelect: React.FC<FormSelectProps> = ({ label, value, onChange, options
                 disabled={disabled}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded px-3 py-2.5 text-xs outline-none focus:border-blue-500 font-semibold text-gray-800 appearance-none pr-10 cursor-pointer disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                className="w-full bg-white border border-gray-200 rounded px-3 py-2.5 text-xs outline-none focus:border-primary font-semibold text-gray-800 appearance-none pr-10 cursor-pointer disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed"
             >
                 {options.map((opt) => (
                     <option key={opt} value={opt}>

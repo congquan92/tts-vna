@@ -52,7 +52,7 @@ export class ReportService {
     };
   }
 
-  async getAllReports(page = 1, limit = 10, filters?: { businessId?: number; year?: number; status?: string }) {
+  async getAllReports(page = 1, limit = 10, filters?: { businessId?: number; year?: number; status?: string; businessName?: string; taxCode?: string; province?: string; ward?: string }) {
     const safePage = Math.max(Number(page) || 1, 1);
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
 

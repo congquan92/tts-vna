@@ -96,7 +96,7 @@ export default function CompanyAccidentsPage() {
                                         setSelectedYear(Number(e.target.value));
                                         setCurrentPage(1);
                                     }}
-                                    className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer bg-no-repeat"
+                                    className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-semibold outline-none focus:border-primary cursor-pointer bg-no-repeat"
                                 >
                                     {[2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027].map((y) => (
                                         <option key={y} value={y}>
@@ -107,7 +107,7 @@ export default function CompanyAccidentsPage() {
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                             </div>
 
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold py-1.5">
+                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
                                 <Plus className="size-4" />
                                 <span>Thêm mới</span>
                             </Button>

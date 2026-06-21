@@ -46,12 +46,12 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                         {reports.map((item) => (
                             <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-3" style={GRID_STYLE}>
                                 <div className="flex items-center justify-center gap-3">
-                                    <button type="button" onClick={() => onView(item)} className="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Xem chi tiết">
+                                    <button type="button" onClick={() => onView(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem chi tiết">
                                         <Eye size={16} />
                                     </button>
 
                                     {item.status === "đang báo cáo" ? (
-                                        <button type="button" onClick={() => onEdit(item)} className="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Chỉnh sửa">
+                                        <button type="button" onClick={() => onEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <Pencil size={16} />
                                         </button>
                                     ) : (
@@ -59,19 +59,19 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                     )}
                                 </div>
 
-                                <div className="font-medium truncate">{item.companyInfo?.businessName || businessProfile?.name || "N/A"}</div>
-                                <div className="tabular-nums">{item.companyInfo?.businessName ? (item.companyInfo.businessId ? businessProfile?.taxCode : "") : businessProfile?.taxCode || "N/A"}</div>
-                                <div>{item.reportPeriod || "N/A"}</div>
+                                <div className="font-semibold text-gray-800 truncate">{item.companyInfo?.businessName || businessProfile?.name || "N/A"}</div>
+                                <div className="font-medium text-gray-650 tabular-nums">{item.companyInfo?.businessName ? (item.companyInfo.businessId ? businessProfile?.taxCode : "") : businessProfile?.taxCode || "N/A"}</div>
+                                <div className="font-medium text-gray-650">{item.reportPeriod || "N/A"}</div>
                                 <div className="flex items-center gap-2">
                                     {item.status === "đang báo cáo" ? (
                                         <>
                                             <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />
-                                            <span className="text-gray-500 font-medium">Đang báo cáo</span>
+                                            <span className="text-gray-500 font-semibold">Đang báo cáo</span>
                                         </>
                                     ) : (
                                         <>
                                             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                                            <span className="text-blue-600 font-medium">Đã tiếp nhận</span>
+                                            <span className="text-blue-600 font-semibold">Đã tiếp nhận</span>
                                         </>
                                     )}
                                 </div>
@@ -80,7 +80,7 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                         {reports.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                                 <FileText className="size-10 mb-2 opacity-50" />
-                                <span className="text-sm">Không tìm thấy báo cáo nào trong năm {selectedYear}</span>
+                                <span className="text-sm font-semibold">Không tìm thấy báo cáo nào trong năm {selectedYear}</span>
                             </div>
                         )}
                     </>
@@ -95,35 +95,33 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                         onChange={(e) => {
                             onPageSizeChange(Number(e.target.value));
                         }}
-                        className="border border-gray-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors"
+                        className="border border-gray-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white hover:border-gray-400 transition-colors font-semibold"
                     >
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                     </select>
                 </div>
-                <span className="tabular-nums">
+                <span className="tabular-nums font-semibold">
                     {totalReports === 0 ? "0" : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, totalReports)}`} of {totalReports}
                 </span>
                 <div className="flex items-center gap-1">
-                    <Button
-                        variant="outline"
-                        size="sm"
+                    <button
+                        type="button"
                         disabled={currentPage <= 1}
                         onClick={() => onPageChange(currentPage - 1)}
-                        className="w-7 h-7 !p-0 border-none bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                        className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                         <ChevronLeft size={16} />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
+                    </button>
+                    <button
+                        type="button"
                         disabled={currentPage >= totalPages}
                         onClick={() => onPageChange(currentPage + 1)}
-                        className="w-7 h-7 !p-0 border-none bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                        className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                         <ChevronRight size={16} />
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>

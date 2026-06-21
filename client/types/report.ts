@@ -4,6 +4,10 @@ export interface CompanyInfo {
     totalNumberOfEmployees?: number;
     totalNumberOfFemaleEmployees?: number;
     totalSalary?: number;
+    business?: {
+        businessName?: string;
+        taxCode?: string;
+    };
 }
 
 export interface AccidentDetail {

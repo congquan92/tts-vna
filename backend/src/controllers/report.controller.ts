@@ -51,6 +51,10 @@ export class ReportController {
   @ApiQuery({ name: 'limit', required: false, example: 10 })
   @ApiQuery({ name: 'year', required: false, example: 2022 })
   @ApiQuery({ name: 'status', required: false, example: 'đang báo cáo' })
+  @ApiQuery({ name: 'businessName', required: false })
+  @ApiQuery({ name: 'taxCode', required: false })
+  @ApiQuery({ name: 'province', required: false })
+  @ApiQuery({ name: 'ward', required: false })
   @ApiResponse({ status: 200, description: 'Danh sách báo cáo' })
   getAllReports(
     @Req() req,
@@ -58,6 +62,10 @@ export class ReportController {
     @Query('limit') limit?: string,
     @Query('year') year?: string,
     @Query('status') status?: string,
+    @Query('businessName') businessName?: string,
+    @Query('taxCode') taxCode?: string,
+    @Query('province') province?: string,
+    @Query('ward') ward?: string,
   ) {
     const filters: any = {};
     if (req.user.orgType === 'DOANH_NGHIEP') {
@@ -68,6 +76,18 @@ export class ReportController {
     }
     if (status) {
       filters.status = status;
+    }
+    if (businessName) {
+      filters.businessName = businessName;
+    }
+    if (taxCode) {
+      filters.taxCode = taxCode;
+    }
+    if (province) {
+      filters.province = province;
+    }
+    if (ward) {
+      filters.ward = ward;
     }
     return this.reportService.getAllReports(
       Number(page),

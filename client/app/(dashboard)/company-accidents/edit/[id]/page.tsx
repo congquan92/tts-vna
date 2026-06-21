@@ -89,7 +89,7 @@ export default function EditReportPage() {
         return (
             <div className="h-screen flex items-center justify-center bg-[#F4F6F8]">
                 <div className="text-center">
-                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <span className="text-gray-500 text-sm">Đang tải dữ liệu báo cáo...</span>
                 </div>
             </div>
@@ -108,7 +108,7 @@ export default function EditReportPage() {
                                 type="number"
                                 value={formTriggers?.year ?? new Date().getFullYear()}
                                 onChange={(e) => formTriggers?.setYear(Number(e.target.value))}
-                                className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center font-semibold outline-none focus:border-blue-500"
+                                className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center font-semibold outline-none focus:border-primary"
                             />
 
                             <Button variant="outline" size="sm" onClick={() => formTriggers?.cancel()} className="border-none bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xs font-semibold px-3 py-1.5">
