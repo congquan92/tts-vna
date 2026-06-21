@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/report/create-report.dto';
@@ -13,6 +10,7 @@ import { validateLaborAccidentReport } from '../common/validators/labor-accident
 import { validateLaborAccidentSupportReport } from '../common/validators/labor-accident-support-report.validator';
 
 type CompanyYearReportItem = {
+  reportId: number;
   businessName: string | null;
   taxCode: string | null;
   reportingPeriod: ReportingPeriod | null;
@@ -21,15 +19,14 @@ type CompanyYearReportItem = {
 
 @Injectable()
 export class ReportService {
-  constructor(
-    private readonly reportRepository: ReportRepository,
-  ) {}
+  constructor(private readonly reportRepository: ReportRepository) {}
 
   async createReport(dto: CreateReportDto) {
     const reportData: DeepPartial<Report> = {};
 
     reportData.year = dto.year ?? new Date().getFullYear();
-    reportData.reportingPeriod = dto.reportingPeriod ?? ReportingPeriod.ONE_YEAR;
+    reportData.reportingPeriod =
+      dto.reportingPeriod ?? ReportingPeriod.ONE_YEAR;
 
     if (dto.companyInfo) {
       reportData.companyInfo = dto.companyInfo;
@@ -82,6 +79,7 @@ export class ReportService {
       ...result,
       data: result.data.map(
         (report): CompanyYearReportItem => ({
+          reportId: report.id,
           businessName: report.companyInfo?.business?.businessName ?? null,
           taxCode: report.companyInfo?.business?.taxCode ?? null,
           reportingPeriod: report.reportingPeriod ?? null,
@@ -140,9 +138,7 @@ export class ReportService {
       updateData.laborAccidentSupportReport = mergedSupportReport;
     }
 
-    const updated = await this.reportRepository.save(
-      updateData as Report,
-    );
+    const updated = await this.reportRepository.save(updateData);
 
     return {
       message: 'Cập nhật báo cáo thành công',
