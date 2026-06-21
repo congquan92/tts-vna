@@ -2,6 +2,29 @@ import { axiosInstance } from "@/lib/axios";
 import type { User } from "@/types/auth";
 import type { CreateUserPayload, UpdateUserPayload, SearchUserParams, UserListResponse } from "@/types/user";
 
+export interface ImportUsersResponse {
+    message: string;
+    data: {
+        total: number;
+        success: number;
+        failed: number;
+        errors: {
+            row: number;
+            data: Record<string, unknown>;
+            errors: string[];
+        }[];
+        rows?: {
+            row: number;
+            fullName: string;
+            username: string;
+            email: string;
+            role: string;
+            position: string;
+            isActive: boolean;
+        }[];
+    };
+}
+
 export const UserApi = {
     create: async (payload: CreateUserPayload): Promise<{ message: string; data: User }> => {
         const res = await axiosInstance.post<{ message: string; data: User }>("/users", payload);
@@ -22,15 +45,23 @@ export const UserApi = {
         return res.data;
     },
 
-    importUsers: async (file: File): Promise<{ message: string; data: any }> => {
-        const formData = new FormData();
-        formData.append("file", file);
-        const res = await axiosInstance.post<{ message: string; data: any }>("/users/import", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
-        return res.data;
+    importUsers: async (fileOrRows: File | unknown[], preview?: boolean): Promise<ImportUsersResponse> => {
+        if (Array.isArray(fileOrRows)) {
+            const res = await axiosInstance.post<ImportUsersResponse>("/users/import", { rows: fileOrRows }, {
+                params: { preview },
+            });
+            return res.data;
+        } else {
+            const formData = new FormData();
+            formData.append("file", fileOrRows);
+            const res = await axiosInstance.post<ImportUsersResponse>("/users/import", formData, {
+                params: { preview },
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return res.data;
+        }
     },
 
     exportUsers: async (): Promise<Blob> => {
@@ -50,13 +81,13 @@ export const UserApi = {
         return res.data;
     },
 
-    delete: async (id: number): Promise<{ message: string; data: any }> => {
-        const res = await axiosInstance.delete<{ message: string; data: any }>(`/users/${id}`);
+    delete: async (id: number): Promise<{ message: string; data: unknown }> => {
+        const res = await axiosInstance.delete<{ message: string; data: unknown }>(`/users/${id}`);
         return res.data;
     },
 
-    setPassword: async (id: number, password: string): Promise<any> => {
-        const res = await axiosInstance.post(`/users/${id}/set-password`, { password });
+    setPassword: async (id: number, password: string): Promise<{ message: string }> => {
+        const res = await axiosInstance.post<{ message: string }>(`/users/${id}/set-password`, { password });
         return res.data;
     },
 

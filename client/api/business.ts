@@ -50,4 +50,14 @@ export const BusinessApi = {
         const res = await axiosInstance.post(`/business/${id}/set-password`, { password });
         return res.data;
     },
+
+    requestOtp: async (email: string, businessName: string): Promise<{ message: string }> => {
+        const res = await axiosInstance.post<{ message: string }>("/business/request-otp", { email, businessName });
+        return res.data;
+    },
+
+    verifyOtp: async (email: string, otp: string): Promise<{ success: boolean; message: string; verifiedEmail: string }> => {
+        const res = await axiosInstance.post<{ success: boolean; message: string; verifiedEmail: string }>("/business/verify-otp", { email, otp });
+        return res.data;
+    },
 };

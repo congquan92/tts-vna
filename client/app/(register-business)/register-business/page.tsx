@@ -2,16 +2,18 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import EnterpriseStepOne from "@/components/modals/Enterprise/EnterpriseStepOne";
 import EnterpriseStepConfirm from "@/components/modals/Enterprise/EnterpriseStepConfirm";
 import type { EnterpriseFormData, EnterpriseFormErrors, AttachmentGroup, UploadedFile } from "@/components/modals/Enterprise/EnterpriseStepOne";
 import { BusinessApi } from "@/api/business";
 import { BusinessFileApi } from "@/api/businessFile";
 import { toast } from "sonner";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Check, ArrowLeft } from "lucide-react";
 import { getErrorMessage } from "@/utils/error-handle";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import AccountInfoPopup from "@/components/popup/account-info-popup";
+import OtpVerificationPopup from "@/components/popup/otp-verification-popup";
 
 const emptyForm: EnterpriseFormData = {
     companyName: "",
@@ -56,25 +58,16 @@ const defaultAttachmentGroups: AttachmentGroup[] = [
     { groupName: "Giấy tờ khác", files: [] },
 ];
 
-const TAX_CODE_REGEX = /^(\d{10})$|^(\d{10}-\d{3})$/;
-
 function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// function generateAccountInfo(taxCode: string) {
-//     return {
-//         accountNumber: taxCode.replace(/-/g, "") || "0000000000",
-//         password: "123456",
-//     };
-// }
-
 const PHONE_REGEX = /^[0-9]{8,15}$/;
 const MOBILE_REGEX = /^[0-9]{10,11}$/;
 
-export default function CreateBusinessPage() {
+export default function RegisterBusinessPage() {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [form, setForm] = useState<EnterpriseFormData>({ ...emptyForm });
@@ -82,6 +75,7 @@ export default function CreateBusinessPage() {
     const [attachmentGroups, setAttachmentGroups] = useState<AttachmentGroup[]>(defaultAttachmentGroups.map((g) => ({ ...g, files: [] })));
     const nextFileIdRef = useRef(1);
 
+    const [showOtpPopup, setShowOtpPopup] = useState(false);
     const [showAccountPopup, setShowAccountPopup] = useState(false);
     const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
     const [submitting, setSubmitting] = useState(false);
@@ -187,9 +181,31 @@ export default function CreateBusinessPage() {
         setCurrentStep(1);
     };
 
-    const handleConfirm = async () => {
+    // Trigger sending OTP when clicking the main confirm registration button
+    const handleConfirmClick = async () => {
         setSubmitting(true);
         try {
+            await BusinessApi.requestOtp(form.email, form.companyName);
+            toast.success("Mã xác thực OTP đã được gửi về email của bạn");
+            setShowOtpPopup(true);
+        } catch (error: any) {
+            console.error("Error requesting OTP:", error);
+            toast.error(getErrorMessage(error, "Không thể gửi mã OTP. Vui lòng kiểm tra lại thông tin."));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // Handle verifying the OTP and creating the business account
+    const handleVerifyOtp = async (otp: string): Promise<boolean> => {
+        try {
+            // 1. Verify OTP first
+            const verifyRes = await BusinessApi.verifyOtp(form.email, otp);
+            if (!verifyRes.success) {
+                return false;
+            }
+
+            // 2. OTP is valid, proceed with creating business account
             const payload = {
                 taxCode: form.taxCode,
                 businessName: form.companyName,
@@ -208,8 +224,9 @@ export default function CreateBusinessPage() {
                 legalRepresentative: form.representative.trim() || undefined,
                 representativePhone: form.representativePhone.trim() || undefined,
             };
+
             const res = await BusinessApi.create(payload);
-            const business = (res as any).data.business;
+            const business = (res as any).data?.business;
             const account = (res as any).data?.account;
 
             // Upload files
@@ -232,7 +249,9 @@ export default function CreateBusinessPage() {
                 await Promise.all(uploadPromises);
             }
 
-            toast.success("Khai báo thành công");
+            toast.success("Đăng ký tài khoản doanh nghiệp thành công!");
+            setShowOtpPopup(false);
+
             if (account) {
                 setAccountInfo({
                     accountNumber: account.username || "",
@@ -240,23 +259,35 @@ export default function CreateBusinessPage() {
                 });
                 setShowAccountPopup(true);
             } else {
-                router.push("/business-managements");
+                router.push("/login");
             }
+            return true;
         } catch (error: any) {
-            console.error("Error saving business:", error);
-            toast.error(getErrorMessage(error, "Có lỗi xảy ra khi lưu thông tin"));
-        } finally {
-            setSubmitting(false);
+            console.error("Error creating business:", error);
+            // Propagate error to verify popup
+            throw error;
+        }
+    };
+
+    // Handle resending the OTP code
+    const handleResendOtp = async () => {
+        try {
+            await BusinessApi.requestOtp(form.email, form.companyName);
+            toast.success("Đã gửi lại mã OTP mới về email của bạn");
+        } catch (error: any) {
+            console.error("Error resending OTP:", error);
+            toast.error(getErrorMessage(error, "Không thể gửi lại mã OTP"));
+            throw error;
         }
     };
 
     const handleCloseAccountPopup = () => {
         setShowAccountPopup(false);
-        router.push("/business-managements");
+        router.push("/login");
     };
 
     const handleCancel = () => {
-        router.push("/business-managements");
+        router.push("/login");
     };
 
     const handleAddFiles = (groupIndex: number, files: FileList) => {
@@ -303,65 +334,116 @@ export default function CreateBusinessPage() {
     ];
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="h-screen flex flex-col bg-[#F4F6F8]">
             <LoadingOverlay isLoading={submitting} />
-            {/* Main content */}
-            <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-2">
-                {/* Stepper */}
-                <div className="shrink-0 px-8 pt-6 pb-4 border-b border-gray-100">
-                    <div className="flex items-center justify-center gap-0">
-                        {steps.map((step, idx) => (
-                            <div key={step.number} className="flex items-center">
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors ${
-                                            currentStep > step.number ? "bg-blue-500 text-white" : currentStep === step.number ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
-                                        }`}
-                                    >
-                                        {currentStep > step.number ? <Check size={14} /> : step.number}
-                                    </div>
-                                    <span className={`text-sm whitespace-nowrap ${currentStep >= step.number ? "text-gray-800 font-medium" : "text-gray-400"}`}>{step.label}</span>
-                                </div>
-
-                                {idx < steps.length - 1 && <div className={`w-32 h-0.5 mx-4 transition-colors ${currentStep > step.number ? "bg-blue-500" : "bg-gray-200"}`} />}
-                            </div>
-                        ))}
+            
+            {/* Header bar */}
+            <header className="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+                <div className="flex items-center gap-3">
+                    <Image src="/quochuy.png" alt="Logo" width={40} height={40} className="object-contain w-auto h-10" />
+                    <div>
+                        <h1 className="text-[17px] font-bold text-gray-900 leading-tight">HỆ THỐNG QUẢN LÝ VNA</h1>
+                        <p className="text-xs text-gray-500 font-medium">Đăng ký tài khoản doanh nghiệp mới</p>
                     </div>
                 </div>
+                <button 
+                    type="button"
+                    onClick={handleCancel} 
+                    className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                >
+                    <ArrowLeft size={16} />
+                    Quay lại đăng nhập
+                </button>
+            </header>
 
-                {/* Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0 bg-[#F4F6F8]">
-                    {currentStep === 1 && <EnterpriseStepOne form={form} errors={errors} attachmentGroups={attachmentGroups} onChange={handleChange} onAddFiles={handleAddFiles} onRemoveFile={handleRemoveFile} mode="create" />}
-                    {currentStep === 2 && <EnterpriseStepConfirm form={form} attachmentGroups={attachmentGroups} />}
-                </div>
+            {/* Main content - Scrollable */}
+            <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0">
+                <div className="max-w-6xl mx-auto flex flex-col min-h-full">
+                    {/* Stepper & Form Container */}
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden">
+                        {/* Stepper */}
+                        <div className="shrink-0 px-8 pt-6 pb-4 border-b border-gray-100 bg-white">
+                            <div className="flex items-center justify-center gap-0">
+                                {steps.map((step, idx) => (
+                                    <div key={step.number} className="flex items-center">
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors ${
+                                                    currentStep > step.number ? "bg-blue-500 text-white" : currentStep === step.number ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
+                                                }`}
+                                            >
+                                                {currentStep > step.number ? <Check size={14} /> : step.number}
+                                            </div>
+                                            <span className={`text-sm whitespace-nowrap ${currentStep >= step.number ? "text-gray-800 font-medium" : "text-gray-400"}`}>{step.label}</span>
+                                        </div>
 
-                {/* Footer buttons */}
-                <div className="shrink-0 px-8 py-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-white">
-                    {currentStep === 1 && (
-                        <>
-                            <button type="button" onClick={handleCancel} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
-                                Hủy bỏ
-                            </button>
-                            <button type="button" onClick={handleNext} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
-                                <ChevronRight size={14} />
-                                Tiếp tục
-                            </button>
-                        </>
-                    )}
-                    {currentStep === 2 && (
-                        <>
-                            <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
-                                Trở về
-                            </button>
-                            <button type="button" onClick={handleConfirm} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer">
-                                <Check size={14} />
-                                Xác nhận
-                            </button>
-                        </>
-                    )}
+                                        {idx < steps.length - 1 && <div className={`w-32 h-0.5 mx-4 transition-colors ${currentStep > step.number ? "bg-blue-500" : "bg-gray-200"}`} />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Content - Scrollable */}
+                        <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0 bg-[#F4F6F8]">
+                            {currentStep === 1 && (
+                                <EnterpriseStepOne 
+                                    form={form} 
+                                    errors={errors} 
+                                    attachmentGroups={attachmentGroups} 
+                                    onChange={handleChange} 
+                                    onAddFiles={handleAddFiles} 
+                                    onRemoveFile={handleRemoveFile} 
+                                    mode="create" 
+                                />
+                            )}
+                            {currentStep === 2 && (
+                                <EnterpriseStepConfirm 
+                                    form={form} 
+                                    attachmentGroups={attachmentGroups} 
+                                />
+                            )}
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="shrink-0 px-8 py-4 border-t border-gray-200 flex items-center justify-end gap-3 bg-white">
+                            {currentStep === 1 && (
+                                <>
+                                    <button type="button" onClick={handleCancel} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer font-medium">
+                                        Hủy bỏ
+                                    </button>
+                                    <button type="button" onClick={handleNext} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer font-semibold shadow-sm">
+                                        <ChevronRight size={14} />
+                                        Tiếp tục
+                                    </button>
+                                </>
+                            )}
+                            {currentStep === 2 && (
+                                <>
+                                    <button type="button" onClick={handleBack} className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer font-medium">
+                                        Trở về
+                                    </button>
+                                    <button type="button" onClick={handleConfirmClick} className="px-5 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer font-semibold shadow-sm">
+                                        <Check size={14} />
+                                        Xác nhận đăng ký
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                <AccountInfoPopup isOpen={showAccountPopup} onClose={handleCloseAccountPopup} accountNumber={accountInfo.accountNumber} password={accountInfo.password} />
             </div>
+
+            {/* Email OTP Verification Modal */}
+            <OtpVerificationPopup 
+                isOpen={showOtpPopup} 
+                onClose={() => setShowOtpPopup(false)} 
+                email={form.email} 
+                onVerify={handleVerifyOtp} 
+                onResend={handleResendOtp} 
+            />
+
+            {/* Credentials Account Info Modal */}
+            <AccountInfoPopup isOpen={showAccountPopup} onClose={handleCloseAccountPopup} accountNumber={accountInfo.accountNumber} password={accountInfo.password} />
         </div>
     );
 }

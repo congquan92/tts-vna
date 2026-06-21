@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { User } from "@/types/auth";
+import type { CreateUserPayload } from "@/types/user";
 import { InputField } from "@/components/form/InputField";
 import Button from "@/components/ui/Button";
 import TopHero from "@/components/TopHero";
@@ -45,7 +46,7 @@ interface UserFormData {
 type UserFormProps = {
     editingItem: User | null;
     onClose: () => void;
-    onSave: (payload: Record<string, any>) => Promise<void>;
+    onSave: (payload: CreateUserPayload) => Promise<void>;
 };
 
 const roleNameToId: Record<string, string> = {
@@ -110,25 +111,39 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         fetchGeoData().then((geoData) => {
             if (editingItem) {
                 // Determine account data from API (plural 'accounts' array)
-                const itemAny = editingItem as any;
-                const account = editingItem.account || itemAny.accounts?.[0];
+                interface UserWithAccounts extends User {
+                    accounts?: {
+                        id: number;
+                        username: string;
+                        roleId?: number;
+                        role?: {
+                            id: number;
+                            name: string;
+                        };
+                    }[];
+                }
+                const itemWithAccounts = editingItem as UserWithAccounts;
+                const account = editingItem.account || itemWithAccounts.accounts?.[0];
 
                 // Determine role ID
-                let rId = account?.role?.id?.toString() || account?.roleId?.toString() || "";
+                let rId = account?.role?.id?.toString() || "";
+                if (!rId && account && "roleId" in account) {
+                    rId = (account as { roleId?: number }).roleId?.toString() || "";
+                }
                 if (!rId && account?.role?.name) {
                     rId = roleNameToId[account.role.name] || "";
-                } else if (!rId && itemAny.role) {
-                    rId = roleNameToId[itemAny.role] || "";
+                } else if (!rId && editingItem.role) {
+                    rId = roleNameToId[editingItem.role] || "";
                 }
 
                 setFormData({
-                    username: account?.username || itemAny.username || "",
+                    username: account?.username || editingItem.username || "",
                     password: "************",
                     fullName: editingItem.fullName || "",
                     email: editingItem.email || "",
                     roleId: rId,
                     position: editingItem.position || "",
-                    isActive: editingItem.isActive ?? itemAny.status === "Active",
+                    isActive: editingItem.isActive ?? editingItem.status === "Active",
                     gender: editingItem.gender || "",
                     dob: formatDateToYYYYMMDD(editingItem.dob),
                     province: editingItem.province || "",
@@ -249,9 +264,12 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         setSubmitting(true);
         try {
             // Remove avatarUrl and handle password dynamically
-            const { avatarUrl: _avatarUrl, password, ...cleanData } = formData;
+            const cleanData = { ...formData };
+            delete (cleanData as { avatarUrl?: string }).avatarUrl;
+            const password = cleanData.password;
+            delete (cleanData as { password?: string }).password;
 
-            const payload: Record<string, any> = {
+            const payload: Record<string, unknown> = {
                 ...cleanData,
                 roleId: Number(formData.roleId),
             };
@@ -267,7 +285,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                 }
             });
 
-            await onSave(payload);
+            await onSave(payload as unknown as CreateUserPayload);
         } catch (error) {
             console.error("Lỗi khi lưu người dùng:", error);
         } finally {

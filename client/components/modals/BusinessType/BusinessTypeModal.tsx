@@ -1,8 +1,7 @@
 "use client";
 
 import type { TypeOfBusiness } from "@/types/typeOfBusiness";
-import InputLegend from "@/components/InputLegend";
-import SelectLegend from "@/components/SelectLegend";
+import { InputField } from "@/components/form/InputField";
 
 type BusinessTypeModalProps = {
     isOpen: boolean;
@@ -26,40 +25,32 @@ export default function BusinessTypeModal({ isOpen, editingItem, form, errors, o
 
                 <div className="px-6 py-5 space-y-4">
                     <div className="grid grid-cols-1 gap-5">
-                        <InputLegend
-                            label="Mã loại hình"
-                            require={true}
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập mã loại hình",
-                                value: form.code,
-                                onChange: (e) => onChange("code", (e.target as HTMLInputElement).value),
-                            }}
-                            errorMess={errors.code}
+                        <InputField
+                            label="Mã loại hình *"
+                            placeholder="Nhập mã loại hình"
+                            value={form.code}
+                            onChange={(e) => onChange("code", e.target.value)}
+                            error={errors.code}
                         />
 
-                        <InputLegend
-                            label="Tên loại hình kinh doanh"
-                            require={true}
-                            input={{
-                                type: "text",
-                                placeholder: "Nhập tên loại hình",
-                                value: form.name,
-                                onChange: (e) => onChange("name", (e.target as HTMLInputElement).value),
-                            }}
-                            errorMess={errors.name}
+                        <InputField
+                            label="Tên loại hình kinh doanh *"
+                            placeholder="Nhập tên loại hình"
+                            value={form.name}
+                            onChange={(e) => onChange("name", e.target.value)}
+                            error={errors.name}
                         />
 
-                        <SelectLegend
+                        <InputField
                             label="Trạng thái"
-                            select={{
-                                value: form.status,
-                                onChange: (e) => onChange("status", (e.target as HTMLSelectElement).value),
-                            }}
-                        >
-                            <option value="true">Sử dụng</option>
-                            <option value="false">Ngừng sử dụng</option>
-                        </SelectLegend>
+                            isSelect={true}
+                            value={form.status}
+                            onChange={(e) => onChange("status", e.target.value)}
+                            options={[
+                                { label: "Sử dụng", value: "true" },
+                                { label: "Ngừng sử dụng", value: "false" }
+                            ]}
+                        />
                     </div>
                 </div>
 

@@ -85,10 +85,21 @@ type Props = {
     onAddFiles: (groupIndex: number, files: FileList) => void;
     onRemoveFile: (groupIndex: number, fileId: number) => void;
     mode?: EnterpriseFormMode;
-    userRole?: string;
+    disableEmail?: boolean;
+    onEmailChangeClick?: () => void;
 };
 
-export default function EnterpriseStepOne({ form, errors, attachmentGroups, onChange, onAddFiles, onRemoveFile, mode = "create", userRole = "" }: Props) {
+export default function EnterpriseStepOne({
+    form,
+    errors,
+    attachmentGroups,
+    onChange,
+    onAddFiles,
+    onRemoveFile,
+    mode = "create",
+    disableEmail = false,
+    onEmailChangeClick,
+}: Props) {
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
     const [businessTypes, setBusinessTypes] = useState<TypeOfBusiness[]>([]);
@@ -278,7 +289,28 @@ export default function EnterpriseStepOne({ form, errors, attachmentGroups, onCh
                                 disabled={isViewMode}
                                 error={errors.foreignName}
                             />
-                            <InputField label="Email *" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} placeholder="Nhập email" disabled={isEmailDisabled} error={errors.email} />
+                            <div className="flex gap-2 items-center">
+                                <div className="flex-1">
+                                    <InputField
+                                        label="Email *"
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(e) => onChange("email", e.target.value)}
+                                        placeholder="Nhập email"
+                                        disabled={disableEmail || isEmailDisabled}
+                                        error={errors.email}
+                                    />
+                                </div>
+                                {disableEmail && onEmailChangeClick && (
+                                    <button
+                                        type="button"
+                                        onClick={onEmailChangeClick}
+                                        className="text-sm text-blue-500 font-semibold cursor-pointer hover:underline focus:outline-none shrink-0"
+                                    >
+                                        Thay đổi
+                                    </button>
+                                )}
+                            </div>
                             <InputField label="Số điện thoại cơ quan" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} placeholder="Số điện thoại cơ quan" disabled={isViewMode} error={errors.phone} />
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4">

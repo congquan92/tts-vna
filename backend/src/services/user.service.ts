@@ -197,16 +197,23 @@ export class UserService {
   }
 
   // Import danh sách người dùng
-  async importFromExcel(file: Express.Multer.File, preview: boolean = false,) {
+  async importFromExcel(
+    file: Express.Multer.File,
+    preview: boolean = false,
+    rows?: any[],
+  ) {
 
-    // ================= CHECK FILE =================
-    if (!file) {
-      throw new BadRequestException('Vui lòng chọn file Excel để import');
+    // ================= CHECK FILE OR ROWS =================
+    let data: any[] = [];
+    if (file) {
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    } else if (rows) {
+      data = rows;
+    } else {
+      throw new BadRequestException('Vui lòng chọn file Excel hoặc cung cấp danh sách dữ liệu để import');
     }
-
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
     const errors: any[] = [];
     const success: any[] = [];
@@ -216,12 +223,12 @@ export class UserService {
 
       try {
         // ================= MAP CỘT =================
-        const fullName = String(row['Họ tên'] || '').trim();
-        const username = String(row['Tài khoản'] || '').trim();
-        const email = String(row['Email'] || '').trim();
-        const roleValue = row['Vai trò'];
-        const position = String(row['Chức danh'] || '').trim();
-        const isActive = true;
+        const fullName = String(row['Họ tên'] || row.fullName || '').trim();
+        const username = String(row['Tài khoản'] || row.username || '').trim();
+        const email = String(row['Email'] || row.email || '').trim();
+        const roleValue = row['Vai trò'] || row.role;
+        const position = String(row['Chức danh'] || row.position || '').trim();
+        const isActive = row.isActive !== undefined ? !!row.isActive : true;
 
         const rowErrors: string[] = [];
 
@@ -355,6 +362,7 @@ export class UserService {
       success: success.length,
       failed: errors.length,
       errors,
+      rows: preview ? success : undefined,
     };
   }
 
