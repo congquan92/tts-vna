@@ -15,8 +15,23 @@ export class ReportRepository {
     return this.reportRepository.save(report);
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, filters?: { businessId?: number; year?: number; status?: string }) {
+    const where: any = {};
+
+    if (filters?.businessId) {
+      where.companyInfo = { businessId: filters.businessId };
+    }
+
+    if (filters?.year) {
+      where.year = filters.year;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
     const [reports, total] = await this.reportRepository.findAndCount({
+      where,
       relations: {
         companyInfo: { business: true },
         laborAccidentReport: { accidentDetails: true },

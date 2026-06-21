@@ -9,6 +9,8 @@ import {
   Post,
   Query,
   UseGuards,
+  Req,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -33,7 +35,13 @@ export class ReportController {
   @Post()
   @ApiOperation({ summary: 'Tạo báo cáo mới' })
   @ApiResponse({ status: 201, description: 'Tạo báo cáo thành công' })
-  createReport(@Body() dto: CreateReportDto) {
+  createReport(@Req() req, @Body() dto: CreateReportDto) {
+    if (req.user.orgType === 'DOANH_NGHIEP') {
+      if (!dto.companyInfo) {
+        dto.companyInfo = {};
+      }
+      dto.companyInfo.businessId = req.user.businessId;
+    }
     return this.reportService.createReport(dto);
   }
 
@@ -41,14 +49,30 @@ export class ReportController {
   @ApiOperation({ summary: 'Lấy danh sách báo cáo (có phân trang)' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 10 })
+  @ApiQuery({ name: 'year', required: false, example: 2022 })
+  @ApiQuery({ name: 'status', required: false, example: 'đang báo cáo' })
   @ApiResponse({ status: 200, description: 'Danh sách báo cáo' })
   getAllReports(
+    @Req() req,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('year') year?: string,
+    @Query('status') status?: string,
   ) {
+    const filters: any = {};
+    if (req.user.orgType === 'DOANH_NGHIEP') {
+      filters.businessId = req.user.businessId;
+    }
+    if (year) {
+      filters.year = Number(year);
+    }
+    if (status) {
+      filters.status = status;
+    }
     return this.reportService.getAllReports(
       Number(page),
       Number(limit),
+      filters,
     );
   }
 
@@ -57,8 +81,12 @@ export class ReportController {
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, description: 'Chi tiết báo cáo' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy báo cáo' })
-  getReportById(@Param('id', ParseIntPipe) id: number) {
-    return this.reportService.getReportById(id);
+  async getReportById(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const report = await this.reportService.getReportById(id);
+    if (req.user.orgType === 'DOANH_NGHIEP' && report.companyInfo?.businessId !== req.user.businessId) {
+      throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này');
+    }
+    return report;
   }
 
   @Patch(':id')
@@ -66,10 +94,20 @@ export class ReportController {
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, description: 'Cập nhật báo cáo thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy báo cáo' })
-  updateReport(
+  async updateReport(
+    @Req() req,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateReportDto,
   ) {
+    if (req.user.orgType === 'DOANH_NGHIEP') {
+      const report = await this.reportService.getReportById(id);
+      if (report.companyInfo?.businessId !== req.user.businessId) {
+        throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền sửa báo cáo này');
+      }
+      if (dto.companyInfo) {
+        dto.companyInfo.businessId = req.user.businessId;
+      }
+    }
     return this.reportService.updateReport(id, dto);
   }
 
@@ -78,7 +116,13 @@ export class ReportController {
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, description: 'Xóa báo cáo thành công' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy báo cáo' })
-  deleteReport(@Param('id', ParseIntPipe) id: number) {
+  async deleteReport(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    if (req.user.orgType === 'DOANH_NGHIEP') {
+      const report = await this.reportService.getReportById(id);
+      if (report.companyInfo?.businessId !== req.user.businessId) {
+        throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền xóa báo cáo này');
+      }
+    }
     return this.reportService.deleteReport(id);
   }
 }

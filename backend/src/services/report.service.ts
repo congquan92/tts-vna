@@ -34,7 +34,15 @@ export class ReportService {
       reportData.laborAccidentSupportReport = dto.laborAccidentSupportReport;
     }
 
-    reportData.status = ReportStatus.RECEIVED;
+    if (dto.year !== undefined) {
+      reportData.year = dto.year;
+    }
+
+    if (dto.reportPeriod !== undefined) {
+      reportData.reportPeriod = dto.reportPeriod;
+    }
+
+    reportData.status = dto.status ?? ReportStatus.REPORTING;
 
     const report = await this.reportRepository.create(reportData);
 
@@ -44,11 +52,11 @@ export class ReportService {
     };
   }
 
-  async getAllReports(page = 1, limit = 10) {
+  async getAllReports(page = 1, limit = 10, filters?: { businessId?: number; year?: number; status?: string }) {
     const safePage = Math.max(Number(page) || 1, 1);
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
 
-    return this.reportRepository.findAll(safePage, safeLimit);
+    return this.reportRepository.findAll(safePage, safeLimit, filters);
   }
 
   async getReportById(id: number) {
@@ -69,6 +77,18 @@ export class ReportService {
     }
 
     const updateData: DeepPartial<Report> = { id: report.id };
+
+    if (dto.year !== undefined) {
+      updateData.year = dto.year;
+    }
+
+    if (dto.reportPeriod !== undefined) {
+      updateData.reportPeriod = dto.reportPeriod;
+    }
+
+    if (dto.status !== undefined) {
+      updateData.status = dto.status;
+    }
 
     if (dto.companyInfo !== undefined) {
       updateData.companyInfo = {

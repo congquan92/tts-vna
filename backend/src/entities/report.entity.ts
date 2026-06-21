@@ -16,6 +16,12 @@ export class Report {
   })
   status!: ReportStatus;
 
+  @Column({ nullable: true })
+  year?: number;
+
+  @Column({ nullable: true })
+  reportPeriod?: string;
+
   @OneToOne(() => CompanyInfo, (companyInfo) => companyInfo.report, {
     cascade: true,
     nullable: true,

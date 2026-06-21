@@ -72,6 +72,9 @@ export interface LaborAccidentSupportReport {
 }
 
 export interface CreateReportPayload {
+    year?: number;
+    reportPeriod?: string;
+    status?: string;
     companyInfo?: CompanyInfo;
     laborAccidentReport?: LaborAccidentReport;
     laborAccidentSupportReport?: LaborAccidentSupportReport;
@@ -81,6 +84,9 @@ export interface UpdateReportPayload extends Partial<CreateReportPayload> {}
 
 export interface Report {
     id: number;
+    status: string;
+    year?: number;
+    reportPeriod?: string;
     companyInfo?: CompanyInfo;
     laborAccidentReport?: LaborAccidentReport;
     laborAccidentSupportReport?: LaborAccidentSupportReport;
