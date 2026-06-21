@@ -8,8 +8,16 @@ import { CreateReportDto } from '../dto/report/create-report.dto';
 import { UpdateReportDto } from '../dto/report/update-report.dto';
 import { Report } from '../entities/report.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
+import { ReportingPeriod } from '../common/enums/reporting-period.enum';
 import { validateLaborAccidentReport } from '../common/validators/labor-accident-report.validator';
 import { validateLaborAccidentSupportReport } from '../common/validators/labor-accident-support-report.validator';
+
+type CompanyYearReportItem = {
+  businessName: string | null;
+  taxCode: string | null;
+  reportingPeriod: ReportingPeriod | null;
+  status: ReportStatus;
+};
 
 @Injectable()
 export class ReportService {
@@ -19,6 +27,9 @@ export class ReportService {
 
   async createReport(dto: CreateReportDto) {
     const reportData: DeepPartial<Report> = {};
+
+    reportData.year = dto.year ?? new Date().getFullYear();
+    reportData.reportingPeriod = dto.reportingPeriod ?? ReportingPeriod.ONE_YEAR;
 
     if (dto.companyInfo) {
       reportData.companyInfo = dto.companyInfo;
@@ -49,6 +60,35 @@ export class ReportService {
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
 
     return this.reportRepository.findAll(safePage, safeLimit);
+  }
+
+  async getReportsByCompanyAndYear(
+    companyId: number,
+    year: number,
+    page = 1,
+    limit = 10,
+  ) {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
+
+    const result = await this.reportRepository.findByCompanyAndYear(
+      companyId,
+      year,
+      safePage,
+      safeLimit,
+    );
+
+    return {
+      ...result,
+      data: result.data.map(
+        (report): CompanyYearReportItem => ({
+          businessName: report.companyInfo?.business?.businessName ?? null,
+          taxCode: report.companyInfo?.business?.taxCode ?? null,
+          reportingPeriod: report.reportingPeriod ?? null,
+          status: report.status,
+        }),
+      ),
+    };
   }
 
   async getReportById(id: number) {

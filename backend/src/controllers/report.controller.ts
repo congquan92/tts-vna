@@ -42,11 +42,29 @@ export class ReportController {
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 10 })
   @ApiResponse({ status: 200, description: 'Danh sách báo cáo' })
-  getAllReports(
+  getAllReports(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.reportService.getAllReports(Number(page), Number(limit));
+  }
+
+  @Get('company-year')
+  @ApiOperation({ summary: 'Lấy báo cáo theo công ty và năm' })
+  @ApiQuery({ name: 'companyId', required: true, example: 1 })
+  @ApiQuery({ name: 'year', required: true, example: 2026 })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách báo cáo theo năm của công ty',
+  })
+  getReportsByCompanyAndYear(
+    @Query('companyId', ParseIntPipe) companyId: number,
+    @Query('year', ParseIntPipe) year: number,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.reportService.getAllReports(
+    return this.reportService.getReportsByCompanyAndYear(
+      companyId,
+      year,
       Number(page),
       Number(limit),
     );
