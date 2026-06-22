@@ -6,6 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { User, Key, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ChangePasswordPopup from "@/components/popup/change-password-popup";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 interface AccountPopupProps {
@@ -16,13 +17,22 @@ interface AccountPopupProps {
 
 export default function AccountPopup({ anchorEl, open, onClose }: AccountPopupProps) {
     const router = useRouter();
+    const { user, logout } = useAuth();
 
     const [isChangePwdOpen, setIsChangePwdOpen] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         onClose();
-        localStorage.removeItem("auth_token");
-        router.push("/login");
+        try {
+            await logout();
+        } catch (error) {
+            console.error("Logout failed:", error);
+            // Fallback in case logout function fails
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("refresh_token");
+            localStorage.removeItem("user_info");
+            router.push("/login");
+        }
     };
 
     const handleOpenChangePwd = () => {
@@ -47,11 +57,13 @@ export default function AccountPopup({ anchorEl, open, onClose }: AccountPopupPr
                     },
                 }}
             >
-                <MenuItem onClick={onClose} sx={{ py: 1.5, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
-                    <Link href="/accounts" className="flex items-center">
-                        <User size={18} className="text-gray-500 mr-2" /> Thông tin tài khoản
-                    </Link>
-                </MenuItem>
+                {user?.orgType !== "DOANH_NGHIEP" && (
+                    <MenuItem onClick={onClose} sx={{ py: 1.5, fontSize: "14px", fontWeight: 700, color: "#111827" }}>
+                        <Link href="/accounts" className="flex items-center">
+                            <User size={18} className="text-gray-500 mr-2" /> Thông tin tài khoản
+                        </Link>
+                    </MenuItem>
+                )}
 
                 {/* Gắn sự kiện mở modal vào nút này */}
                 <MenuItem onClick={handleOpenChangePwd} sx={{ py: 1.5, fontSize: "14px", fontWeight: 700, color: "#111827" }}>

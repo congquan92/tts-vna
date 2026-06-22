@@ -44,9 +44,13 @@ axiosInstance.interceptors.response.use(
         // Token hết hạn -> cần refresh
         const isExpired = error.response?.status === 401;
 
-        // Không refresh cho login/register/refresh,....
+        // Không refresh cho login/register/refresh/change-password....
         const url = originalRequest.url || "";
-        const isAuthAPI = url.includes("/auth/login") || url.includes("/auth/register") || url.includes("/auth/refresh");
+        const isAuthAPI = 
+            url.includes("/auth/login") || 
+            url.includes("/auth/register") || 
+            url.includes("/auth/refresh") ||
+            url.includes("/auth/change-password");
 
         if (isExpired && !originalRequest._retry && !isAuthAPI) {
             originalRequest._retry = true;
