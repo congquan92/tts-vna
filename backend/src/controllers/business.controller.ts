@@ -99,6 +99,7 @@ export class BusinessController {
             example: {
                 email: 'abc@gmail.com',
                 busniessName: 'Công ty ABC',
+                taxCode: '0312345678',
             },
         },
     })
@@ -111,7 +112,7 @@ export class BusinessController {
         },
     })
     async requestOtp(@Body() dto: RequestOtpDto) {
-        return this.businessService.requestOtpToRegisterBusiness(dto.email, dto.businessName);
+        return this.businessService.requestOtpToRegisterBusiness(dto.email, dto.businessName, dto.taxCode);
     }
 
     // Xác thực mã otp

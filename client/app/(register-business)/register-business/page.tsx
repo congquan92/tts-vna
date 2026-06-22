@@ -180,7 +180,7 @@ export default function RegisterBusinessPage() {
             }
             setSubmitting(true);
             try {
-                await BusinessApi.requestOtp(form.email, form.companyName);
+                await BusinessApi.requestOtp(form.email, form.companyName, form.taxCode);
                 toast.success("Mã xác thực OTP đã được gửi về email của bạn");
                 setShowOtpPopup(true);
             } catch (error: unknown) {
@@ -296,7 +296,7 @@ export default function RegisterBusinessPage() {
     // Handle resending the OTP code
     const handleResendOtp = async () => {
         try {
-            await BusinessApi.requestOtp(form.email, form.companyName);
+            await BusinessApi.requestOtp(form.email, form.companyName, form.taxCode);
             toast.success("Đã gửi lại mã OTP mới về email của bạn");
         } catch (error: unknown) {
             console.error("Error resending OTP:", error);

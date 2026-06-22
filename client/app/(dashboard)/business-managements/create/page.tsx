@@ -56,7 +56,7 @@ const defaultAttachmentGroups: AttachmentGroup[] = [
     { groupName: "Giấy tờ khác", files: [] },
 ];
 
-const TAX_CODE_REGEX = /^(\d{10})$|^(\d{10}-\d{3})$/;
+const TAX_CODE_REGEX = /^\d{10,15}$/;
 
 function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -191,7 +191,7 @@ export default function CreateBusinessPage() {
         setSubmitting(true);
         try {
             const payload = {
-                taxCode: form.taxCode,
+                taxCode: form.taxCode.trim(),
                 businessName: form.companyName,
                 foreignName: form.foreignName.trim() || undefined,
                 typeOfBusinessId: Number(form.businessType),

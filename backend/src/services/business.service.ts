@@ -555,14 +555,20 @@ export class BusinessService {
     }
 
     // Yêu cầu gửi mã otp đến email đăng ký
-    async requestOtpToRegisterBusiness(email: string, businessName: string) {
-        // CASE 1: validate email format
+    async requestOtpToRegisterBusiness(email: string, businessName: string, taxCode: string) {
+        // CASE 1: mã số thuế đã tồn tại trong hệ thống
+        const taxCodeExists = await this.businessRepository.findByTaxCode(taxCode);
+        if (taxCodeExists) {
+            throw new ConflictException('Mã số thuế đã tồn tại trên hệ thống');
+        }
+
+        // CASE 2: validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             throw new BadRequestException('Email không hợp lệ. Xin vui lòng nhập lại');
         }
 
-        // CASE 2: email đã tồn tại trong hệ thống
+        // CASE 3: email đã tồn tại trong hệ thống
         const emailExists = await this.authRepository.findAccountByEmail(email);
         if (emailExists) {
             throw new ConflictException('Email đã tồn tại trên hệ thống');
@@ -598,7 +604,7 @@ export class BusinessService {
                 'Không thể gửi email xác thực, vui lòng kiểm tra lại cấu hình hệ thống',
             );
         }
-        
+
         return {
             message: 'Mã OTP đã được gửi tới email đăng ký',
         };

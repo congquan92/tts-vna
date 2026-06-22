@@ -56,8 +56,8 @@ export const BusinessApi = {
         return res.data;
     },
 
-    requestOtp: async (email: string, businessName: string): Promise<{ message: string }> => {
-        const res = await axiosInstance.post<{ message: string }>("/business/request-otp", { email, businessName });
+    requestOtp: async (email: string, businessName: string, taxCode: string): Promise<{ message: string }> => {
+        const res = await axiosInstance.post<{ message: string }>("/business/request-otp", { email, businessName, taxCode });
         return res.data;
     },
 
