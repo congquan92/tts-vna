@@ -1,3 +1,5 @@
+import type { ReportFile } from "./reportFile";
+
 export interface CompanyInfo {
     businessId?: number;
     businessName?: string;
@@ -94,6 +96,7 @@ export interface Report {
     companyInfo?: CompanyInfo;
     laborAccidentReport?: LaborAccidentReport;
     laborAccidentSupportReport?: LaborAccidentSupportReport;
+    files?: ReportFile[];
     createdAt: string;
     updatedAt: string;
 }

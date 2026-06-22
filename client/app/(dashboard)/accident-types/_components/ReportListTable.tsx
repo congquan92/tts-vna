@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Eye, ChevronLeft, ChevronRight, FileText, ChevronDown } from "lucide-react";
 import type { Report } from "@/types/report";
 
@@ -20,7 +21,6 @@ interface ReportListTableProps {
     pageSize: number;
     setPageSize: (val: number) => void;
     totalReports: number;
-    setViewingReport: (report: Report | null) => void;
 
     // Selection props
     selectedIds: number[];
@@ -46,7 +46,6 @@ export default function ReportListTable({
     pageSize,
     setPageSize,
     totalReports,
-    setViewingReport,
     selectedIds,
     onSelectAll,
     onSelectOne,
@@ -70,12 +69,7 @@ export default function ReportListTable({
                 {/* Inline search header filters */}
                 <div className="grid pb-3 px-4 bg-[#F4F6F8] gap-3 items-center" style={GRID_STYLE}>
                     <div className="flex items-center justify-center">
-                        <input
-                            type="checkbox"
-                            className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300"
-                            checked={allSelected}
-                            onChange={(e) => onSelectAll(e.target.checked)}
-                        />
+                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
                     </div>
                     <div />
                     <div>
@@ -141,40 +135,22 @@ export default function ReportListTable({
                 ) : (
                     <>
                         {reports.map((item) => (
-                            <div
-                                key={item.id}
-                                className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-2.5"
-                                style={GRID_STYLE}
-                            >
+                            <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-2.5" style={GRID_STYLE}>
                                 {/* Checkbox */}
                                 <div className="flex justify-center items-center">
-                                    <input
-                                        type="checkbox"
-                                        className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300"
-                                        checked={selectedIds.includes(item.id)}
-                                        onChange={() => onSelectOne(item.id)}
-                                    />
+                                    <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => onSelectOne(item.id)} />
                                 </div>
 
                                 {/* Action View button */}
                                 <div className="flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => setViewingReport(item)}
-                                        className="text-gray-400 hover:text-primary transition-colors cursor-pointer p-1 rounded hover:bg-gray-100"
-                                        title="Xem chi tiết"
-                                    >
+                                    <Link href={`/accident-types/view/${item.id}`} className="text-gray-400 hover:text-primary transition-colors cursor-pointer p-1 rounded hover:bg-gray-100 flex items-center justify-center" title="Xem chi tiết">
                                         <Eye size={16} />
-                                    </button>
+                                    </Link>
                                 </div>
 
                                 {/* Business details */}
-                                <div className="font-semibold text-gray-800 truncate">
-                                    {item.companyInfo?.business?.businessName || item.companyInfo?.businessName || "N/A"}
-                                </div>
-                                <div className="font-medium text-gray-600 tabular-nums">
-                                    {item.companyInfo?.business?.taxCode || "N/A"}
-                                </div>
+                                <div className="font-semibold text-gray-800 truncate">{item.companyInfo?.business?.businessName || item.companyInfo?.businessName || "N/A"}</div>
+                                <div className="font-medium text-gray-600 tabular-nums">{item.companyInfo?.business?.taxCode || "N/A"}</div>
                                 <div className="font-medium text-gray-600">{item.reportPeriod || "N/A"}</div>
                                 <div className="flex items-center gap-2">
                                     {item.status === "đang báo cáo" ? (
@@ -218,11 +194,7 @@ export default function ReportListTable({
                         <option value={50}>50</option>
                     </select>
                 </div>
-                <span className="tabular-nums font-semibold">
-                    {totalReports === 0
-                        ? "0"
-                        : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, totalReports)} of ${totalReports}`}
-                </span>
+                <span className="tabular-nums font-semibold">{totalReports === 0 ? "0" : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, totalReports)} of ${totalReports}`}</span>
                 <div className="flex items-center gap-1">
                     <button
                         type="button"

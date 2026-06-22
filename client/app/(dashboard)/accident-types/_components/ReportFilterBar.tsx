@@ -27,14 +27,7 @@ interface ReportFilterBarProps {
     activeWards: Ward[];
 }
 
-export default function ReportFilterBar({
-    selectedProvince,
-    setSelectedProvince,
-    selectedWard,
-    setSelectedWard,
-    provinces,
-    activeWards,
-}: ReportFilterBarProps) {
+export default function ReportFilterBar({ selectedProvince, setSelectedProvince, selectedWard, setSelectedWard, provinces, activeWards }: ReportFilterBarProps) {
     const provinceOptions = useMemo(() => {
         return [
             { label: "Tất cả", value: "Tất cả" },

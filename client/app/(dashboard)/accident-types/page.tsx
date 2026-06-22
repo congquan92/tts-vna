@@ -9,7 +9,6 @@ import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
 import { toast } from "sonner";
 
-import ReportDetailView from "./_components/ReportDetailView";
 import ReportListTable from "./_components/ReportListTable";
 import ReportFilterBar, { Province } from "./_components/ReportFilterBar";
 
@@ -36,8 +35,7 @@ export default function AccidentTypesPage() {
     const [pageSize, setPageSize] = useState(10);
     const [totalReports, setTotalReports] = useState(0);
 
-    // Detail view state
-    const [viewingReport, setViewingReport] = useState<Report | null>(null);
+
 
     // Fetch address list
     useEffect(() => {
@@ -196,11 +194,6 @@ export default function AccidentTypesPage() {
         fetchReports();
     };
 
-    // If a report is currently selected to view details
-    if (viewingReport) {
-        return <ReportDetailView report={viewingReport} onBack={() => setViewingReport(null)} />;
-    }
-
     return (
         <main className="h-screen flex flex-col py-2">
             {/* Top title & search filters */}
@@ -267,7 +260,6 @@ export default function AccidentTypesPage() {
                 pageSize={pageSize}
                 setPageSize={handlePageSizeChange}
                 totalReports={totalReports}
-                setViewingReport={setViewingReport}
                 selectedIds={selectedIds}
                 onSelectAll={handleSelectAll}
                 onSelectOne={handleSelectOne}
