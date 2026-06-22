@@ -27,13 +27,12 @@ import { CreateTypeOfBusinessDto } from '../dto/typeOfBusiness/createTypeOfBusin
 import { UpdateTypeOfBusinessDto } from '../dto/typeOfBusiness/updateTypeOfBusiness.dto';
 
 @ApiTags('TypeOfBusiness')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('TypeOfBusiness')
 export class TypeOfBusinessController {
   constructor(private readonly typeOfBusinessService: TypeOfBusinessService) { }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_CREATE)
   @Post()
   @ApiOperation({ summary: 'Tạo loại hình kinh doanh mới' })
@@ -43,9 +42,6 @@ export class TypeOfBusinessController {
     return await this.typeOfBusinessService.create(createDto);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách loại hình kinh doanh' })
   @ApiResponse({ status: 200, description: 'Trả về danh sách' })
@@ -53,30 +49,24 @@ export class TypeOfBusinessController {
     return await this.typeOfBusinessService.findAll();
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get('code/:code')
   @ApiOperation({ summary: 'Tìm loại hình theo mã code (tìm gần đúng)' })
   async findByCode(@Param('code') code: string) {
     return await this.typeOfBusinessService.findByCode(code);
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get('name')
   @ApiOperation({ summary: 'Tìm loại hình theo tên (tìm gần đúng)' })
   async findByName(@Query('name') name: string) {
     return await this.typeOfBusinessService.findByName(name || '');
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get('status/:status')
   @ApiOperation({ summary: 'Tìm loại hình theo trạng thái' })
   async findByStatus(@Param('status') status: string) {
     return await this.typeOfBusinessService.findByStatus(status);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin loại hình kinh doanh theo ID' })
   @ApiResponse({ status: 200, description: 'Trả về chi tiết loại hình' })
@@ -85,7 +75,7 @@ export class TypeOfBusinessController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_UPDATE)
   @Patch(':id')
   @ApiOperation({ summary: 'Cập nhật loại hình kinh doanh' })
@@ -98,7 +88,7 @@ export class TypeOfBusinessController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_DELETE)
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa loại hình kinh doanh' })
@@ -107,8 +97,10 @@ export class TypeOfBusinessController {
     return await this.typeOfBusinessService.remove(id);
   }
 
-  @Patch(':id/toggle-status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_TOGGLE_STATUS)
+  @Patch(':id/toggle-status')
   @ApiOperation({
     summary: 'Bật/Tắt trạng thái loại hình kinh doanh',
     description: 'Đổi trạng thái status của loại hình kinh doanh (true/false)',

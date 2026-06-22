@@ -49,9 +49,9 @@ import { ReportController } from './controllers/report.controller';
 import { ReportService } from './services/report.service';
 import { ReportRepository } from './repositories/report.repository';
 import { ReportFile } from './entities/report-file.entity';
-import { ReportFileRepository } from './repositories/reportFile.repository';
 import { ReportFileController } from './controllers/reportFile.controller';
 import { ReportFileService } from './services/reportFile.service';
+import { ReportFileRepository } from './repositories/reportFile.repository';
 
 @Module({
   imports: [

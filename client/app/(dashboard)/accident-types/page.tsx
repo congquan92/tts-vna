@@ -231,7 +231,7 @@ export default function AccidentTypesPage() {
             const aggregated: Report = {
                 id: 0,
                 status: "đã tiếp nhận",
-                year: selectedYear,
+                year: selectedYear || undefined,
                 reportPeriod: searchPeriod || "Tổng hợp",
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),

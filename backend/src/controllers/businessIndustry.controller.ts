@@ -20,18 +20,20 @@ import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusines
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('businessIndustries')
 export class BusinessIndustryController {
   constructor(private readonly service: BusinessIndustryService) { }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_CREATE)
   @Post()
   async create(@Body() dto: CreateBusinessIndustryDto) {
     return this.service.create(dto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_UPDATE)
   @Patch(':idOrCode')
   async update(
@@ -41,31 +43,27 @@ export class BusinessIndustryController {
     return this.service.update(idOrCode, dto);
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
+
   @Get('level/not-4')
   async findNotLevel4() {
     return this.service.findByLevelNot(4);
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get('level/4')
   async findLevel4() {
     return this.service.findByLevel(4);
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get()
   async findAll() {
     return this.service.findAll();
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get('search')
   async search(@Query() query: SearchBusinessIndustryDto) {
     return this.service.searchBusinessIndustries(query);
   }
 
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get(':idOrCode')
   async findOne(@Param('idOrCode') idOrCode: string) {
     const res = await this.service.findOne(idOrCode);
@@ -73,6 +71,8 @@ export class BusinessIndustryController {
     return res;
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(Permission.BUSINESS_DELETE)
   @Delete(':idOrCode')
   async remove(@Param('idOrCode') idOrCode: string) {
