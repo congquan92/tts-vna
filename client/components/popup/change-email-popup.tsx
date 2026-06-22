@@ -20,7 +20,8 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
     const [step, setStep] = useState(1);
     const [otp, setOtp] = useState("");
     const [newEmail, setNewEmail] = useState("");
-    const [timeLeft, setTimeLeft] = useState(60);
+    const [cooldown, setCooldown] = useState(60);
+    const [otpTimeLeft, setOtpTimeLeft] = useState(300);
     const [loading, setLoading] = useState(false);
     const [hasSentOtp, setHasSentOtp] = useState(false);
 
@@ -29,7 +30,8 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
         setLoading(true);
         try {
             await AuthApi.requestChangeEmail();
-            setTimeLeft(60);
+            setCooldown(60);
+            setOtpTimeLeft(300);
             setHasSentOtp(true);
             toast.success("Mã OTP đã được gửi tới email của bạn");
         } catch (error: unknown) {
@@ -59,27 +61,31 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                 setStep(1);
                 setOtp("");
                 setNewEmail("");
-                setTimeLeft(60);
+                setCooldown(60);
+                setOtpTimeLeft(300);
                 setHasSentOtp(false);
             }, 0);
             return () => clearTimeout(timer);
         }
     }, [open]);
 
-    // Đếm ngược thời gian gửi mã OTP
+    // Đếm ngược thời gian gửi lại mã OTP (cooldown) và thời gian hết hạn OTP (otpTimeLeft)
     useEffect(() => {
-        if (step === 1 && timeLeft > 0 && open) {
-            const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-            return () => clearTimeout(timer);
+        if (step === 1 && open) {
+            const timer = setInterval(() => {
+                setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+                setOtpTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+            }, 1000);
+            return () => clearInterval(timer);
         }
-    }, [timeLeft, step, open]);
+    }, [step, open]);
 
     const handleConfirmOtp = async () => {
         if (!otp) {
             toast.error("Vui lòng nhập mã OTP");
             return;
         }
-        if (timeLeft === 0) {
+        if (otpTimeLeft === 0) {
             toast.error("Mã OTP đã hết hạn, vui lòng gửi lại mã mới");
             return;
         }
@@ -209,20 +215,20 @@ export default function ChangeEmailPopup({ open, onClose, currentEmail }: Change
                         <InputField label="OTP*" value={otp} placeholder="Nhập mã xác thực" onChange={(e) => setOtp(e.target.value)} />
 
                         <Box>
-                            <Typography variant="body1" color="#2962ff" sx={{ mb: 1, fontWeight: "500" }}>
-                                {timeLeft > 0 ? `00:${timeLeft < 10 ? `0${timeLeft}` : timeLeft}` : "Hết hạn"}
+                            <Typography variant="body1" color={otpTimeLeft > 0 ? "#2962ff" : "error"} sx={{ mb: 1, fontWeight: "500" }}>
+                                {otpTimeLeft > 0 ? `${Math.floor(otpTimeLeft / 60)}:${otpTimeLeft % 60 < 10 ? `0${otpTimeLeft % 60}` : otpTimeLeft % 60}` : "Hết hạn"}
                             </Typography>
                             <Typography
                                 variant="body2"
                                 color="text.secondary"
                                 sx={{
-                                    cursor: timeLeft === 0 ? "pointer" : "default",
-                                    opacity: timeLeft === 0 ? 1 : 0.6,
-                                    "&:hover": { color: timeLeft === 0 ? "#2962ff" : "text.secondary" },
+                                    cursor: cooldown === 0 ? "pointer" : "default",
+                                    opacity: cooldown === 0 ? 1 : 0.6,
+                                    "&:hover": { color: cooldown === 0 ? "#2962ff" : "text.secondary" },
                                 }}
-                                onClick={() => timeLeft === 0 && handleSendOtp()}
+                                onClick={() => cooldown === 0 && handleSendOtp()}
                             >
-                                Chưa nhận được mã? {timeLeft === 0 ? "Gửi lại" : `Gửi lại sau ${timeLeft}s`}
+                                {cooldown === 0 ? <span className="text-[#2962ff] font-bold hover:underline">Gửi lại mã OTP</span> : `Chưa nhận được mã? Gửi lại sau ${cooldown}s`}
                             </Typography>
                         </Box>
 
