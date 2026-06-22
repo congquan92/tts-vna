@@ -103,8 +103,13 @@ export class ReportController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy báo cáo' })
   async getReportById(@Req() req, @Param('id', ParseIntPipe) id: number) {
     const report = await this.reportService.getReportById(id);
-    if (req.user.orgType === 'DOANH_NGHIEP' && report.companyInfo?.businessId !== req.user.businessId) {
-      throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này');
+    if (
+      req.user.orgType === 'DOANH_NGHIEP' &&
+      report.companyInfo?.businessId !== req.user.businessId
+    ) {
+      throw new NotFoundException(
+        'Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này',
+      );
     }
     return report;
   }
@@ -122,7 +127,9 @@ export class ReportController {
     if (req.user.orgType === 'DOANH_NGHIEP') {
       const report = await this.reportService.getReportById(id);
       if (report.companyInfo?.businessId !== req.user.businessId) {
-        throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền sửa báo cáo này');
+        throw new NotFoundException(
+          'Không tìm thấy báo cáo hoặc bạn không có quyền sửa báo cáo này',
+        );
       }
       if (dto.companyInfo) {
         dto.companyInfo.businessId = req.user.businessId;
@@ -140,7 +147,9 @@ export class ReportController {
     if (req.user.orgType === 'DOANH_NGHIEP') {
       const report = await this.reportService.getReportById(id);
       if (report.companyInfo?.businessId !== req.user.businessId) {
-        throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền xóa báo cáo này');
+        throw new NotFoundException(
+          'Không tìm thấy báo cáo hoặc bạn không có quyền xóa báo cáo này',
+        );
       }
     }
     return this.reportService.deleteReport(id);

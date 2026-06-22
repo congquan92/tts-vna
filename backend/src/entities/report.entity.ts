@@ -1,7 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 import { CompanyInfo } from './company-info.entity';
 import { LaborAccidentReport } from './labor-accident-report.entity';
 import { LaborAccidentSupportReport } from './labor-accident-support-report.entity';
+import { ReportFile } from './report-file.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
 
 @Entity('reports')
@@ -47,4 +54,9 @@ export class Report {
     },
   )
   laborAccidentSupportReport?: LaborAccidentSupportReport;
+
+  @OneToMany(() => ReportFile, (file) => file.report, {
+    cascade: true,
+  })
+  files?: ReportFile[];
 }

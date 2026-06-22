@@ -1,24 +1,32 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/report/create-report.dto';
 import { UpdateReportDto } from '../dto/report/update-report.dto';
 import { Report } from '../entities/report.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
+import { ReportingPeriod } from '../common/enums/reporting-period.enum';
 import { validateLaborAccidentReport } from '../common/validators/labor-accident-report.validator';
 import { validateLaborAccidentSupportReport } from '../common/validators/labor-accident-support-report.validator';
 
+type CompanyYearReportItem = {
+  reportId: number;
+  businessName: string | null;
+  taxCode: string | null;
+  reportPeriod: ReportingPeriod | null;
+  status: ReportStatus;
+};
+
 @Injectable()
 export class ReportService {
-  constructor(
-    private readonly reportRepository: ReportRepository,
-  ) {}
+  constructor(private readonly reportRepository: ReportRepository) {}
 
   async createReport(dto: CreateReportDto) {
     const reportData: DeepPartial<Report> = {};
+
+    reportData.year = dto.year ?? new Date().getFullYear();
+    reportData.reportPeriod =
+      dto.reportPeriod ?? ReportingPeriod.ONE_YEAR;
 
     if (dto.companyInfo) {
       reportData.companyInfo = dto.companyInfo;
@@ -57,6 +65,36 @@ export class ReportService {
     const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
 
     return this.reportRepository.findAll(safePage, safeLimit, filters);
+  }
+
+  async getReportsByCompanyAndYear(
+    companyId: number,
+    year: number,
+    page = 1,
+    limit = 10,
+  ) {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
+
+    const result = await this.reportRepository.findByCompanyAndYear(
+      companyId,
+      year,
+      safePage,
+      safeLimit,
+    );
+
+    return {
+      ...result,
+      data: result.data.map(
+        (report): CompanyYearReportItem => ({
+          reportId: report.id,
+          businessName: report.companyInfo?.business?.businessName ?? null,
+          taxCode: report.companyInfo?.business?.taxCode ?? null,
+          reportPeriod: (report.reportPeriod as ReportingPeriod) ?? null,
+          status: report.status,
+        }),
+      ),
+    };
   }
 
   async getReportById(id: number) {
@@ -120,9 +158,7 @@ export class ReportService {
       updateData.laborAccidentSupportReport = mergedSupportReport;
     }
 
-    const updated = await this.reportRepository.save(
-      updateData as Report,
-    );
+    const updated = await this.reportRepository.save(updateData);
 
     return {
       message: 'Cập nhật báo cáo thành công',
