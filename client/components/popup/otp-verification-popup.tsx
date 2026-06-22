@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import { InputField } from "@/components/form/InputField";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/utils/error-handle";
 
 type OtpVerificationPopupProps = {
     isOpen: boolean;
@@ -23,7 +24,8 @@ export default function OtpVerificationPopup({
     onResend,
 }: OtpVerificationPopupProps) {
     const [otp, setOtp] = useState("");
-    const [timeLeft, setTimeLeft] = useState(60);
+    const [timeLeft, setTimeLeft] = useState(300);
+    const [resendCooldown, setResendCooldown] = useState(60);
     const [loading, setLoading] = useState(false);
 
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -31,17 +33,28 @@ export default function OtpVerificationPopup({
         setPrevIsOpen(isOpen);
         if (isOpen) {
             setOtp("");
-            setTimeLeft(60);
+            setTimeLeft(300);
+            setResendCooldown(60);
         }
     }
 
-    // Countdown timer for OTP
+    // Countdown timers for OTP and Resend Cooldown
     useEffect(() => {
-        if (timeLeft > 0 && isOpen) {
-            const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [timeLeft, isOpen]);
+        if (!isOpen) return;
+
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+            setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isOpen]);
+
+    const formatTime = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins < 10 ? `0${mins}` : mins}:${secs < 10 ? `0${secs}` : secs}`;
+    };
 
     const handleConfirmOtp = async () => {
         if (!otp) {
@@ -57,11 +70,11 @@ export default function OtpVerificationPopup({
         try {
             const success = await onVerify(otp);
             if (!success) {
-                toast.error("Mã OTP không đúng hoặc đã hết hạn");
+                toast.error("Mã OTP không đúng. Vui lòng kiểm tra lại.");
             }
-        } catch (error: any) {
-            const msg = error.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn";
-            toast.error(Array.isArray(msg) ? msg[0] : msg);
+        } catch (error: unknown) {
+            const msg = getErrorMessage(error, "Mã OTP không đúng hoặc đã hết hạn");
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -71,10 +84,12 @@ export default function OtpVerificationPopup({
         setLoading(true);
         try {
             await onResend();
-            setTimeLeft(60);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || "Không thể gửi lại mã OTP, vui lòng thử lại sau";
-            toast.error(Array.isArray(msg) ? msg[0] : msg);
+            setTimeLeft(300);
+            setResendCooldown(60);
+            toast.success("Mã OTP mới đã được gửi");
+        } catch (error: unknown) {
+            const msg = getErrorMessage(error, "Không thể gửi lại mã OTP, vui lòng thử lại sau");
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -135,19 +150,19 @@ export default function OtpVerificationPopup({
 
                     <Box className="my-2">
                         <Typography variant="body1" color="#2962ff" sx={{ mb: 1, fontWeight: "500" }}>
-                            {timeLeft > 0 ? `00:${timeLeft < 10 ? `0${timeLeft}` : timeLeft}` : "Hết hạn"}
+                            {timeLeft > 0 ? `Hạn sử dụng mã: ${formatTime(timeLeft)}` : "Mã OTP đã hết hạn"}
                         </Typography>
                         <Typography
                             variant="body2"
                             color="text.secondary"
                             sx={{
-                                cursor: timeLeft === 0 ? "pointer" : "default",
-                                opacity: timeLeft === 0 ? 1 : 0.6,
-                                "&:hover": { color: timeLeft === 0 ? "#2962ff" : "text.secondary" },
+                                cursor: resendCooldown === 0 ? "pointer" : "default",
+                                opacity: resendCooldown === 0 ? 1 : 0.6,
+                                "&:hover": { color: resendCooldown === 0 ? "#2962ff" : "text.secondary" },
                             }}
-                            onClick={() => timeLeft === 0 && handleSendOtp()}
+                            onClick={() => resendCooldown === 0 && handleSendOtp()}
                         >
-                            Chưa nhận được mã? {timeLeft === 0 ? "Gửi lại" : `Gửi lại sau ${timeLeft}s`}
+                            Chưa nhận được mã? {resendCooldown === 0 ? "Gửi lại" : `Gửi lại sau ${resendCooldown}s`}
                         </Typography>
                     </Box>
 

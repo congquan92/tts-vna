@@ -27,7 +27,7 @@ const emptyForm: EnterpriseFormData = {
     foreignName: "",
     email: "",
     phone: "",
-    businessProvince: "Thành phố Hồ Chí Minh",
+    businessProvince: "",
     businessWard: "",
     businessAddress: "",
     representative: "",
