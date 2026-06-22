@@ -5,11 +5,11 @@ import {
   IsInt,
   IsNumber,
   IsOptional,
-  IsEnum,
   IsString,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
-import { ReportingPeriod } from '../../common/enums/reporting-period.enum';
+import { ReportStatus } from '../../common/enums/report-status.enum';
 
 export class CompanyInfoDto {
   @ApiPropertyOptional({ example: 1 })
@@ -327,18 +327,20 @@ export class LaborAccidentSupportReportDto {
 }
 
 export class CreateReportDto {
-  @ApiPropertyOptional({ example: 2026 })
+  @ApiPropertyOptional({ example: 2022 })
   @IsOptional()
   @IsInt()
   year?: number;
 
-  @ApiPropertyOptional({
-    enum: ReportingPeriod,
-    example: ReportingPeriod.ONE_YEAR,
-  })
+  @ApiPropertyOptional({ example: '6 tháng' })
   @IsOptional()
-  @IsEnum(ReportingPeriod)
-  reportingPeriod?: ReportingPeriod;
+  @IsString()
+  reportPeriod?: string;
+
+  @ApiPropertyOptional({ enum: ReportStatus, example: ReportStatus.REPORTING })
+  @IsOptional()
+  @IsEnum(ReportStatus)
+  status?: ReportStatus;
 
   @ApiPropertyOptional({ type: CompanyInfoDto })
   @IsOptional()

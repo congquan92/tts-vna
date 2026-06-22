@@ -1,9 +1,15 @@
+import type { ReportFile } from "./reportFile";
+
 export interface CompanyInfo {
     businessId?: number;
     businessName?: string;
     totalNumberOfEmployees?: number;
     totalNumberOfFemaleEmployees?: number;
     totalSalary?: number;
+    business?: {
+        businessName?: string;
+        taxCode?: string;
+    };
 }
 
 export interface AccidentDetail {
@@ -72,6 +78,9 @@ export interface LaborAccidentSupportReport {
 }
 
 export interface CreateReportPayload {
+    year?: number;
+    reportPeriod?: string;
+    status?: string;
     companyInfo?: CompanyInfo;
     laborAccidentReport?: LaborAccidentReport;
     laborAccidentSupportReport?: LaborAccidentSupportReport;
@@ -81,9 +90,13 @@ export interface UpdateReportPayload extends Partial<CreateReportPayload> {}
 
 export interface Report {
     id: number;
+    status: string;
+    year?: number;
+    reportPeriod?: string;
     companyInfo?: CompanyInfo;
     laborAccidentReport?: LaborAccidentReport;
     laborAccidentSupportReport?: LaborAccidentSupportReport;
+    files?: ReportFile[];
     createdAt: string;
     updatedAt: string;
 }

@@ -10,7 +10,6 @@ import { LaborAccidentReport } from './labor-accident-report.entity';
 import { LaborAccidentSupportReport } from './labor-accident-support-report.entity';
 import { ReportFile } from './report-file.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
-import { ReportingPeriod } from '../common/enums/reporting-period.enum';
 
 @Entity('reports')
 export class Report {
@@ -24,15 +23,11 @@ export class Report {
   })
   status!: ReportStatus;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ nullable: true })
   year?: number;
 
-  @Column({
-    type: 'enum',
-    enum: ReportingPeriod,
-    nullable: true,
-  })
-  reportingPeriod?: ReportingPeriod;
+  @Column({ nullable: true })
+  reportPeriod?: string;
 
   @OneToOne(() => CompanyInfo, (companyInfo) => companyInfo.report, {
     cascade: true,

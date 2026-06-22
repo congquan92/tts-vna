@@ -7,9 +7,18 @@ export const ReportApi = {
         return res.data;
     },
 
-    getAll: async (page?: number, limit?: number): Promise<ReportListResponse> => {
+    getAll: async (
+        page?: number,
+        limit?: number,
+        year?: number,
+        status?: string,
+        businessName?: string,
+        taxCode?: string,
+        province?: string,
+        ward?: string
+    ): Promise<ReportListResponse> => {
         const res = await axiosInstance.get<ReportListResponse>("/reports", {
-            params: { page, limit },
+            params: { page, limit, year, status, businessName, taxCode, province, ward },
         });
         return res.data;
     },
