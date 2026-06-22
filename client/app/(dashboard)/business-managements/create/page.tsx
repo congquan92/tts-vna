@@ -19,7 +19,7 @@ const emptyForm: EnterpriseFormData = {
     businessType: "",
     industry: "",
     gpkdDate: "",
-    gpkdProvince: "",
+    gpkdProvince: "Thành phố Hồ Chí Minh",
     gpkdWard: "",
     address: "",
     foreignName: "",

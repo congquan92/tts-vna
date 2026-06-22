@@ -21,7 +21,7 @@ const emptyForm: EnterpriseFormData = {
     businessType: "",
     industry: "",
     gpkdDate: "",
-    gpkdProvince: "",
+    gpkdProvince: "Thành phố Hồ Chí Minh",
     gpkdWard: "",
     address: "",
     foreignName: "",
@@ -79,6 +79,7 @@ export default function RegisterBusinessPage() {
     const [showAccountPopup, setShowAccountPopup] = useState(false);
     const [accountInfo, setAccountInfo] = useState({ accountNumber: "", password: "" });
     const [submitting, setSubmitting] = useState(false);
+    const [verifiedEmail, setVerifiedEmail] = useState("");
 
     const handleChange = (field: keyof EnterpriseFormData, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -171,9 +172,23 @@ export default function RegisterBusinessPage() {
         return valid;
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (validate()) {
-            setCurrentStep(2);
+            if (form.email.trim() === verifiedEmail) {
+                setCurrentStep(2);
+                return;
+            }
+            setSubmitting(true);
+            try {
+                await BusinessApi.requestOtp(form.email, form.companyName);
+                toast.success("Mã xác thực OTP đã được gửi về email của bạn");
+                setShowOtpPopup(true);
+            } catch (error: unknown) {
+                console.error("Error requesting OTP:", error);
+                toast.error(getErrorMessage(error, "Không thể gửi mã OTP. Vui lòng kiểm tra lại thông tin."));
+            } finally {
+                setSubmitting(false);
+            }
         }
     };
 
@@ -181,31 +196,10 @@ export default function RegisterBusinessPage() {
         setCurrentStep(1);
     };
 
-    // Trigger sending OTP when clicking the main confirm registration button
+    // Step 2: Trigger final registration directly (OTP already verified in Step 1)
     const handleConfirmClick = async () => {
         setSubmitting(true);
         try {
-            await BusinessApi.requestOtp(form.email, form.companyName);
-            toast.success("Mã xác thực OTP đã được gửi về email của bạn");
-            setShowOtpPopup(true);
-        } catch (error: any) {
-            console.error("Error requesting OTP:", error);
-            toast.error(getErrorMessage(error, "Không thể gửi mã OTP. Vui lòng kiểm tra lại thông tin."));
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // Handle verifying the OTP and creating the business account
-    const handleVerifyOtp = async (otp: string): Promise<boolean> => {
-        try {
-            // 1. Verify OTP first
-            const verifyRes = await BusinessApi.verifyOtp(form.email, otp);
-            if (!verifyRes.success) {
-                return false;
-            }
-
-            // 2. OTP is valid, proceed with creating business account
             const payload = {
                 taxCode: form.taxCode,
                 businessName: form.companyName,
@@ -225,9 +219,18 @@ export default function RegisterBusinessPage() {
                 representativePhone: form.representativePhone.trim() || undefined,
             };
 
-            const res = await BusinessApi.create(payload);
-            const business = (res as any).data?.business;
-            const account = (res as any).data?.account;
+            const res = await BusinessApi.create(payload) as unknown as {
+                data?: {
+                    business: { id: number };
+                    account?: { username?: string; password?: string };
+                };
+            };
+            const business = res?.data?.business;
+            const account = res?.data?.account;
+
+            if (!business) {
+                throw new Error("Không có thông tin doanh nghiệp được trả về");
+            }
 
             // Upload files
             const uploadPromises: Promise<unknown>[] = [];
@@ -250,7 +253,6 @@ export default function RegisterBusinessPage() {
             }
 
             toast.success("Đăng ký tài khoản doanh nghiệp thành công!");
-            setShowOtpPopup(false);
 
             if (account) {
                 setAccountInfo({
@@ -261,9 +263,31 @@ export default function RegisterBusinessPage() {
             } else {
                 router.push("/login");
             }
-            return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error creating business:", error);
+            toast.error(getErrorMessage(error, "Không thể đăng ký doanh nghiệp. Vui lòng kiểm tra lại thông tin."));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // Step 1: Handle verifying the OTP to move to Step 2
+    const handleVerifyOtp = async (otp: string): Promise<boolean> => {
+        try {
+            // 1. Verify OTP first
+            const verifyRes = await BusinessApi.verifyOtp(form.email, otp);
+            if (!verifyRes.success) {
+                return false;
+            }
+
+            // 2. OTP is valid, save verified state and move to Step 2
+            setVerifiedEmail(form.email.trim());
+            setShowOtpPopup(false);
+            setCurrentStep(2);
+            toast.success("Xác thực email thành công!");
+            return true;
+        } catch (error: unknown) {
+            console.error("Error verifying OTP:", error);
             // Propagate error to verify popup
             throw error;
         }
@@ -274,7 +298,7 @@ export default function RegisterBusinessPage() {
         try {
             await BusinessApi.requestOtp(form.email, form.companyName);
             toast.success("Đã gửi lại mã OTP mới về email của bạn");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error resending OTP:", error);
             toast.error(getErrorMessage(error, "Không thể gửi lại mã OTP"));
             throw error;

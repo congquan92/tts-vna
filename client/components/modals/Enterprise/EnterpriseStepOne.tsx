@@ -210,7 +210,7 @@ export default function EnterpriseStepOne({
                     <h3 className="text-[17px] font-bold text-gray-950 mb-4">{sectionTitle}</h3>
                     <div className="grid grid-cols-3 gap-4">
                         <InputField label="Tên doanh nghiệp *" value={form.companyName} onChange={(e) => onChange("companyName", e.target.value)} placeholder="Nhập tên doanh nghiệp" disabled={isViewMode} error={errors.companyName} />
-                        <InputField label="Mã số thuế *" value={form.taxCode} onChange={(e) => handleTaxCodeChange(e.target.value)} placeholder="VD: 0123456789 hoặc 0123456789-001" disabled={isTaxCodeDisabled} error={errors.taxCode} />
+                        <InputField label="Mã số thuế *" value={form.taxCode} onChange={(e) => handleTaxCodeChange(e.target.value)} placeholder="Nhập mã số thuế" disabled={isTaxCodeDisabled} error={errors.taxCode} />
                         <InputField
                             label="Loại hình kinh doanh *"
                             isSelect
