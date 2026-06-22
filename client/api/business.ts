@@ -7,6 +7,11 @@ export const BusinessApi = {
         return res.data;
     },
 
+    register: async (payload: CreateBusinessPayload): Promise<Business> => {
+        const res = await axiosInstance.post<Business>("/business/register", payload);
+        return res.data;
+    },
+
     getAll: async (page?: number, limit?: number): Promise<BusinessListResponse> => {
         const res = await axiosInstance.get<BusinessListResponse>("/business", {
             params: { page, limit },

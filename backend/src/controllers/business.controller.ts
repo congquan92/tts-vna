@@ -37,6 +37,17 @@ export class BusinessController {
         return this.businessService.createBusiness(dto);
     }
 
+    // Đăng ký doanh nghiệp
+    @Post('register')
+    @ApiOperation({
+        summary: 'Doanh nghiệp tự đăng ký',
+    })
+    registerBusiness(
+        @Body() dto: CreateBusinessDto,
+    ) {
+        return this.businessService.createBusiness(dto);
+    }
+
     // Lấy danh sách doanh nghiệp
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_VIEW)

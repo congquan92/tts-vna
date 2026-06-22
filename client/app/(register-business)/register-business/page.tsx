@@ -219,7 +219,7 @@ export default function RegisterBusinessPage() {
                 representativePhone: form.representativePhone.trim() || undefined,
             };
 
-            const res = await BusinessApi.create(payload) as unknown as {
+            const res = await BusinessApi.register(payload) as unknown as {
                 data?: {
                     business: { id: number };
                     account?: { username?: string; password?: string };
