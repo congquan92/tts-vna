@@ -9,7 +9,7 @@ import { ReportApi } from "@/api/report";
 import { BusinessApi } from "@/api/business";
 import type { Report } from "@/types/report";
 import { toast } from "sonner";
-import { Plus, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import ReportTable from "./_components/ReportTable";
 
 export default function CompanyAccidentsPage() {
@@ -69,9 +69,7 @@ export default function CompanyAccidentsPage() {
         });
     }, [fetchReports]);
 
-    const openNew = () => {
-        router.push("/company-accidents/create");
-    };
+
 
     const openEdit = (report: Report) => {
         router.push(`/company-accidents/edit/${report.id}`);
@@ -106,11 +104,6 @@ export default function CompanyAccidentsPage() {
                                 </select>
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                             </div>
-
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
-                                <Plus className="size-4" />
-                                <span>Thêm mới</span>
-                            </Button>
                         </div>
                     }
                 />

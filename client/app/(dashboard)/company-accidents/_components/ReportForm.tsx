@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronUp, Trash2, Plus, Save, Send, X } from "lucide-react";
 import type { Report, CreateReportPayload, UpdateReportPayload, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail } from "@/types/report";
 import { CAUSES, FACTORS, OCCUPATIONS, initialLaborReport, initialSupportReport } from "./constants";
@@ -18,8 +19,29 @@ const formatNumber = (val: number | string | undefined | null): string => {
     return num.toLocaleString("vi-VN");
 };
 
-const parseNumber = (val: string): number => {
-    const clean = val.replace(/\./g, "").replace(/,/g, "");
+const parseNumber = (val: string | number | undefined | null): number => {
+    if (val === undefined || val === null) return 0;
+    if (typeof val === "number") return val;
+    let clean = val.trim();
+    if (!clean) return 0;
+    
+    if (clean.includes(".") && clean.includes(",")) {
+        clean = clean.replace(/\./g, "").replace(/,/g, ".");
+    } else if (clean.includes(",")) {
+        const parts = clean.split(",");
+        if (parts.length === 2 && parts[1].length !== 3) {
+            clean = clean.replace(/,/g, ".");
+        } else {
+            clean = clean.replace(/,/g, "");
+        }
+    } else if (clean.includes(".")) {
+        const parts = clean.split(".");
+        if (parts.length === 2 && parts[1].length !== 3) {
+            // Keep the dot as decimal separator
+        } else {
+            clean = clean.replace(/\./g, "");
+        }
+    }
     const num = Number(clean);
     return isNaN(num) ? 0 : num;
 };
@@ -35,6 +57,25 @@ interface FormInputProps {
 }
 
 const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "text", disabled = false, required = false, suffix }) => {
+    const [localValue, setLocalValue] = useState(String(value ?? ""));
+
+    useEffect(() => {
+        if (parseNumber(localValue) !== parseNumber(String(value ?? ""))) {
+            setLocalValue(String(value ?? ""));
+        }
+    }, [value]);
+
+    const handleChange = (val: string) => {
+        setLocalValue(val);
+        if (onChange) {
+            onChange(val);
+        }
+    };
+
+    const handleBlur = () => {
+        setLocalValue(formatNumber(parseNumber(localValue)));
+    };
+
     return (
         <div className="relative flex items-center">
             <label className="absolute left-2.5 top-0 -translate-y-1/2 bg-white px-1 text-[10px] text-gray-400 font-semibold tracking-wide z-10">
@@ -44,8 +85,9 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
             <input
                 type={type}
                 disabled={disabled}
-                value={value ?? ""}
-                onChange={(e) => onChange && onChange(e.target.value)}
+                value={localValue}
+                onChange={(e) => handleChange(e.target.value)}
+                onBlur={handleBlur}
                 className={`w-full bg-white border border-gray-200 rounded px-3 py-2 text-xs outline-none focus:border-primary font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed ${suffix ? "pr-16" : ""}`}
             />
             {suffix && <span className="absolute right-3 text-[10px] text-gray-400 font-semibold pointer-events-none">{suffix}</span>}
@@ -99,6 +141,7 @@ interface ReportFormProps {
 type ReportSection = "Thông tin doanh nghiệp" | "1. Tai nạn lao động" | "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ" | "Xem tổng quan báo cáo tai nạn lao động";
 
 export default function ReportForm({ mode, report, businessProfile, existingReports, onSaveSuccess, onClose, registerTriggers }: ReportFormProps) {
+    const searchParams = useSearchParams();
     const [selectedSection, setSelectedSection] = useState<ReportSection>("Thông tin doanh nghiệp");
     const [activeSubTab, setActiveSubTab] = useState<"summary" | "details">("summary");
 
@@ -126,8 +169,10 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
     useEffect(() => {
         Promise.resolve().then(() => {
             if (mode === "create") {
-                setFormYear(new Date().getFullYear());
-                setFormPeriod("6 tháng");
+                const queryYear = searchParams.get("year");
+                const queryPeriod = searchParams.get("period");
+                setFormYear(queryYear ? Number(queryYear) : new Date().getFullYear());
+                setFormPeriod(queryPeriod || "6 tháng");
                 setTotalEmployees(0);
                 setTotalFemaleEmployees(0);
                 setTotalSalary(0);
@@ -265,8 +310,12 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             const tDeaths = Number(data.totalCasesWithDeath || 0);
             const tTwoVictims = Number(data.totalCasesWithTwoOrMoreVictims || 0);
 
-            if (tCases !== tDeaths + tTwoVictims) {
-                toast.error(`${prefixLabel}: Tổng số vụ (${tCases}) phải bằng số vụ có người chết (${tDeaths}) + số vụ có 2 người bị nạn trở lên (${tTwoVictims})`);
+            if (tDeaths > tCases) {
+                toast.error(`${prefixLabel}: Số vụ có người chết (${tDeaths}) không được lớn hơn tổng số vụ (${tCases})`);
+                return false;
+            }
+            if (tTwoVictims > tCases) {
+                toast.error(`${prefixLabel}: Số vụ có từ 2 người bị nạn trở lên (${tTwoVictims}) không được lớn hơn tổng số vụ (${tCases})`);
                 return false;
             }
 
@@ -275,6 +324,18 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             const tDead = Number(data.totalDeaths || 0);
             const tSerious = Number(data.totalSeriouslyInjured || 0);
 
+            if (tFemale > tVictims) {
+                toast.error(`${prefixLabel}: Số lao động nữ bị nạn (${tFemale}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+                return false;
+            }
+            if (tDead > tVictims) {
+                toast.error(`${prefixLabel}: Số người chết (${tDead}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+                return false;
+            }
+            if (tSerious > tVictims) {
+                toast.error(`${prefixLabel}: Số người bị thương nặng (${tSerious}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+                return false;
+            }
             const unmanagedV = Number(data.unmanagedVictims || 0);
             const unmanagedF = Number(data.unmanagedFemaleVictims || 0);
             const unmanagedD = Number(data.unmanagedDeaths || 0);
@@ -353,6 +414,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 medicalCost: Number(laborReport.medicalCost),
                 salaryDuringTreatment: Number(laborReport.salaryDuringTreatment),
                 compensationCost: Number(laborReport.compensationCost),
+                totalCost: Number(laborReport.medicalCost || 0) + Number(laborReport.salaryDuringTreatment || 0) + Number(laborReport.compensationCost || 0),
                 totalSickDays: Number(laborReport.totalSickDays),
                 propertyDamage: Number(laborReport.propertyDamage),
                 accidentDetails: (laborReport.accidentDetails || []).map((d) => ({
@@ -373,6 +435,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                     medicalCost: Number(d.medicalCost),
                     salaryDuringTreatment: Number(d.salaryDuringTreatment),
                     compensationCost: Number(d.compensationCost),
+                    totalCost: Number(d.medicalCost || 0) + Number(d.salaryDuringTreatment || 0) + Number(d.compensationCost || 0),
                     propertyDamage: Number(d.propertyDamage),
                     totalSickDays: Number(d.totalSickDays),
                 })),
@@ -392,6 +455,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 medicalCost: Number(supportReport.medicalCost),
                 salaryDuringTreatment: Number(supportReport.salaryDuringTreatment),
                 compensationCost: Number(supportReport.compensationCost),
+                totalCost: Number(supportReport.medicalCost || 0) + Number(supportReport.salaryDuringTreatment || 0) + Number(supportReport.compensationCost || 0),
                 totalSickDays: Number(supportReport.totalSickDays),
                 propertyDamage: Number(supportReport.propertyDamage),
             },
@@ -1624,7 +1688,16 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                     <tbody>
                                         <tr className="font-semibold text-gray-800 text-[10px]">
                                             <td className="border border-gray-200 p-2.5 text-center">{(laborReport.totalSickDays || 0) + (supportReport.totalSickDays || 0)}</td>
-                                            <td className="border border-gray-200 p-2.5 text-center">{formatNumber((laborReport.totalCost || 0) + (supportReport.totalCost || 0))}</td>
+                                            <td className="border border-gray-200 p-2.5 text-center">
+                                                {formatNumber(
+                                                    Number(laborReport.medicalCost || 0) +
+                                                    Number(laborReport.salaryDuringTreatment || 0) +
+                                                    Number(laborReport.compensationCost || 0) +
+                                                    Number(supportReport.medicalCost || 0) +
+                                                    Number(supportReport.salaryDuringTreatment || 0) +
+                                                    Number(supportReport.compensationCost || 0)
+                                                )}
+                                            </td>
                                             <td className="border border-gray-200 p-2.5 text-center">{formatNumber((laborReport.medicalCost || 0) + (supportReport.medicalCost || 0))}</td>
                                             <td className="border border-gray-200 p-2.5 text-center">{formatNumber((laborReport.salaryDuringTreatment || 0) + (supportReport.salaryDuringTreatment || 0))}</td>
                                             <td className="border border-gray-200 p-2.5 text-center">{formatNumber((laborReport.compensationCost || 0) + (supportReport.compensationCost || 0))}</td>

@@ -504,7 +504,16 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
                                 <tbody>
                                     <tr className="font-semibold text-gray-800">
                                         <td className="border border-gray-250 p-2.5 text-center">{(laborReport.totalSickDays || 0) + (supportReport.totalSickDays || 0)}</td>
-                                        <td className="border border-gray-250 p-2.5 text-center">{formatNumber((laborReport.totalCost || 0) + (supportReport.totalCost || 0))}</td>
+                                        <td className="border border-gray-250 p-2.5 text-center">
+                                            {formatNumber(
+                                                Number(laborReport.medicalCost || 0) +
+                                                Number(laborReport.salaryDuringTreatment || 0) +
+                                                Number(laborReport.compensationCost || 0) +
+                                                Number(supportReport.medicalCost || 0) +
+                                                Number(supportReport.salaryDuringTreatment || 0) +
+                                                Number(supportReport.compensationCost || 0)
+                                            )}
+                                        </td>
                                         <td className="border border-gray-250 p-2.5 text-center">{formatNumber((laborReport.medicalCost || 0) + (supportReport.medicalCost || 0))}</td>
                                         <td className="border border-gray-250 p-2.5 text-center">{formatNumber((laborReport.salaryDuringTreatment || 0) + (supportReport.salaryDuringTreatment || 0))}</td>
                                         <td className="border border-gray-250 p-2.5 text-center">{formatNumber((laborReport.compensationCost || 0) + (supportReport.compensationCost || 0))}</td>
