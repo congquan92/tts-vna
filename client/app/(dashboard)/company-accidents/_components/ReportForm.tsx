@@ -60,10 +60,12 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
     const [localValue, setLocalValue] = useState(String(value ?? ""));
 
     useEffect(() => {
-        if (parseNumber(localValue) !== parseNumber(String(value ?? ""))) {
-            setLocalValue(String(value ?? ""));
+        if (!disabled) {
+            if (parseNumber(localValue) !== parseNumber(String(value ?? ""))) {
+                setLocalValue(String(value ?? ""));
+            }
         }
-    }, [value]);
+    }, [value, disabled]);
 
     const handleChange = (val: string) => {
         setLocalValue(val);
@@ -85,7 +87,7 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
             <input
                 type={type}
                 disabled={disabled}
-                value={localValue}
+                value={disabled ? (value ?? "") : localValue}
                 onChange={(e) => handleChange(e.target.value)}
                 onBlur={handleBlur}
                 className={`w-full bg-white border border-gray-200 rounded px-3 py-2 text-xs outline-none focus:border-primary font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed ${suffix ? "pr-16" : ""}`}
@@ -142,7 +144,9 @@ type ReportSection = "Thông tin doanh nghiệp" | "1. Tai nạn lao động" | 
 
 export default function ReportForm({ mode, report, businessProfile, existingReports, onSaveSuccess, onClose, registerTriggers }: ReportFormProps) {
     const searchParams = useSearchParams();
-    const [selectedSection, setSelectedSection] = useState<ReportSection>("Thông tin doanh nghiệp");
+    const [selectedSection, setSelectedSection] = useState<ReportSection>(
+        mode === "view" ? "Xem tổng quan báo cáo tai nạn lao động" : "Thông tin doanh nghiệp"
+    );
     const [activeSubTab, setActiveSubTab] = useState<"summary" | "details">("summary");
 
     // Form fields state
@@ -198,7 +202,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 );
 
                 setSupportReport(report.laborAccidentSupportReport || initialSupportReport());
-                setSelectedSection("Thông tin doanh nghiệp");
+                setSelectedSection(mode === "view" ? "Xem tổng quan báo cáo tai nạn lao động" : "Thông tin doanh nghiệp");
                 setActiveSubTab("summary");
                 setStampedFile(null);
             }
@@ -771,15 +775,17 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             `}</style>
 
             {/* Form Section Dropdown Selector */}
-            <div className="mb-6 max-w-xl print:hidden">
-                <FormSelect
-                    label="Chọn mục báo cáo"
-                    value={selectedSection}
-                    onChange={(val) => setSelectedSection(val as ReportSection)}
-                    options={["Thông tin doanh nghiệp", "1. Tai nạn lao động", "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ", "Xem tổng quan báo cáo tai nạn lao động"]}
-                    disabled={false}
-                />
-            </div>
+            {mode !== "view" && (
+                <div className="mb-6 max-w-xl print:hidden">
+                    <FormSelect
+                        label="Chọn mục báo cáo"
+                        value={selectedSection}
+                        onChange={(val) => setSelectedSection(val as ReportSection)}
+                        options={["Thông tin doanh nghiệp", "1. Tai nạn lao động", "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ", "Xem tổng quan báo cáo tai nạn lao động"]}
+                        disabled={false}
+                    />
+                </div>
+            )}
 
             {/* Form Scrollable Body */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 min-h-0">

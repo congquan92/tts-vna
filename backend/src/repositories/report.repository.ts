@@ -10,6 +10,10 @@ export class ReportRepository {
     private readonly reportRepository: Repository<Report>,
   ) {}
 
+  get manager() {
+    return this.reportRepository.manager;
+  }
+
   async create(data: DeepPartial<Report>): Promise<Report> {
     const report = this.reportRepository.create(data);
     return this.reportRepository.save(report);

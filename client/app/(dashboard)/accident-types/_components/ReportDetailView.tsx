@@ -187,7 +187,7 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
     };
 
     return (
-        <div className="flex flex-col flex-1 h-full min-h-0 bg-[#F4F6F8]">
+        <div className="flex flex-col flex-1 h-screen min-h-0 bg-[#F4F6F8] py-2">
             {/* Print Isolator CSS */}
             <style jsx global>{`
                 @media print {

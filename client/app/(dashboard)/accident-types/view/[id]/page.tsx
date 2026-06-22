@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
-import ReportDetailView from "../../_components/ReportDetailView";
+import TopHero from "@/components/TopHero";
+import ReportForm from "../../../company-accidents/_components/ReportForm";
+import Button from "@/components/ui/Button";
+import { ChevronRight, Printer } from "lucide-react";
 
 export default function ViewReportPage() {
     const router = useRouter();
@@ -13,6 +16,17 @@ export default function ViewReportPage() {
 
     const [report, setReport] = useState<Report | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Active triggers for header buttons
+    const [formTriggers, setFormTriggers] = useState<{
+        save: () => void;
+        continue: () => void;
+        cancel: () => void;
+        setYear: (y: number) => void;
+        year: number;
+        selectedSection: string;
+        print: () => void;
+    } | null>(null);
 
     useEffect(() => {
         const fetchReport = async () => {
@@ -31,9 +45,9 @@ export default function ViewReportPage() {
         fetchReport();
     }, [reportId]);
 
-    const handleBack = () => {
+    const handleBack = useCallback(() => {
         router.push("/accident-types");
-    };
+    }, [router]);
 
     if (loading) {
         return (
@@ -60,5 +74,60 @@ export default function ViewReportPage() {
         );
     }
 
-    return <ReportDetailView report={report} onBack={handleBack} />;
+    // Fallback profile details resolved from report's companyInfo
+    const businessProfile = {
+        name: report.companyInfo?.business?.businessName || report.companyInfo?.businessName || "N/A",
+        taxCode: report.companyInfo?.business?.taxCode || "N/A",
+        businessType: (report.companyInfo?.business as any)?.typeOfBusiness?.name || "Doanh nghiệp tư nhân",
+        industry: (report.companyInfo?.business as any)?.businessIndustry?.name || "Chưa xác định",
+    };
+
+    const isOverview = formTriggers?.selectedSection === "Xem tổng quan báo cáo tai nạn lao động";
+
+    return (
+        <main className="h-screen flex flex-col py-2">
+            <div className="shrink-0 print:hidden">
+                <TopHero
+                    lable="Báo cáo định kỳ Tai nạn lao động"
+                    component={
+                        <div className="flex gap-2 items-center">
+                            {/* Year input display */}
+                            <input
+                                type="number"
+                                value={formTriggers?.year ?? report.year}
+                                disabled={true}
+                                className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center font-semibold outline-none focus:border-primary bg-gray-100 cursor-not-allowed"
+                            />
+
+                            <Button variant="outline" size="sm" onClick={handleBack} className="border-none bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xs font-semibold px-3 py-1.5">
+                                Trở về
+                            </Button>
+
+                            {isOverview ? (
+                                <Button variant="outline" size="sm" onClick={() => formTriggers?.print()} className="gap-1.5 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
+                                    <Printer className="size-3.5" />
+                                    <span>In báo cáo</span>
+                                </Button>
+                            ) : (
+                                <Button variant="outline" size="sm" onClick={() => formTriggers?.continue()} className="gap-1 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
+                                    <span>Tiếp tục</span>
+                                    <ChevronRight className="size-3" />
+                                </Button>
+                            )}
+                        </div>
+                    }
+                />
+            </div>
+
+            <ReportForm
+                mode="view"
+                report={report}
+                businessProfile={businessProfile}
+                existingReports={[]}
+                onSaveSuccess={() => {}}
+                onClose={handleBack}
+                registerTriggers={setFormTriggers}
+            />
+        </main>
+    );
 }

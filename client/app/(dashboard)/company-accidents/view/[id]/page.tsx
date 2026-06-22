@@ -2,21 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import TopHero from "@/components/TopHero";
-import { BusinessApi } from "@/api/business";
 import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
-import { ChevronRight, Printer } from "lucide-react";
+import TopHero from "@/components/TopHero";
 import ReportForm from "../../_components/ReportForm";
 import Button from "@/components/ui/Button";
+import { ChevronRight, Printer } from "lucide-react";
 
 export default function ViewReportPage() {
     const router = useRouter();
     const params = useParams();
     const reportId = params?.id ? Number(params.id) : null;
 
-    const { user } = useAuth();
     const [report, setReport] = useState<Report | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -31,35 +28,6 @@ export default function ViewReportPage() {
         print: () => void;
     } | null>(null);
 
-    // Business profile pre-populated state
-    const [businessProfile, setBusinessProfile] = useState<{
-        name: string;
-        taxCode: string;
-        businessType?: string;
-        industry?: string;
-    } | null>(null);
-
-    // Fetch logged-in business profile details
-    useEffect(() => {
-        const fetchBusiness = async () => {
-            if (user?.profileId) {
-                try {
-                    const data = (await BusinessApi.getById(user.profileId)) as any;
-                    setBusinessProfile({
-                        name: data.businessName || "",
-                        taxCode: data.taxCode || "",
-                        businessType: data.typeOfBusiness?.name || "",
-                        industry: data.businessIndustry?.name || "",
-                    });
-                } catch (e) {
-                    console.error("Failed to load business profile details", e);
-                }
-            }
-        };
-        fetchBusiness();
-    }, [user]);
-
-    // Fetch report by ID
     useEffect(() => {
         const fetchReport = async () => {
             if (reportId) {
@@ -77,11 +45,9 @@ export default function ViewReportPage() {
         fetchReport();
     }, [reportId]);
 
-    const handleFormClose = () => {
+    const handleBack = useCallback(() => {
         router.push("/company-accidents");
-    };
-
-    const isOverview = formTriggers?.selectedSection === "Xem tổng quan báo cáo tai nạn lao động";
+    }, [router]);
 
     if (loading) {
         return (
@@ -94,6 +60,27 @@ export default function ViewReportPage() {
         );
     }
 
+    if (!report) {
+        return (
+            <div className="h-screen flex flex-col items-center justify-center bg-[#F4F6F8] gap-4">
+                <span className="text-gray-500 text-sm">Không tìm thấy báo cáo hoặc có lỗi xảy ra.</span>
+                <button onClick={handleBack} className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary-hover transition-colors">
+                    Trở về
+                </button>
+            </div>
+        );
+    }
+
+    // Fallback profile details resolved from report's companyInfo
+    const businessProfile = {
+        name: report.companyInfo?.business?.businessName || report.companyInfo?.businessName || "N/A",
+        taxCode: report.companyInfo?.business?.taxCode || "N/A",
+        businessType: (report.companyInfo?.business as any)?.typeOfBusiness?.name || "Doanh nghiệp tư nhân",
+        industry: (report.companyInfo?.business as any)?.businessIndustry?.name || "Chưa xác định",
+    };
+
+    const isOverview = formTriggers?.selectedSection === "Xem tổng quan báo cáo tai nạn lao động";
+
     return (
         <main className="h-screen flex flex-col py-2">
             <div className="shrink-0 print:hidden">
@@ -101,16 +88,8 @@ export default function ViewReportPage() {
                     lable="Báo cáo định kỳ Tai nạn lao động"
                     component={
                         <div className="flex gap-2 items-center">
-                            {/* Year display */}
-                            <input
-                                type="number"
-                                value={formTriggers?.year ?? new Date().getFullYear()}
-                                disabled={true}
-                                className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center font-semibold outline-none focus:border-primary bg-gray-100 cursor-not-allowed"
-                            />
-
-                            <Button variant="outline" size="sm" onClick={() => formTriggers?.cancel()} className="border-none bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xs font-semibold px-3 py-1.5">
-                                Trở về
+                            <Button variant="outline" size="sm" onClick={handleBack} className="border-none bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xs font-semibold px-3 py-1.5">
+                                Huỷ bỏ
                             </Button>
 
                             {isOverview ? (
@@ -129,7 +108,7 @@ export default function ViewReportPage() {
                 />
             </div>
 
-            <ReportForm mode="view" report={report} businessProfile={businessProfile} existingReports={[]} onSaveSuccess={() => {}} onClose={handleFormClose} registerTriggers={setFormTriggers} />
+            <ReportForm mode="view" report={report} businessProfile={businessProfile} existingReports={[]} onSaveSuccess={() => {}} onClose={handleBack} registerTriggers={setFormTriggers} />
         </main>
     );
 }

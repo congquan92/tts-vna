@@ -4,6 +4,10 @@ import { ReportRepository } from '../repositories/report.repository';
 import { CreateReportDto } from '../dto/report/create-report.dto';
 import { UpdateReportDto } from '../dto/report/update-report.dto';
 import { Report } from '../entities/report.entity';
+import { CompanyInfo } from '../entities/company-info.entity';
+import { LaborAccidentReport } from '../entities/labor-accident-report.entity';
+import { LaborAccidentSupportReport } from '../entities/labor-accident-support-report.entity';
+import { AccidentDetail } from '../entities/accident-detail.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
 import { ReportingPeriod } from '../common/enums/reporting-period.enum';
 import { validateLaborAccidentReport } from '../common/validators/labor-accident-report.validator';
@@ -114,51 +118,57 @@ export class ReportService {
       throw new NotFoundException('Không tìm thấy báo cáo');
     }
 
-    const updateData: DeepPartial<Report> = { id: report.id };
-
     if (dto.year !== undefined) {
-      updateData.year = dto.year;
+      report.year = dto.year;
     }
 
     if (dto.reportPeriod !== undefined) {
-      updateData.reportPeriod = dto.reportPeriod;
+      report.reportPeriod = dto.reportPeriod;
     }
 
     if (dto.status !== undefined) {
-      updateData.status = dto.status;
+      report.status = dto.status as any;
     }
 
     if (dto.companyInfo !== undefined) {
-      updateData.companyInfo = {
-        ...report.companyInfo,
-        ...dto.companyInfo,
-      };
+      if (!report.companyInfo) {
+        report.companyInfo = new CompanyInfo();
+      }
+      Object.assign(report.companyInfo, dto.companyInfo);
     }
 
     if (dto.laborAccidentReport !== undefined) {
-      const mergedLaborAccidentReport = {
-        ...report.laborAccidentReport,
-        ...dto.laborAccidentReport,
-        accidentDetails:
-          dto.laborAccidentReport.accidentDetails ??
-          report.laborAccidentReport?.accidentDetails,
-      };
+      if (!report.laborAccidentReport) {
+        report.laborAccidentReport = new LaborAccidentReport();
+      }
+      
+      const oldDetails = report.laborAccidentReport.accidentDetails || [];
+      const reportId = report.laborAccidentReport.id;
+      if (reportId && oldDetails.length > 0) {
+        await this.reportRepository.manager.delete(AccidentDetail, { laborAccidentReportId: reportId });
+      }
 
-      validateLaborAccidentReport(mergedLaborAccidentReport);
-      updateData.laborAccidentReport = mergedLaborAccidentReport;
+      Object.assign(report.laborAccidentReport, dto.laborAccidentReport);
+
+      if (dto.laborAccidentReport.accidentDetails !== undefined) {
+        report.laborAccidentReport.accidentDetails = dto.laborAccidentReport.accidentDetails.map(d => {
+          const detail = new AccidentDetail();
+          Object.assign(detail, d);
+          return detail;
+        });
+      }
+      validateLaborAccidentReport(report.laborAccidentReport);
     }
 
     if (dto.laborAccidentSupportReport !== undefined) {
-      const mergedSupportReport = {
-        ...report.laborAccidentSupportReport,
-        ...dto.laborAccidentSupportReport,
-      };
-
-      validateLaborAccidentSupportReport(mergedSupportReport);
-      updateData.laborAccidentSupportReport = mergedSupportReport;
+      if (!report.laborAccidentSupportReport) {
+        report.laborAccidentSupportReport = new LaborAccidentSupportReport();
+      }
+      Object.assign(report.laborAccidentSupportReport, dto.laborAccidentSupportReport);
+      validateLaborAccidentSupportReport(report.laborAccidentSupportReport);
     }
 
-    const updated = await this.reportRepository.save(updateData);
+    const updated = await this.reportRepository.save(report);
 
     return {
       message: 'Cập nhật báo cáo thành công',

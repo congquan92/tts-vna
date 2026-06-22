@@ -9,20 +9,23 @@ import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
 import { toast } from "sonner";
 
+import { useAuth } from "@/contexts/AuthContext";
 import ReportDetailView from "./_components/ReportDetailView";
 import ReportListTable from "./_components/ReportListTable";
 import ReportFilterBar, { Province } from "./_components/ReportFilterBar";
 
 export default function AccidentTypesPage() {
+    const { user } = useAuth();
+
     // List state
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedYear, setSelectedYear] = useState<number>(2022); // Default to 2022 as in Image 1
+    const [selectedYear, setSelectedYear] = useState<number | "">("");
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     // Location dropdown lists & selections
     const [provinces, setProvinces] = useState<Province[]>([]);
-    const [selectedProvince, setSelectedProvince] = useState<string>("Thành phố Hồ Chí Minh"); // Default to Hồ Chí Minh
+    const [selectedProvince, setSelectedProvince] = useState<string>("Tất cả");
     const [selectedWard, setSelectedWard] = useState<string>("Tất cả");
 
     // Inline table search inputs
@@ -71,7 +74,7 @@ export default function AccidentTypesPage() {
             const res = await ReportApi.getAll(
                 currentPage,
                 pageSize,
-                selectedYear,
+                selectedYear || undefined,
                 searchStatus || undefined,
                 searchBusinessName || undefined,
                 searchTaxCode || undefined,
@@ -122,7 +125,7 @@ export default function AccidentTypesPage() {
         setCurrentPage(1);
     };
 
-    const handleYearChange = (year: number) => {
+    const handleYearChange = (year: number | "") => {
         setSelectedYear(year);
         setSelectedIds([]);
         setCurrentPage(1);
@@ -207,7 +210,7 @@ export default function AccidentTypesPage() {
             const res = await ReportApi.getAll(
                 1,
                 99999,
-                selectedYear,
+                selectedYear || undefined,
                 "đã tiếp nhận",
                 undefined,
                 undefined,
@@ -359,9 +362,10 @@ export default function AccidentTypesPage() {
                             <div className="relative">
                                 <select
                                     value={selectedYear}
-                                    onChange={(e) => handleYearChange(Number(e.target.value))}
+                                    onChange={(e) => handleYearChange(e.target.value === "" ? "" : Number(e.target.value))}
                                     className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-semibold outline-none focus:border-primary cursor-pointer bg-no-repeat"
                                 >
+                                    <option value="">Tất cả các năm</option>
                                     {[2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027].map((y) => (
                                         <option key={y} value={y}>
                                             {y}

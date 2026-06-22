@@ -77,6 +77,58 @@ export default function ReportTable({
                                     style={GRID_STYLE}
                                 >
                                     <div className="flex items-center justify-center gap-3">
+                                        {/* 1. View icon */}
+                                        {isPlaceholder ? (
+                                            <button
+                                                type="button"
+                                                className="text-gray-200 cursor-not-allowed"
+                                                title="Báo cáo chưa được khai báo"
+                                                disabled
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => onView(item)}
+                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                title="Xem chi tiết"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                        )}
+
+                                        {/* 2. Edit icon */}
+                                        {isPlaceholder ? (
+                                            <button
+                                                type="button"
+                                                className="text-gray-200 cursor-not-allowed"
+                                                title="Không thể chỉnh sửa báo cáo chưa khai báo"
+                                                disabled
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                        ) : item.status === "đang báo cáo" ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => onEdit(item)}
+                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                title="Chỉnh sửa"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                className="text-gray-200 cursor-not-allowed"
+                                                title="Báo cáo đã tiếp nhận không thể chỉnh sửa"
+                                                disabled
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                        )}
+
+                                        {/* 3. Add icon */}
                                         {isPlaceholder ? (
                                             <button
                                                 type="button"
@@ -85,36 +137,20 @@ export default function ReportTable({
                                                         `/company-accidents/create?year=${selectedYear}&period=${item.reportPeriod}`
                                                     )
                                                 }
-                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer flex items-center gap-1 font-semibold"
+                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
                                                 title="Khai báo mới"
                                             >
-                                                <Plus size={14} className="text-primary" />
-                                                <span className="text-primary text-[10px]">Khai báo</span>
+                                                <Plus size={16} />
                                             </button>
                                         ) : (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onView(item)}
-                                                    className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <Eye size={16} />
-                                                </button>
-
-                                                {item.status === "đang báo cáo" ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onEdit(item)}
-                                                        className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                        title="Chỉnh sửa"
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                ) : (
-                                                    <div className="w-4" />
-                                                )}
-                                            </>
+                                            <button
+                                                type="button"
+                                                className="text-gray-200 cursor-not-allowed"
+                                                title="Báo cáo đã được khai báo"
+                                                disabled
+                                            >
+                                                <Plus size={16} />
+                                            </button>
                                         )}
                                     </div>
 
