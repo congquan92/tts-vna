@@ -65,6 +65,10 @@ export class BusinessRepository {
                 business.businessIndustry?.name ?? '',
             ward:
                 business.registeredWard,
+            registeredProvince:
+                business.registeredProvince,
+            registeredWard:
+                business.registeredWard,
             status:
                 business.status === 'active',
         }));
@@ -165,6 +169,7 @@ export class BusinessRepository {
                 taxCode: b.taxCode,
                 typeOfBusiness: b.typeOfBusiness?.name ?? '',
                 businessIndustry: b.businessIndustry?.name ?? '',
+                registeredProvince: b.registeredProvince,
                 registeredWard: b.registeredWard,
                 status: b.status === 'active',
             }));
