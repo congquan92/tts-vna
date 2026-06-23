@@ -182,6 +182,10 @@ export class AuthService {
       orgType: account.role?.orgType,
     };
 
+    const permissions = account.roleId
+      ? await this.authRepository.findPermissionsByRole(account.roleId)
+      : [];
+
     const profileInfo = {
       profileId: profile.id,
       fullName: profile.fullName ?? profile.businessName,
@@ -201,6 +205,7 @@ export class AuthService {
       ...accountInfo,
       role: roleInfo.name,
       orgType: roleInfo.orgType,
+      permissions,
 
       account: {
         ...accountInfo,

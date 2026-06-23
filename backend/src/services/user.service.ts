@@ -88,7 +88,7 @@ export class UserService {
 
     return {
       ...user,
-      accounts: user.accounts.map((acc) => ({
+      accounts: (user.accounts || []).map((acc) => ({
         ...acc,
         role: acc.role,
       })),

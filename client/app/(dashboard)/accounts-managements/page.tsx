@@ -13,9 +13,12 @@ import { Upload, Plus, ChevronDown, Pencil, Key, Download, ChevronLeft, ChevronR
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import axios from "axios";
 import { getRoleDisplayName, ROLE_OPTIONS } from "@/utils/display";
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/types/permission";
 
 const AccountPage = () => {
     const router = useRouter();
+    const { hasPermission } = usePermission();
     const searchParams = useSearchParams();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
@@ -68,13 +71,14 @@ const AccountPage = () => {
 
                     // Check if we need to show password modal for a newly created user
                     const newUserId = searchParams.get("newUserId");
-                    if (newUserId) {
-                        let newUser = result.data.find((u: User) => u.id === Number(newUserId));
+                    const parsedUserId = newUserId ? Number(newUserId) : null;
+                    if (parsedUserId && !isNaN(parsedUserId)) {
+                        let newUser = result.data.find((u: User) => u.id === parsedUserId);
 
                         // If not found in the current page, fetch them separately
                         if (!newUser) {
                             try {
-                                newUser = await UserApi.getById(Number(newUserId));
+                                newUser = await UserApi.getById(parsedUserId);
                             } catch (e) {
                                 console.error("Could not fetch new user for password setup", e);
                             }
@@ -279,15 +283,21 @@ const AccountPage = () => {
                     lable="Danh sách người dùng"
                     component={
                         <div className="flex gap-3">
-                            <input type="file" id="importFileInput" className="hidden" accept=".xlsx, .xls" onChange={handleImportFile} />
-                            <Button variant="outline" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={() => document.getElementById("importFileInput")?.click()}>
-                                <Upload className="size-4" />
-                                <span>Import</span>
-                            </Button>
-                            <Button variant="primary" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={handleOpenCreate}>
-                                <Plus className="size-4" />
-                                <span>Thêm mới</span>
-                            </Button>
+                            {hasPermission(Permission.USER_IMPORT) && (
+                                <>
+                                    <input type="file" id="importFileInput" className="hidden" accept=".xlsx, .xls" onChange={handleImportFile} />
+                                    <Button variant="outline" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={() => document.getElementById("importFileInput")?.click()}>
+                                        <Upload className="size-4" />
+                                        <span>Import</span>
+                                    </Button>
+                                </>
+                            )}
+                            {hasPermission(Permission.USER_CREATE) && (
+                                <Button variant="primary" size="sm" className="flex gap-2 items-center text-sm font-semibold" onClick={handleOpenCreate}>
+                                    <Plus className="size-4" />
+                                    <span>Thêm mới</span>
+                                </Button>
+                            )}
                         </div>
                     }
                 />
@@ -388,17 +398,33 @@ const AccountPage = () => {
                                     style={{ gridTemplateColumns: "40px 45px 45px 1.5fr 1fr 2fr 1.5fr 1.5fr 100px" }}
                                 >
                                     <div className="flex items-center justify-center">
-                                        <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => handleSelectOne(user.id)} className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" />
+                                        {hasPermission(Permission.USER_DELETE) ? (
+                                            <input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => handleSelectOne(user.id)} className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" />
+                                        ) : (
+                                            <input type="checkbox" disabled className="w-3.5 h-3.5 opacity-30 cursor-not-allowed rounded border-gray-300" />
+                                        )}
                                     </div>
                                     <div className="flex items-center justify-center">
-                                        <button type="button" onClick={() => handleOpenEdit(user)} className="text-gray-400 hover:text-primary transition-colors" title="Chỉnh sửa">
-                                            <Pencil className="size-3.5" />
-                                        </button>
+                                        {hasPermission(Permission.USER_UPDATE) ? (
+                                            <button type="button" onClick={() => handleOpenEdit(user)} className="text-gray-400 hover:text-primary transition-colors" title="Chỉnh sửa">
+                                                <Pencil className="size-3.5" />
+                                            </button>
+                                        ) : (
+                                            <button type="button" disabled className="text-gray-200 cursor-not-allowed" title="Không có quyền chỉnh sửa">
+                                                <Pencil className="size-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex items-center justify-center">
-                                        <button type="button" onClick={() => handleOpenSetPassword(user)} className="text-gray-400 hover:text-primary transition-colors" title="Đặt lại mật khẩu">
-                                            <Key className="size-3.5" />
-                                        </button>
+                                        {hasPermission(Permission.USER_RESET_PASSWORD) ? (
+                                            <button type="button" onClick={() => handleOpenSetPassword(user)} className="text-gray-400 hover:text-primary transition-colors" title="Đặt lại mật khẩu">
+                                                <Key className="size-3.5" />
+                                            </button>
+                                        ) : (
+                                            <button type="button" disabled className="text-gray-200 cursor-not-allowed" title="Không có quyền đặt lại mật khẩu">
+                                                <Key className="size-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="truncate font-medium">{user.fullName}</div>
                                     <div className="truncate">{user.username || "-"}</div>
@@ -406,7 +432,11 @@ const AccountPage = () => {
                                     <div className="truncate">{getRoleDisplayName(user.role)}</div>
                                     <div className="truncate">{user.position || "-"}</div>
                                     <div className="flex items-center">
-                                        <ToggleSwitch checked={user.isActive ?? false} onChange={() => handleToggleStatus(user.id)} />
+                                        <ToggleSwitch 
+                                            checked={user.isActive ?? false} 
+                                            onChange={() => handleToggleStatus(user.id)} 
+                                            disabled={!hasPermission(Permission.USER_TOGGLE_STATUS)}
+                                        />
                                     </div>
                                 </div>
                             ))}
@@ -418,10 +448,14 @@ const AccountPage = () => {
                 {/* Footer */}
                 <div className="shrink-0 flex items-center justify-between px-5 py-3 border-t border-gray-200 text-xs text-gray-500 bg-white">
                     {/* Left: Export */}
-                    <button type="button" onClick={handleExport} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors cursor-pointer">
-                        <Download className="size-3.5" />
-                        <span>Export Data</span>
-                    </button>
+                    {hasPermission(Permission.USER_EXPORT) ? (
+                        <button type="button" onClick={handleExport} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors cursor-pointer">
+                            <Download className="size-3.5" />
+                            <span>Export Data</span>
+                        </button>
+                    ) : (
+                        <div />
+                    )}
 
                     {/* Right: Pagination */}
                     <div className="flex items-center gap-4">
