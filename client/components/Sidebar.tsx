@@ -19,9 +19,11 @@ import { Menu as MenuIcon, ChevronDown, ChevronRight, ChevronUp } from "lucide-r
 import AccountPopup from "@/components/popup/account-popup";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermission } from "@/hooks/usePermission";
 
 export default function SidebarMUI() {
     const { user } = useAuth();
+    const { hasPermission } = usePermission();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -51,14 +53,31 @@ export default function SidebarMUI() {
 
     const baseMenus = user?.orgType === "DOANH_NGHIEP" ? menuDataDONGHIEP : menuDataSO;
 
-    const sidebarMenus = baseMenus.map((menu) => {
-        if (!menu.items) return menu;
-        const menuStateFromUrl = searchParams.get(menu.id);
-        return {
-            ...menu,
-            isOpen: menuStateFromUrl === null ? menu.isOpen : menuStateFromUrl === "true",
-        };
-    });
+    const sidebarMenus = baseMenus
+        .map((menu) => {
+            // Lọc các item con dựa trên quyền
+            const allowedItems = menu.items?.filter((item) => {
+                return !item.requiredPermission || hasPermission(item.requiredPermission);
+            });
+
+            return {
+                ...menu,
+                items: allowedItems,
+            };
+        })
+        .filter((menu) => {
+            // Lọc menu cha
+            const hasParentPermission = !menu.requiredPermission || hasPermission(menu.requiredPermission);
+            const hasChildren = !menu.items || menu.items.length > 0;
+            return hasParentPermission && hasChildren;
+        })
+        .map((menu) => {
+            const menuStateFromUrl = searchParams.get(menu.id);
+            return {
+                ...menu,
+                isOpen: menuStateFromUrl === null ? menu.isOpen : menuStateFromUrl === "true",
+            };
+        });
 
     const handleToggleMenu = (menuId: string) => {
         const params = new URLSearchParams(searchParams.toString());

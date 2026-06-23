@@ -13,6 +13,7 @@ export interface User {
     createdAt?: string;
     updatedAt?: string;
     orgType?: string;
+    permissions?: string[];
     account?: Account;
     profileId?: number;
     username?: string;
