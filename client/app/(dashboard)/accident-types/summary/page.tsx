@@ -501,104 +501,120 @@ export default function AccidentSummaryPage() {
 
             {/* Content view container */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
-                <div id="print-section" className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm max-w-[95%] mx-auto space-y-8 text-gray-900">
+                <div id="print-section" className="bg-white p-6 border border-gray-200 max-w-[95%] mx-auto space-y-8 text-gray-900 rounded-md shadow-sm">
+                    {/* Report Header Title */}
+                    <div className="text-center space-y-1 pb-4 border-b border-gray-100">
+                        <h2 className="text-sm font-bold text-gray-900 uppercase">Báo cáo tổng hợp tình hình tai nạn lao động</h2>
+                        {selectedYear && (
+                            <p className="text-xs font-semibold text-gray-500">
+                                Năm {selectedYear} {period ? ` - Kỳ báo cáo: ${period}` : ""}
+                            </p>
+                        )}
+                        {(province || ward) && (
+                            <p className="text-xs font-semibold text-gray-600 no-print">
+                                Khu vực: {ward ? `${ward}, ` : ""}
+                                {province || "Toàn quốc"}
+                            </p>
+                        )}
+                    </div>
+
                     {/* SECTION I */}
                     <div className="space-y-3">
-                        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-l-4 border-blue-600 pl-2">I. Thông tin tổng quan:</h3>
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-                            <table className="w-full text-left border-collapse text-[10px]">
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">I. Thông tin tổng quan:</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse border border-gray-300 text-[10px]">
                                 <thead>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700 border-b border-gray-200">
-                                        <th rowSpan={3} className="border-r border-gray-200 p-2.5 text-left align-middle min-w-[150px]">
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700">
+                                        <th rowSpan={3} className="border border-gray-300 p-2 text-left align-middle w-[22%]">
                                             Loại hình cơ sở
                                         </th>
-                                        <th rowSpan={3} className="border-r border-gray-200 p-2.5 text-center align-middle w-12">
+                                        <th rowSpan={3} className="border border-gray-300 p-2 text-center align-middle w-[6%]">
                                             Mã số
                                         </th>
-                                        <th colSpan={2} className="border-r border-gray-200 p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Cơ sở
                                         </th>
-                                        <th colSpan={3} className="border-r border-gray-200 p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={3} className="border border-gray-300 p-2 text-center align-middle">
                                             Lực lượng lao động
                                         </th>
-                                        <th colSpan={3} className="border-r border-gray-200 p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={3} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số tai nạn lao động
                                         </th>
-                                        <th colSpan={2} className="border-r border-gray-200 p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Tần suất tai nạn lao động
                                         </th>
-                                        <th rowSpan={3} className="p-2.5 text-left align-middle min-w-[80px]">
+                                        <th rowSpan={3} className="border border-gray-300 p-2 text-center align-middle w-[14%]">
                                             Ghi chú
                                         </th>
                                     </tr>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700 border-b border-gray-200">
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Số cơ sở tham gia
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số lao động
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Số LD của cơ sở tham gia báo cáo
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Số lao động nữ
                                         </th>
-                                        <th colSpan={3} className="border-r border-gray-200 p-1.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={3} className="border border-gray-300 p-1.5 text-center align-middle">
                                             Số người bị TNLĐ
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             KTNLĐ
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             KChết
                                         </th>
                                     </tr>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-600">
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số người chết</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số người bị thương nặng</th>
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-600 text-[8.5px]">
+                                        <th className="border border-gray-300 p-1.5 text-center">Tổng số</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số người chết</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số người bị thương nặng</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {/* Grand Total Row */}
                                     {table1GrandTotal && (
-                                        <tr className="bg-blue-50/40 font-bold border-b border-gray-200 text-gray-900">
-                                            <td className="border-r border-gray-200 p-2.5">{table1GrandTotal.name}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center"></td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(table1GrandTotal.totalEstablishments)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(table1GrandTotal.participatingEstablishments)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(table1GrandTotal.totalWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(table1GrandTotal.reportingWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(table1GrandTotal.femaleWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(table1GrandTotal.totalVictims)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(table1GrandTotal.totalDeaths)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(table1GrandTotal.totalSeriouslyInjured)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center text-blue-600">{formatDecimal(table1GrandTotal.accidentFrequency)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center text-red-600">{formatDecimal(table1GrandTotal.deathFrequency)}</td>
-                                            <td className="p-2.5"></td>
+                                        <tr className="font-bold text-gray-900">
+                                            <td className="border border-gray-300 p-2">{table1GrandTotal.name}</td>
+                                            <td className="border border-gray-300 p-2 text-center"></td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.totalEstablishments)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.participatingEstablishments)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.totalWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.reportingWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.femaleWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.totalVictims)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.totalDeaths)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(table1GrandTotal.totalSeriouslyInjured)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatDecimal(table1GrandTotal.accidentFrequency)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatDecimal(table1GrandTotal.deathFrequency)}</td>
+                                            <td className="border border-gray-300 p-2 text-center"></td>
                                         </tr>
                                     )}
 
                                     {/* Sub-rows */}
                                     {table1Rows.map((row, idx) => (
-                                        <tr key={idx} className="border-b border-gray-150 hover:bg-gray-50/50 text-gray-700 transition-colors">
-                                            <td className="border-r border-gray-200 p-2.5 font-medium">{row.name}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center text-gray-400">{row.code}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.totalEstablishments)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.participatingEstablishments)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.totalWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.reportingWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.femaleWorkforce)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(row.totalVictims)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(row.totalDeaths)}</td>
-                                            <td className="border-r border-gray-200 p-1.5 text-center">{formatNumber(row.totalSeriouslyInjured)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center font-medium text-blue-500">{formatDecimal(row.accidentFrequency)}</td>
-                                            <td className="border-r border-gray-200 p-2.5 text-center font-medium text-red-500">{formatDecimal(row.deathFrequency)}</td>
-                                            <td className="p-2.5 text-gray-400 text-[9px]">-</td>
+                                        <tr key={idx} className="text-gray-800">
+                                            <td className="border border-gray-300 p-2 text-left">{row.name}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{row.code}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalEstablishments)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.participatingEstablishments)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.reportingWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.femaleWorkforce)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalVictims)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalDeaths)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalSeriouslyInjured)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatDecimal(row.accidentFrequency)}</td>
+                                            <td className="border border-gray-300 p-2 text-center">{formatDecimal(row.deathFrequency)}</td>
+                                            <td className="border border-gray-300 p-2 text-center"></td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -608,63 +624,63 @@ export default function AccidentSummaryPage() {
 
                     {/* SECTION II */}
                     <div className="space-y-3">
-                        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-l-4 border-blue-600 pl-2">II. Phân loại TNLĐ:</h3>
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-                            <table className="w-full text-left border-collapse text-[10px]">
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">II. Phân loại TNLĐ:</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse border border-gray-300 text-[10px]">
                                 <thead>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700 border-b border-gray-200">
-                                        <th rowSpan={3} className="border-r border-gray-200 p-2.5 text-left align-middle min-w-[200px]">
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700">
+                                        <th rowSpan={3} className="border border-gray-300 p-2 text-left align-middle w-[30%]">
                                             Tên chỉ tiêu thống kê
                                         </th>
-                                        <th rowSpan={3} className="border-r border-gray-200 p-2.5 text-center align-middle w-12">
+                                        <th rowSpan={3} className="border border-gray-300 p-2 text-center align-middle w-[6%]">
                                             Mã số
                                         </th>
-                                        <th colSpan={7} className="border-r border-gray-200 p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={7} className="border border-gray-300 p-2 text-center align-middle">
                                             Phân loại TNLĐ theo mức độ thương tật
                                         </th>
-                                        <th colSpan={6} className="p-2.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={6} className="border border-gray-300 p-2 text-center align-middle">
                                             Theo mức độ thương tật
                                         </th>
                                     </tr>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700 border-b border-gray-200">
-                                        <th colSpan={3} className="border-r border-gray-200 p-1.5 text-center align-middle border-b border-gray-200">
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-700">
+                                        <th colSpan={3} className="border border-gray-300 p-2 text-center align-middle">
                                             Số vụ TNLĐ
                                         </th>
-                                        <th colSpan={4} className="border-r border-gray-200 p-1.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={4} className="border border-gray-300 p-2 text-center align-middle">
                                             Số người bị nạn (Người)
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle min-w-[60px]">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số ngày nghỉ vì TNLĐ
                                         </th>
-                                        <th rowSpan={2} className="border-r border-gray-200 p-2 text-center align-middle min-w-[70px]">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số tiền
                                         </th>
-                                        <th colSpan={3} className="border-r border-gray-200 p-1.5 text-center align-middle border-b border-gray-200">
+                                        <th colSpan={3} className="border border-gray-300 p-2 text-center align-middle">
                                             Tổng số ngày nghỉ vì TNLĐ
                                         </th>
-                                        <th rowSpan={2} className="p-2 text-center align-middle min-w-[85px]">
+                                        <th rowSpan={2} className="border border-gray-300 p-2 text-center align-middle">
                                             Thiệt hại tài sản (1.000 đ)
                                         </th>
                                     </tr>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-600">
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số vụ có người chết</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số vụ có từ 2 người bị nạn trở lên</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số LD nữ</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số người chết</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Số người bị thương nặng</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Y Tế</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Trả lương theo thời gian điều trị</th>
-                                        <th className="border-r border-gray-200 p-1.5 text-center">Bồi thường/ Trợ cấp</th>
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-650 text-[8.5px]">
+                                        <th className="border border-gray-300 p-1.5 text-center">Tổng số</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số vụ có người chết</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số vụ có từ 2 người bị nạn trở lên</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Tổng số</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số LD nữ</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số người chết</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Số người bị thương nặng</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Y Tế</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Trả lương theo thời gian điều trị</th>
+                                        <th className="border border-gray-300 p-1.5 text-center">Bồi thường/ Trợ cấp</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {table2Rows.map((row, idx) => {
                                         if (row.isHeader) {
                                             return (
-                                                <tr key={idx} className="bg-gray-100/80 font-bold border-b border-gray-200 text-gray-800">
-                                                    <td className="border-r border-gray-200 p-2 pl-4" colSpan={15}>
+                                                <tr key={idx} className="bg-gray-50/70 font-bold text-gray-800">
+                                                    <td className="border border-gray-300 p-2" colSpan={15}>
                                                         {row.name}
                                                     </td>
                                                 </tr>
@@ -674,25 +690,22 @@ export default function AccidentSummaryPage() {
                                         const isGrandTotal = idx === 0;
 
                                         return (
-                                            <tr
-                                                key={idx}
-                                                className={`border-b border-gray-150 transition-colors ${isGrandTotal ? "bg-blue-50/40 font-bold text-gray-900 border-b-2 border-gray-300 text-[10.5px]" : "hover:bg-gray-50/50 text-gray-700"}`}
-                                            >
-                                                <td className={`border-r border-gray-200 p-2.5 ${isGrandTotal ? "" : "pl-6 font-medium"}`}>{row.name}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center text-gray-400">{row.code}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.cases)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center text-red-600">{formatNumber(row.deathCases)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.twoVictimsCases)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center font-semibold">{formatNumber(row.victims)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.femaleVictims)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center text-red-700 font-semibold">{formatNumber(row.deaths)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center text-orange-700 font-semibold">{formatNumber(row.serious)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.sickDays)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center font-bold text-blue-700">{formatNumber(row.totalCost)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.medicalCost)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.salaryCost)}</td>
-                                                <td className="border-r border-gray-200 p-2.5 text-center">{formatNumber(row.compensationCost)}</td>
-                                                <td className="p-2.5 text-center">{formatNumber(row.propertyDamage)}</td>
+                                            <tr key={idx} className={`text-gray-850 ${isGrandTotal ? "bg-gray-100 font-bold text-gray-900" : "text-gray-800"}`}>
+                                                <td className={`border border-gray-300 p-2 ${isGrandTotal ? "text-left" : "text-left pl-4"}`}>{row.name}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{row.code}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.cases)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.deathCases)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.twoVictimsCases)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.victims)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.femaleVictims)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.deaths)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.serious)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.sickDays)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.totalCost)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.medicalCost)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.salaryCost)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.compensationCost)}</td>
+                                                <td className="border border-gray-300 p-2 text-center">{formatNumber(row.propertyDamage)}</td>
                                             </tr>
                                         );
                                     })}
