@@ -28,15 +28,16 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
     const router = useRouter();
     const pathname = usePathname();
 
-    const checkPermissionForPath = useCallback((path: string): boolean => {
-        const matchingRoute = Object.keys(ROUTE_PERMISSIONS).find(
-            (route) => path === route || path.startsWith(route + "/")
-        );
-        if (!matchingRoute) return true;
-        
-        const requiredPerm = ROUTE_PERMISSIONS[matchingRoute];
-        return hasPermission(requiredPerm);
-    }, [hasPermission]);
+    const checkPermissionForPath = useCallback(
+        (path: string): boolean => {
+            const matchingRoute = Object.keys(ROUTE_PERMISSIONS).find((route) => path === route || path.startsWith(route + "/"));
+            if (!matchingRoute) return true;
+
+            const requiredPerm = ROUTE_PERMISSIONS[matchingRoute];
+            return hasPermission(requiredPerm);
+        },
+        [hasPermission],
+    );
 
     const isAuthorized = (() => {
         if (loading) return false;
@@ -50,13 +51,9 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
         const orgType = user.orgType;
         const DONGHIEP_PATHS = ["/company-info", "/company-accidents"];
         if (orgType === "DOANH_NGHIEP") {
-            return DONGHIEP_PATHS.some(
-                (path) => pathname === path || pathname.startsWith(path + "/")
-            );
+            return DONGHIEP_PATHS.some((path) => pathname === path || pathname.startsWith(path + "/"));
         } else {
-            const isDongHiepPath = DONGHIEP_PATHS.some(
-                (path) => pathname === path || pathname.startsWith(path + "/")
-            );
+            const isDongHiepPath = DONGHIEP_PATHS.some((path) => pathname === path || pathname.startsWith(path + "/"));
             return !isDongHiepPath;
         }
     })();
@@ -85,18 +82,14 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
         const orgType = user.orgType;
         const DONGHIEP_PATHS = ["/company-info", "/company-accidents"];
         if (orgType === "DOANH_NGHIEP") {
-            const allowed = DONGHIEP_PATHS.some(
-                (path) => pathname === path || pathname.startsWith(path + "/")
-            );
+            const allowed = DONGHIEP_PATHS.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
             if (!allowed) {
                 toast.error("Bạn không có quyền truy cập trang này.");
                 router.replace("/company-info");
             }
         } else {
-            const isDongHiepPath = DONGHIEP_PATHS.some(
-                (path) => pathname === path || pathname.startsWith(path + "/")
-            );
+            const isDongHiepPath = DONGHIEP_PATHS.some((path) => pathname === path || pathname.startsWith(path + "/"));
 
             if (isDongHiepPath) {
                 toast.error("Bạn không có quyền truy cập trang này.");
