@@ -203,8 +203,8 @@ export class UserController {
     @ApiParam({ name: 'id', example: 1, description: 'ID người dùng' })
     @ApiResponse({ status: 200, description: 'Chi tiết người dùng' })
     @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng' })
-    getDetailUserById(@Param('id') id: string) {
-        return this.userService.getUserDetailById(Number(id));
+    getDetailUserById(@Param('id', ParseIntPipe) id: number) {
+        return this.userService.getUserDetailById(id);
     }
 
     // Cập nhật thông tin người dùng
