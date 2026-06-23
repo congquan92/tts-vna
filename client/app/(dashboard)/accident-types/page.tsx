@@ -8,14 +8,15 @@ import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
-import ReportDetailView from "./_components/ReportDetailView";
 import ReportListTable from "./_components/ReportListTable";
 import ReportFilterBar, { Province } from "./_components/ReportFilterBar";
 
 export default function AccidentTypesPage() {
     const { user } = useAuth();
+    const router = useRouter();
 
     // List state
     const [reports, setReports] = useState<Report[]>([]);
@@ -38,11 +39,6 @@ export default function AccidentTypesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [totalReports, setTotalReports] = useState(0);
-
-    // Summary report state
-    const [viewingSummaryReport, setViewingSummaryReport] = useState<Report | null>(null);
-
-
 
     // Fetch address list
     useEffect(() => {
@@ -201,154 +197,15 @@ export default function AccidentTypesPage() {
         fetchReports();
     };
 
-    const handleViewSummaryReport = async () => {
-        setLoading(true);
-        try {
-            const provParam = selectedProvince && selectedProvince !== "Tất cả" ? selectedProvince : undefined;
-            const wardParam = selectedWard && selectedWard !== "Tất cả" ? selectedWard : undefined;
+    const handleViewSummaryReport = () => {
+        const params = new URLSearchParams();
+        if (selectedYear) params.append("year", selectedYear.toString());
+        if (selectedProvince && selectedProvince !== "Tất cả") params.append("province", selectedProvince);
+        if (selectedWard && selectedWard !== "Tất cả") params.append("ward", selectedWard);
+        if (searchPeriod) params.append("period", searchPeriod);
 
-            const res = await ReportApi.getAll(
-                1,
-                99999,
-                selectedYear || undefined,
-                "đã tiếp nhận",
-                undefined,
-                undefined,
-                provParam,
-                wardParam
-            );
-
-            let list = res.data || [];
-            if (searchPeriod) {
-                list = list.filter((r) => r.reportPeriod === searchPeriod);
-            }
-
-            if (list.length === 0) {
-                toast.info("Không có báo cáo nào ở trạng thái 'Đã tiếp nhận' để tổng hợp.");
-                return;
-            }
-
-            const aggregated: Report = {
-                id: 0,
-                status: "đã tiếp nhận",
-                year: selectedYear || undefined,
-                reportPeriod: searchPeriod || "Tổng hợp",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                companyInfo: {
-                    businessName: "BÁO CÁO TỔNG HỢP CÁC DOANH NGHIỆP",
-                    totalNumberOfEmployees: 0,
-                    totalNumberOfFemaleEmployees: 0,
-                    totalSalary: 0,
-                },
-                laborAccidentReport: {
-                    totalAccidentCases: 0,
-                    totalCasesWithDeath: 0,
-                    totalCasesWithTwoOrMoreVictims: 0,
-                    totalVictims: 0,
-                    totalFemaleVictims: 0,
-                    totalDeaths: 0,
-                    totalSeriouslyInjured: 0,
-                    unmanagedVictims: 0,
-                    unmanagedFemaleVictims: 0,
-                    unmanagedDeaths: 0,
-                    unmanagedSeriouslyInjured: 0,
-                    medicalCost: 0,
-                    salaryDuringTreatment: 0,
-                    compensationCost: 0,
-                    totalCost: 0,
-                    totalSickDays: 0,
-                    propertyDamage: 0,
-                    accidentDetails: [],
-                },
-                laborAccidentSupportReport: {
-                    totalAccidentCases: 0,
-                    totalCasesWithDeath: 0,
-                    totalCasesWithTwoOrMoreVictims: 0,
-                    totalVictims: 0,
-                    totalFemaleVictims: 0,
-                    totalDeaths: 0,
-                    totalSeriouslyInjured: 0,
-                    unmanagedVictims: 0,
-                    unmanagedFemaleVictims: 0,
-                    unmanagedDeaths: 0,
-                    unmanagedSeriouslyInjured: 0,
-                    medicalCost: 0,
-                    salaryDuringTreatment: 0,
-                    compensationCost: 0,
-                    totalCost: 0,
-                    totalSickDays: 0,
-                    propertyDamage: 0,
-                }
-            };
-
-            list.forEach((r) => {
-                if (aggregated.companyInfo) {
-                    aggregated.companyInfo.totalNumberOfEmployees = (aggregated.companyInfo.totalNumberOfEmployees || 0) + (r.companyInfo?.totalNumberOfEmployees || 0);
-                    aggregated.companyInfo.totalNumberOfFemaleEmployees = (aggregated.companyInfo.totalNumberOfFemaleEmployees || 0) + (r.companyInfo?.totalNumberOfFemaleEmployees || 0);
-                    aggregated.companyInfo.totalSalary = (aggregated.companyInfo.totalSalary || 0) + Number(r.companyInfo?.totalSalary || 0);
-                }
-
-                if (aggregated.laborAccidentReport && r.laborAccidentReport) {
-                    const a = aggregated.laborAccidentReport;
-                    const b = r.laborAccidentReport;
-                    a.totalAccidentCases = (a.totalAccidentCases || 0) + (b.totalAccidentCases || 0);
-                    a.totalCasesWithDeath = (a.totalCasesWithDeath || 0) + (b.totalCasesWithDeath || 0);
-                    a.totalCasesWithTwoOrMoreVictims = (a.totalCasesWithTwoOrMoreVictims || 0) + (b.totalCasesWithTwoOrMoreVictims || 0);
-                    a.totalVictims = (a.totalVictims || 0) + (b.totalVictims || 0);
-                    a.totalFemaleVictims = (a.totalFemaleVictims || 0) + (b.totalFemaleVictims || 0);
-                    a.totalDeaths = (a.totalDeaths || 0) + (b.totalDeaths || 0);
-                    a.totalSeriouslyInjured = (a.totalSeriouslyInjured || 0) + (b.totalSeriouslyInjured || 0);
-                    a.unmanagedVictims = (a.unmanagedVictims || 0) + (b.unmanagedVictims || 0);
-                    a.unmanagedFemaleVictims = (a.unmanagedFemaleVictims || 0) + (b.unmanagedFemaleVictims || 0);
-                    a.unmanagedDeaths = (a.unmanagedDeaths || 0) + (b.unmanagedDeaths || 0);
-                    a.unmanagedSeriouslyInjured = (a.unmanagedSeriouslyInjured || 0) + (b.unmanagedSeriouslyInjured || 0);
-                    a.medicalCost = (a.medicalCost || 0) + (b.medicalCost || 0);
-                    a.salaryDuringTreatment = (a.salaryDuringTreatment || 0) + (b.salaryDuringTreatment || 0);
-                    a.compensationCost = (a.compensationCost || 0) + (b.compensationCost || 0);
-                    a.totalCost = (a.totalCost || 0) + (b.totalCost || 0);
-                    a.totalSickDays = (a.totalSickDays || 0) + (b.totalSickDays || 0);
-                    a.propertyDamage = (a.propertyDamage || 0) + (b.propertyDamage || 0);
-                    if (b.accidentDetails) {
-                        a.accidentDetails = [...(a.accidentDetails || []), ...b.accidentDetails];
-                    }
-                }
-
-                if (aggregated.laborAccidentSupportReport && r.laborAccidentSupportReport) {
-                    const a = aggregated.laborAccidentSupportReport;
-                    const b = r.laborAccidentSupportReport;
-                    a.totalAccidentCases = (a.totalAccidentCases || 0) + (b.totalAccidentCases || 0);
-                    a.totalCasesWithDeath = (a.totalCasesWithDeath || 0) + (b.totalCasesWithDeath || 0);
-                    a.totalCasesWithTwoOrMoreVictims = (a.totalCasesWithTwoOrMoreVictims || 0) + (b.totalCasesWithTwoOrMoreVictims || 0);
-                    a.totalVictims = (a.totalVictims || 0) + (b.totalVictims || 0);
-                    a.totalFemaleVictims = (a.totalFemaleVictims || 0) + (b.totalFemaleVictims || 0);
-                    a.totalDeaths = (a.totalDeaths || 0) + (b.totalDeaths || 0);
-                    a.totalSeriouslyInjured = (a.totalSeriouslyInjured || 0) + (b.totalSeriouslyInjured || 0);
-                    a.unmanagedVictims = (a.unmanagedVictims || 0) + (b.unmanagedVictims || 0);
-                    a.unmanagedFemaleVictims = (a.unmanagedFemaleVictims || 0) + (b.unmanagedFemaleVictims || 0);
-                    a.unmanagedDeaths = (a.unmanagedDeaths || 0) + (b.unmanagedDeaths || 0);
-                    a.unmanagedSeriouslyInjured = (a.unmanagedSeriouslyInjured || 0) + (b.unmanagedSeriouslyInjured || 0);
-                    a.medicalCost = (a.medicalCost || 0) + (b.medicalCost || 0);
-                    a.salaryDuringTreatment = (a.salaryDuringTreatment || 0) + (b.salaryDuringTreatment || 0);
-                    a.compensationCost = (a.compensationCost || 0) + (b.compensationCost || 0);
-                    a.totalCost = (a.totalCost || 0) + (b.totalCost || 0);
-                    a.totalSickDays = (a.totalSickDays || 0) + (b.totalSickDays || 0);
-                    a.propertyDamage = (a.propertyDamage || 0) + (b.propertyDamage || 0);
-                }
-            });
-
-            setViewingSummaryReport(aggregated);
-        } catch (e) {
-            console.error("Failed to compile summary report", e);
-            toast.error("Không thể tải dữ liệu để tổng hợp báo cáo.");
-        } finally {
-            setLoading(false);
-        }
+        router.push(`/accident-types/summary?${params.toString()}`);
     };
-
-    if (viewingSummaryReport) {
-        return <ReportDetailView report={viewingSummaryReport} onBack={() => setViewingSummaryReport(null)} />;
-    }
 
     return (
         <main className="h-screen flex flex-col py-2">
