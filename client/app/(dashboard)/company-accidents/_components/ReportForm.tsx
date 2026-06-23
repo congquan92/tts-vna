@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronUp, Trash2, Plus, Save, Send, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
 import type { Report, CreateReportPayload, UpdateReportPayload, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail } from "@/types/report";
 import { CAUSES, FACTORS, OCCUPATIONS, initialLaborReport, initialSupportReport } from "./constants";
 import { ReportApi } from "@/api/report";
+import { ReportFileApi } from "@/api/reportFile";
+import type { ReportFile } from "@/types/reportFile";
 import { toast } from "sonner";
 import axios from "axios";
 import CancelPopup from "@/components/popup/cancel-popup";
+import SaveReportPopup from "@/components/popup/save-report-popup";
 import Button from "@/components/ui/Button";
 
 // Helpers for number formatting with dot separators (e.g. 10.000.000)
@@ -24,7 +27,7 @@ const parseNumber = (val: string | number | undefined | null): number => {
     if (typeof val === "number") return val;
     let clean = val.trim();
     if (!clean) return 0;
-    
+
     if (clean.includes(".") && clean.includes(",")) {
         clean = clean.replace(/\./g, "").replace(/,/g, ".");
     } else if (clean.includes(",")) {
@@ -58,14 +61,16 @@ interface FormInputProps {
 
 const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "text", disabled = false, required = false, suffix }) => {
     const [localValue, setLocalValue] = useState(String(value ?? ""));
+    const [prevValue, setPrevValue] = useState(value);
 
-    useEffect(() => {
+    if (value !== prevValue) {
+        setPrevValue(value);
         if (!disabled) {
             if (parseNumber(localValue) !== parseNumber(String(value ?? ""))) {
                 setLocalValue(String(value ?? ""));
             }
         }
-    }, [value, disabled]);
+    }
 
     const handleChange = (val: string) => {
         setLocalValue(val);
@@ -144,9 +149,7 @@ type ReportSection = "Thông tin doanh nghiệp" | "1. Tai nạn lao động" | 
 
 export default function ReportForm({ mode, report, businessProfile, existingReports, onSaveSuccess, onClose, registerTriggers }: ReportFormProps) {
     const searchParams = useSearchParams();
-    const [selectedSection, setSelectedSection] = useState<ReportSection>(
-        mode === "view" ? "Xem tổng quan báo cáo tai nạn lao động" : "Thông tin doanh nghiệp"
-    );
+    const [selectedSection, setSelectedSection] = useState<ReportSection>(mode === "view" ? "Xem tổng quan báo cáo tai nạn lao động" : "Thông tin doanh nghiệp");
     const [activeSubTab, setActiveSubTab] = useState<"summary" | "details">("summary");
 
     // Form fields state
@@ -164,6 +167,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
 
     // Stamped PDF state
     const [stampedFile, setStampedFile] = useState<File | null>(null);
+    const [existingFile, setExistingFile] = useState<ReportFile | null>(null);
 
     // Dialog flags
     const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -185,6 +189,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 setSelectedSection("Thông tin doanh nghiệp");
                 setActiveSubTab("summary");
                 setStampedFile(null);
+                setExistingFile(null);
             } else if (report) {
                 setFormYear(report.year || new Date().getFullYear());
                 setFormPeriod(report.reportPeriod || "6 tháng");
@@ -205,6 +210,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 setSelectedSection(mode === "view" ? "Xem tổng quan báo cáo tai nạn lao động" : "Thông tin doanh nghiệp");
                 setActiveSubTab("summary");
                 setStampedFile(null);
+                setExistingFile(report.files && report.files.length > 0 ? report.files[0] : null);
             }
         });
     }, [mode, report]);
@@ -294,8 +300,64 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
         }
     }, [laborReport.accidentDetails, calculateTotalsFromDetails]);
 
-    // Validation
-    const validateForm = (): boolean => {
+    // Validation helpers
+    const validateSummary = useCallback((data: LaborAccidentReport | LaborAccidentSupportReport | AccidentDetail, prefixLabel: string) => {
+        const tCases = Number(data.totalAccidentCases || 0);
+        const tDeaths = Number(data.totalCasesWithDeath || 0);
+        const tTwoVictims = Number(data.totalCasesWithTwoOrMoreVictims || 0);
+
+        if (tDeaths > tCases) {
+            toast.error(`${prefixLabel}: Số vụ có người chết (${tDeaths}) không được lớn hơn tổng số vụ (${tCases})`);
+            return false;
+        }
+        if (tTwoVictims > tCases) {
+            toast.error(`${prefixLabel}: Số vụ có từ 2 người bị nạn trở lên (${tTwoVictims}) không được lớn hơn tổng số vụ (${tCases})`);
+            return false;
+        }
+
+        const tVictims = Number(data.totalVictims || 0);
+        const tFemale = Number(data.totalFemaleVictims || 0);
+        const tDead = Number(data.totalDeaths || 0);
+        const tSerious = Number(data.totalSeriouslyInjured || 0);
+
+        if (tFemale > tVictims) {
+            toast.error(`${prefixLabel}: Số lao động nữ bị nạn (${tFemale}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+            return false;
+        }
+        if (tDead > tVictims) {
+            toast.error(`${prefixLabel}: Số người chết (${tDead}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+            return false;
+        }
+        if (tSerious > tVictims) {
+            toast.error(`${prefixLabel}: Số người bị thương nặng (${tSerious}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
+            return false;
+        }
+        const unmanagedV = Number(data.unmanagedVictims || 0);
+        const unmanagedF = Number(data.unmanagedFemaleVictims || 0);
+        const unmanagedD = Number(data.unmanagedDeaths || 0);
+        const unmanagedS = Number(data.unmanagedSeriouslyInjured || 0);
+
+        if (tVictims < unmanagedV) {
+            toast.error(`${prefixLabel}: Tổng số người bị nạn phải lớn hơn hoặc bằng số người bị nạn không quản lý`);
+            return false;
+        }
+        if (tFemale < unmanagedF) {
+            toast.error(`${prefixLabel}: Số lao động nữ bị nạn phải lớn hơn hoặc bằng lao động nữ bị nạn không quản lý`);
+            return false;
+        }
+        if (tDead < unmanagedD) {
+            toast.error(`${prefixLabel}: Tổng số người chết phải lớn hơn hoặc bằng số người chết không quản lý`);
+            return false;
+        }
+        if (tSerious < unmanagedS) {
+            toast.error(`${prefixLabel}: Số người bị thương nặng phải lớn hơn hoặc bằng số người bị thương nặng không quản lý`);
+            return false;
+        }
+
+        return true;
+    }, []);
+
+    const validateBusinessInfo = useCallback((): boolean => {
         if (!totalEmployees || totalEmployees < 0) {
             toast.error("Vui lòng điền tổng số lao động hợp lệ");
             return false;
@@ -309,64 +371,18 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             return false;
         }
 
-        const validateSummary = (data: LaborAccidentReport | LaborAccidentSupportReport, prefixLabel: string) => {
-            const tCases = Number(data.totalAccidentCases || 0);
-            const tDeaths = Number(data.totalCasesWithDeath || 0);
-            const tTwoVictims = Number(data.totalCasesWithTwoOrMoreVictims || 0);
+        if (mode === "create") {
+            const isDuplicate = existingReports.some((r) => r.year === formYear && r.reportPeriod === formPeriod);
+            if (isDuplicate) {
+                toast.error(`Doanh nghiệp đã khai báo báo cáo cho Kỳ ${formPeriod} năm ${formYear} rồi.`);
+                return false;
+            }
+        }
+        return true;
+    }, [totalEmployees, totalFemaleEmployees, totalSalary, mode, existingReports, formYear, formPeriod]);
 
-            if (tDeaths > tCases) {
-                toast.error(`${prefixLabel}: Số vụ có người chết (${tDeaths}) không được lớn hơn tổng số vụ (${tCases})`);
-                return false;
-            }
-            if (tTwoVictims > tCases) {
-                toast.error(`${prefixLabel}: Số vụ có từ 2 người bị nạn trở lên (${tTwoVictims}) không được lớn hơn tổng số vụ (${tCases})`);
-                return false;
-            }
-
-            const tVictims = Number(data.totalVictims || 0);
-            const tFemale = Number(data.totalFemaleVictims || 0);
-            const tDead = Number(data.totalDeaths || 0);
-            const tSerious = Number(data.totalSeriouslyInjured || 0);
-
-            if (tFemale > tVictims) {
-                toast.error(`${prefixLabel}: Số lao động nữ bị nạn (${tFemale}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
-                return false;
-            }
-            if (tDead > tVictims) {
-                toast.error(`${prefixLabel}: Số người chết (${tDead}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
-                return false;
-            }
-            if (tSerious > tVictims) {
-                toast.error(`${prefixLabel}: Số người bị thương nặng (${tSerious}) không được lớn hơn tổng số người bị nạn (${tVictims})`);
-                return false;
-            }
-            const unmanagedV = Number(data.unmanagedVictims || 0);
-            const unmanagedF = Number(data.unmanagedFemaleVictims || 0);
-            const unmanagedD = Number(data.unmanagedDeaths || 0);
-            const unmanagedS = Number(data.unmanagedSeriouslyInjured || 0);
-
-            if (tVictims < unmanagedV) {
-                toast.error(`${prefixLabel}: Tổng số người bị nạn phải lớn hơn hoặc bằng số người bị nạn không quản lý`);
-                return false;
-            }
-            if (tFemale < unmanagedF) {
-                toast.error(`${prefixLabel}: Số lao động nữ bị nạn phải lớn hơn hoặc bằng lao động nữ bị nạn không quản lý`);
-                return false;
-            }
-            if (tDead < unmanagedD) {
-                toast.error(`${prefixLabel}: Tổng số người chết phải lớn hơn hoặc bằng số người chết không quản lý`);
-                return false;
-            }
-            if (tSerious < unmanagedS) {
-                toast.error(`${prefixLabel}: Số người bị thương nặng phải lớn hơn hoặc bằng số người bị thương nặng không quản lý`);
-                return false;
-            }
-
-            return true;
-        };
-
+    const validateLaborReport = useCallback((): boolean => {
         if (!validateSummary(laborReport, "Báo cáo có HĐLĐ")) return false;
-        if (!validateSummary(supportReport, "Báo cáo không HĐLĐ")) return false;
 
         // Check details for occupations
         if (laborReport.accidentDetails && laborReport.accidentDetails.length > 0) {
@@ -379,20 +395,53 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 if (!validateSummary(detail, `Vụ tai nạn số ${i + 1}`)) return false;
             }
         }
-
-        if (mode === "create") {
-            const isDuplicate = existingReports.some((r) => r.year === formYear && r.reportPeriod === formPeriod);
-            if (isDuplicate) {
-                toast.error(`Doanh nghiệp đã khai báo báo cáo cho Kỳ ${formPeriod} năm ${formYear} rồi.`);
-                return false;
-            }
-        }
-
         return true;
-    };
+    }, [laborReport, validateSummary]);
+
+    const validateSupportReport = useCallback((): boolean => {
+        if (!validateSummary(supportReport, "Báo cáo không HĐLĐ")) return false;
+        return true;
+    }, [supportReport, validateSummary]);
+
+    // Validation
+    const validateForm = useCallback((): boolean => {
+        if (!validateBusinessInfo()) return false;
+        if (!validateLaborReport()) return false;
+        if (!validateSupportReport()) return false;
+        return true;
+    }, [validateBusinessInfo, validateLaborReport, validateSupportReport]);
+
+    const handleSectionChange = useCallback(
+        (newSection: ReportSection) => {
+            const sections: ReportSection[] = ["Thông tin doanh nghiệp", "1. Tai nạn lao động", "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ", "Xem tổng quan báo cáo tai nạn lao động"];
+
+            const currentIndex = sections.indexOf(selectedSection);
+            const targetIndex = sections.indexOf(newSection);
+
+            if (mode !== "view" && targetIndex > currentIndex) {
+                for (let i = currentIndex; i < targetIndex; i++) {
+                    if (sections[i] === "Thông tin doanh nghiệp") {
+                        if (!validateBusinessInfo()) return;
+                    } else if (sections[i] === "1. Tai nạn lao động") {
+                        if (!validateLaborReport()) return;
+                    } else if (sections[i] === "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ") {
+                        if (!validateSupportReport()) return;
+                    }
+                }
+            }
+
+            setSelectedSection(newSection);
+        },
+        [mode, selectedSection, validateBusinessInfo, validateLaborReport, validateSupportReport],
+    );
 
     const handleSave = async (statusToSave: "đang báo cáo" | "đã tiếp nhận") => {
         if (!validateForm()) return;
+
+        if (statusToSave === "đã tiếp nhận" && !stampedFile && !existingFile) {
+            toast.error("Vui lòng đính kèm file báo cáo có dấu mộc công ty trước khi gửi báo cáo!");
+            return;
+        }
 
         const payload: CreateReportPayload = {
             year: formYear,
@@ -467,10 +516,24 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
 
         try {
             if (mode === "create") {
-                await ReportApi.create(payload);
+                const response = (await ReportApi.create(payload)) as unknown as { data?: { id?: number }; id?: number };
+                const createdReportId = response?.data?.id ?? response?.id;
+                if (stampedFile && createdReportId) {
+                    await ReportFileApi.upload(createdReportId, stampedFile, "attachment");
+                }
                 toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Lưu nháp thành công!");
             } else if (mode === "edit" && report !== null) {
                 await ReportApi.update(report.id, payload as UpdateReportPayload);
+                if (stampedFile) {
+                    if (existingFile) {
+                        try {
+                            await ReportFileApi.deleteFile(existingFile.id);
+                        } catch (err) {
+                            console.error("Failed to delete old report file:", err);
+                        }
+                    }
+                    await ReportFileApi.upload(report.id, stampedFile, "attachment");
+                }
                 toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Cập nhật nháp thành công!");
             }
             onSaveSuccess();
@@ -489,15 +552,15 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
     // Header navigation triggers
     const handleContinue = useCallback(() => {
         if (selectedSection === "Thông tin doanh nghiệp") {
-            setSelectedSection("1. Tai nạn lao động");
+            handleSectionChange("1. Tai nạn lao động");
         } else if (selectedSection === "1. Tai nạn lao động") {
-            setSelectedSection("2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ");
+            handleSectionChange("2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ");
         } else if (selectedSection === "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ") {
-            setSelectedSection("Xem tổng quan báo cáo tai nạn lao động");
+            handleSectionChange("Xem tổng quan báo cáo tai nạn lao động");
         } else {
             toast.info("Đã đến mục báo cáo cuối cùng");
         }
-    }, [selectedSection]);
+    }, [selectedSection, handleSectionChange]);
 
     const handleCancelTrigger = useCallback(() => {
         if (mode === "view") {
@@ -775,17 +838,15 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             `}</style>
 
             {/* Form Section Dropdown Selector */}
-            {mode !== "view" && (
-                <div className="mb-6 max-w-xl print:hidden">
-                    <FormSelect
-                        label="Chọn mục báo cáo"
-                        value={selectedSection}
-                        onChange={(val) => setSelectedSection(val as ReportSection)}
-                        options={["Thông tin doanh nghiệp", "1. Tai nạn lao động", "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ", "Xem tổng quan báo cáo tai nạn lao động"]}
-                        disabled={false}
-                    />
-                </div>
-            )}
+            <div className="mb-6 max-w-xl print:hidden">
+                <FormSelect
+                    label="Chọn mục báo cáo"
+                    value={selectedSection}
+                    onChange={(val) => handleSectionChange(val as ReportSection)}
+                    options={["Thông tin doanh nghiệp", "1. Tai nạn lao động", "2. Tai nạn lao động được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ", "Xem tổng quan báo cáo tai nạn lao động"]}
+                    disabled={false}
+                />
+            </div>
 
             {/* Form Scrollable Body */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 min-h-0">
@@ -805,8 +866,8 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                            <FormInput label="Tổng số lao động của cơ sở" value={totalEmployees || ""} onChange={(val) => setTotalEmployees(Math.max(0, Number(val)))} type="number" required={true} disabled={mode === "view"} />
-                            <FormInput label="Tổng số lao động nữ" value={totalFemaleEmployees || ""} onChange={(val) => setTotalFemaleEmployees(Math.max(0, Number(val)))} type="number" required={true} disabled={mode === "view"} />
+                            <FormInput label="Tổng số lao động của cơ sở" value={totalEmployees ?? 0} onChange={(val) => setTotalEmployees(Math.max(0, Number(val)))} type="number" required={true} disabled={mode === "view"} />
+                            <FormInput label="Tổng số lao động nữ" value={totalFemaleEmployees ?? 0} onChange={(val) => setTotalFemaleEmployees(Math.max(0, Number(val)))} type="number" required={true} disabled={mode === "view"} />
                             <FormInput label="Tổng quỹ lương" value={formatNumber(totalSalary)} onChange={(val) => setTotalSalary(parseNumber(val))} required={true} disabled={mode === "view"} suffix="(1.000đ)" />
                         </div>
                     </div>
@@ -849,7 +910,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormInput
                                             label="Tổng số vụ"
-                                            value={laborReport.totalAccidentCases || ""}
+                                            value={laborReport.totalAccidentCases ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalAccidentCases: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -857,7 +918,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         />
                                         <FormInput
                                             label="Tổng số vụ có người chết"
-                                            value={laborReport.totalCasesWithDeath || ""}
+                                            value={laborReport.totalCasesWithDeath ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalCasesWithDeath: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -865,7 +926,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         />
                                         <FormInput
                                             label="Tổng số vụ có 2 người bị nạn trở lên"
-                                            value={laborReport.totalCasesWithTwoOrMoreVictims || ""}
+                                            value={laborReport.totalCasesWithTwoOrMoreVictims ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalCasesWithTwoOrMoreVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -876,7 +937,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-2">
                                         <FormInput
                                             label="Tổng số người bị nạn"
-                                            value={laborReport.totalVictims || ""}
+                                            value={laborReport.totalVictims ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -884,7 +945,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         />
                                         <FormInput
                                             label="Tổng số lao động nữ bị nạn"
-                                            value={laborReport.totalFemaleVictims || ""}
+                                            value={laborReport.totalFemaleVictims ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalFemaleVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -892,7 +953,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         />
                                         <FormInput
                                             label="Tổng số người bị chết"
-                                            value={laborReport.totalDeaths || ""}
+                                            value={laborReport.totalDeaths ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalDeaths: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -900,7 +961,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         />
                                         <FormInput
                                             label="Tổng số người bị thương nặng"
-                                            value={laborReport.totalSeriouslyInjured || ""}
+                                            value={laborReport.totalSeriouslyInjured ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalSeriouslyInjured: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -977,7 +1038,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                                         <FormInput
                                             label="Tổng số ngày nghỉ vì TNLĐ"
-                                            value={laborReport.totalSickDays || ""}
+                                            value={laborReport.totalSickDays ?? 0}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalSickDays: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
@@ -1055,7 +1116,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                             <FormInput
                                                                 label="Tổng số vụ"
-                                                                value={detail.totalAccidentCases || ""}
+                                                                value={detail.totalAccidentCases ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalAccidentCases", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1063,7 +1124,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                             />
                                                             <FormInput
                                                                 label="Tổng số vụ có người chết"
-                                                                value={detail.totalCasesWithDeath || ""}
+                                                                value={detail.totalCasesWithDeath ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalCasesWithDeath", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1071,7 +1132,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                             />
                                                             <FormInput
                                                                 label="Tổng số vụ có 2 người bị nạn trở lên"
-                                                                value={detail.totalCasesWithTwoOrMoreVictims || ""}
+                                                                value={detail.totalCasesWithTwoOrMoreVictims ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalCasesWithTwoOrMoreVictims", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1082,7 +1143,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-2">
                                                             <FormInput
                                                                 label="Tổng số người bị nạn"
-                                                                value={detail.totalVictims || ""}
+                                                                value={detail.totalVictims ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalVictims", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1090,7 +1151,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                             />
                                                             <FormInput
                                                                 label="Tổng số lao động nữ bị nạn"
-                                                                value={detail.totalFemaleVictims || ""}
+                                                                value={detail.totalFemaleVictims ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalFemaleVictims", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1098,7 +1159,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                             />
                                                             <FormInput
                                                                 label="Tổng số người bị chết"
-                                                                value={detail.totalDeaths || ""}
+                                                                value={detail.totalDeaths ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalDeaths", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1106,7 +1167,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                             />
                                                             <FormInput
                                                                 label="Tổng số người bị thương nặng"
-                                                                value={detail.totalSeriouslyInjured || ""}
+                                                                value={detail.totalSeriouslyInjured ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalSeriouslyInjured", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1190,7 +1251,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                                                             <FormInput
                                                                 label="Tổng số ngày nghỉ vì TNLĐ"
-                                                                value={detail.totalSickDays || ""}
+                                                                value={detail.totalSickDays ?? 0}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalSickDays", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
@@ -1216,12 +1277,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 )}
 
                                 {mode !== "view" && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleAddDetail}
-                                        className="w-full py-2.5 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50/50 text-xs font-bold gap-1.5 mt-2"
-                                    >
+                                    <Button variant="outline" size="sm" onClick={handleAddDetail} className="w-full py-2.5 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50/50 text-xs font-bold gap-1.5 mt-2">
                                         <Plus size={14} />
                                         <span>Thêm chi tiết vụ tai nạn</span>
                                     </Button>
@@ -1239,7 +1295,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormInput
                                     label="Tổng số vụ"
-                                    value={supportReport.totalAccidentCases || ""}
+                                    value={supportReport.totalAccidentCases ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalAccidentCases: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1247,7 +1303,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 />
                                 <FormInput
                                     label="Tổng số vụ có người chết"
-                                    value={supportReport.totalCasesWithDeath || ""}
+                                    value={supportReport.totalCasesWithDeath ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalCasesWithDeath: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1255,7 +1311,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 />
                                 <FormInput
                                     label="Tổng số vụ có từ 2 nạn nhân trở lên"
-                                    value={supportReport.totalCasesWithTwoOrMoreVictims || ""}
+                                    value={supportReport.totalCasesWithTwoOrMoreVictims ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalCasesWithTwoOrMoreVictims: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1266,7 +1322,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-2">
                                 <FormInput
                                     label="Tổng số người bị nạn"
-                                    value={supportReport.totalVictims || ""}
+                                    value={supportReport.totalVictims ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalVictims: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1274,7 +1330,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 />
                                 <FormInput
                                     label="Tổng số lao động nữ bị nạn"
-                                    value={supportReport.totalFemaleVictims || ""}
+                                    value={supportReport.totalFemaleVictims ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalFemaleVictims: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1282,7 +1338,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 />
                                 <FormInput
                                     label="Tổng số người chết"
-                                    value={supportReport.totalDeaths || ""}
+                                    value={supportReport.totalDeaths ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalDeaths: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1290,7 +1346,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 />
                                 <FormInput
                                     label="Tổng số người bị thương nặng"
-                                    value={supportReport.totalSeriouslyInjured || ""}
+                                    value={supportReport.totalSeriouslyInjured ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalSeriouslyInjured: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1367,7 +1423,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                                 <FormInput
                                     label="Tổng số ngày nghỉ vì TNLĐ"
-                                    value={supportReport.totalSickDays || ""}
+                                    value={supportReport.totalSickDays ?? 0}
                                     onChange={(val) => setSupportReport((prev) => ({ ...prev, totalSickDays: Math.max(0, Number(val)) }))}
                                     type="number"
                                     required={true}
@@ -1399,11 +1455,37 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                         <div className="bg-gray-50/50 border border-gray-200 rounded px-4 py-3 text-xs print:hidden">
                             <p className="text-xs font-semibold text-gray-700">
                                 <span className="text-red-500 font-bold mr-1">**</span>Vui lòng đính kèm báo cáo TNLĐ có dấu mộc công ty:{" "}
-                                <label className="text-blue-600 underline cursor-pointer hover:text-blue-800 ml-1 font-bold">
-                                    Tại đây
-                                    <input type="file" className="hidden" accept=".pdf" onChange={handleStampedFileChange} disabled={mode === "view"} />
-                                </label>
-                                {stampedFile ? <span className="ml-2 text-blue-600 font-bold underline">{stampedFile.name}</span> : <span className="ml-2 text-gray-400 italic font-normal">baocaoTNLĐ.pdf</span>}
+                                {mode !== "view" && (
+                                    <label className="text-blue-600 underline cursor-pointer hover:text-blue-800 ml-1 font-bold">
+                                        Tại đây
+                                        <input type="file" className="hidden" accept=".pdf" onChange={handleStampedFileChange} />
+                                    </label>
+                                )}
+                                {stampedFile ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const url = URL.createObjectURL(stampedFile);
+                                            window.open(url, "_blank");
+                                        }}
+                                        className="ml-2 text-blue-600 font-bold underline hover:text-blue-800 cursor-pointer inline-block align-baseline"
+                                    >
+                                        {stampedFile.name}
+                                    </button>
+                                ) : existingFile ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const fileUrl = `${process.env.NEXT_PUBLIC_API_URL}${existingFile.filePath}`;
+                                            window.open(fileUrl, "_blank");
+                                        }}
+                                        className="ml-2 text-blue-600 font-bold underline hover:text-blue-800 cursor-pointer inline-block align-baseline"
+                                    >
+                                        {existingFile.fileName}
+                                    </button>
+                                ) : (
+                                    <span className="ml-2 text-gray-400 italic font-normal">baocaoTNLĐ.pdf</span>
+                                )}
                             </p>
                         </div>
 
@@ -1561,12 +1643,22 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         <td className="border border-gray-200 p-2 text-center"></td>
                                         <td colSpan={11} className="border border-gray-200 p-2"></td>
                                     </tr>
-                                    {(() => {
-                                        const s = getFactorStats("Thiết bị nâng");
+                                    {[
+                                        { code: "101", name: "Thiết bị nâng" },
+                                        { code: "102", name: "Ngã từ trên cao" },
+                                        { code: "103", name: "Vật rơi trúng" },
+                                        { code: "104", name: "Điện giật" },
+                                        { code: "105", name: "Mắc kẹt vào máy móc" },
+                                        { code: "106", name: "Bỏng (nhiệt, hóa chất)" },
+                                        { code: "107", name: "Tai nạn giao thông lao động" },
+                                        { code: "108", name: "Sập giàn giáo, đất đá" },
+                                        { code: "109", name: "Khác" },
+                                    ].map((f) => {
+                                        const s = getFactorStats(f.name);
                                         return (
-                                            <tr className="text-gray-700">
-                                                <td className="border border-gray-200 p-2 pl-6">Thiết bị nâng</td>
-                                                <td className="border border-gray-200 p-2 text-center">101</td>
+                                            <tr key={f.code} className="text-gray-700">
+                                                <td className="border border-gray-200 p-2 pl-6">{f.name}</td>
+                                                <td className="border border-gray-200 p-2 text-center">{f.code}</td>
                                                 <td className="border border-gray-200 p-2 text-center">{s.cases}</td>
                                                 <td className="border border-gray-200 p-2 text-center">{s.deathCases}</td>
                                                 <td className="border border-gray-200 p-2 text-center">{s.twoVictimsCases}</td>
@@ -1580,7 +1672,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                 <td className="border border-gray-200 p-2 text-center">{s.unmanagedSerious}</td>
                                             </tr>
                                         );
-                                    })()}
+                                    })}
 
                                     {/* 1.3 Phân theo nghề nghiệp */}
                                     <tr className="bg-gray-50/20 font-bold text-gray-700">
@@ -1589,8 +1681,13 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                         <td colSpan={11} className="border border-gray-200 p-2"></td>
                                     </tr>
                                     {[
-                                        { code: "102", name: "Nhà lãnh đạo cơ quan Đảng Cộng sản Việt Nam cấp Trung ương" },
-                                        { code: "103", name: "Công nhân" },
+                                        { code: "201", name: "Nhà lãnh đạo cơ quan Đảng Cộng sản Việt Nam cấp Trung ương" },
+                                        { code: "202", name: "Kỹ sư cơ khí" },
+                                        { code: "203", name: "Công nhân xây dựng" },
+                                        { code: "204", name: "Nhân viên văn phòng" },
+                                        { code: "205", name: "Lao động vận hành máy móc" },
+                                        { code: "206", name: "Lao động thủ công đơn giản" },
+                                        { code: "207", name: "Khác" },
                                     ].map((occ) => {
                                         const s = getOccupationStats(occ.name);
                                         return (
@@ -1697,11 +1794,11 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             <td className="border border-gray-200 p-2.5 text-center">
                                                 {formatNumber(
                                                     Number(laborReport.medicalCost || 0) +
-                                                    Number(laborReport.salaryDuringTreatment || 0) +
-                                                    Number(laborReport.compensationCost || 0) +
-                                                    Number(supportReport.medicalCost || 0) +
-                                                    Number(supportReport.salaryDuringTreatment || 0) +
-                                                    Number(supportReport.compensationCost || 0)
+                                                        Number(laborReport.salaryDuringTreatment || 0) +
+                                                        Number(laborReport.compensationCost || 0) +
+                                                        Number(supportReport.medicalCost || 0) +
+                                                        Number(supportReport.salaryDuringTreatment || 0) +
+                                                        Number(supportReport.compensationCost || 0),
                                                 )}
                                             </td>
                                             <td className="border border-gray-200 p-2.5 text-center">{formatNumber((laborReport.medicalCost || 0) + (supportReport.medicalCost || 0))}</td>
@@ -1728,63 +1825,22 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             />
 
             {/* DIALOG 2: Save Confirmation Prompt */}
-            {showSaveDialog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-999 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        {/* Blue header bar */}
-                        <div className="bg-blue-600 px-6 py-3.5 text-center flex items-center justify-between">
-                            <h3 className="text-white text-sm font-bold uppercase tracking-wide">Xác nhận lưu báo cáo</h3>
-                            <button type="button" onClick={() => setShowSaveDialog(false)} className="text-white/80 hover:text-white">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        {/* Content */}
-                        <div className="px-6 py-6 space-y-4">
-                            <div className="relative">
-                                <FormSelect label="Kỳ báo cáo" value={formPeriod} onChange={(val) => setFormPeriod(val)} options={["6 tháng", "Cả năm"]} />
-                            </div>
-                            <p className="text-xs text-gray-500 font-medium">Hãy chọn trạng thái bạn muốn lưu cho báo cáo kỳ này:</p>
-                        </div>
-                        {/* Footer */}
-                        <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3 border-t border-gray-100">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowSaveDialog(false)}
-                                className="border-none bg-transparent hover:bg-gray-100 text-gray-600 hover:text-gray-800 text-xs font-semibold px-4 py-2"
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setShowSaveDialog(false);
-                                    handleSave("đang báo cáo");
-                                }}
-                                className="gap-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2 shadow-sm"
-                            >
-                                <Save size={14} />
-                                <span>Lưu nháp</span>
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => {
-                                    setShowSaveDialog(false);
-                                    if (window.confirm("Khi đã gửi báo cáo, bạn sẽ không thể chỉnh sửa thông tin này nữa. Bạn có chắc chắn muốn gửi báo cáo?")) {
-                                        handleSave("đã tiếp nhận");
-                                    }
-                                }}
-                                className="gap-1.5 text-xs font-bold px-4 py-2 shadow-sm"
-                            >
-                                <Send size={14} />
-                                <span>Gửi báo cáo</span>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <SaveReportPopup
+                isOpen={showSaveDialog}
+                onClose={() => setShowSaveDialog(false)}
+                onSaveDraft={() => {
+                    setShowSaveDialog(false);
+                    handleSave("đang báo cáo");
+                }}
+                onSendReport={() => {
+                    setShowSaveDialog(false);
+                    if (window.confirm("Khi đã gửi báo cáo, bạn sẽ không thể chỉnh sửa thông tin này nữa. Bạn có chắc chắn muốn gửi báo cáo?")) {
+                        handleSave("đã tiếp nhận");
+                    }
+                }}
+                period={formPeriod}
+                setPeriod={setFormPeriod}
+            />
         </div>
     );
 }

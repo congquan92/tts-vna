@@ -242,7 +242,7 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
                     <div className="bg-gray-50 border border-gray-200 rounded px-4 py-3 text-xs print:hidden">
                         <p className="text-xs font-semibold text-gray-700">
                             <span className="text-red-500 font-bold mr-1">**</span>
-                            Vui lòng đính kèm báo cáo TNLĐ có dấu mộc công ty:{" "}
+                            Vui lòng đính kèm báo cáo TNLĐ có dấu mộc công ty:
                             <a href="#" className="text-blue-600 underline font-bold hover:text-blue-800 ml-1">
                                 baocaoTNLĐ.pdf
                             </a>
@@ -507,11 +507,11 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
                                         <td className="border border-gray-250 p-2.5 text-center">
                                             {formatNumber(
                                                 Number(laborReport.medicalCost || 0) +
-                                                Number(laborReport.salaryDuringTreatment || 0) +
-                                                Number(laborReport.compensationCost || 0) +
-                                                Number(supportReport.medicalCost || 0) +
-                                                Number(supportReport.salaryDuringTreatment || 0) +
-                                                Number(supportReport.compensationCost || 0)
+                                                    Number(laborReport.salaryDuringTreatment || 0) +
+                                                    Number(laborReport.compensationCost || 0) +
+                                                    Number(supportReport.medicalCost || 0) +
+                                                    Number(supportReport.salaryDuringTreatment || 0) +
+                                                    Number(supportReport.compensationCost || 0),
                                             )}
                                         </td>
                                         <td className="border border-gray-250 p-2.5 text-center">{formatNumber((laborReport.medicalCost || 0) + (supportReport.medicalCost || 0))}</td>

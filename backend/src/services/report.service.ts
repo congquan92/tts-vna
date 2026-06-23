@@ -12,6 +12,8 @@ import { ReportStatus } from '../common/enums/report-status.enum';
 import { ReportingPeriod } from '../common/enums/reporting-period.enum';
 import { validateLaborAccidentReport } from '../common/validators/labor-accident-report.validator';
 import { validateLaborAccidentSupportReport } from '../common/validators/labor-accident-support-report.validator';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type CompanyYearReportItem = {
   reportId: number;
@@ -177,6 +179,28 @@ export class ReportService {
   }
 
   async deleteReport(id: number) {
+    const report = await this.reportRepository.findById(id);
+
+    if (!report) {
+      throw new NotFoundException('Không tìm thấy báo cáo');
+    }
+
+    // Delete associated physical files from file system
+    if (report.files && report.files.length > 0) {
+      for (const file of report.files) {
+        const relativePath = file.filePath.replace(/^\//, '');
+        const fullPath = path.join(process.cwd(), relativePath);
+
+        try {
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+          }
+        } catch (err) {
+          console.error(`Failed to delete physical file: ${fullPath}`, err);
+        }
+      }
+    }
+
     const result = await this.reportRepository.delete(id);
 
     if (!result.affected) {

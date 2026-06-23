@@ -21,18 +21,11 @@ interface ReportTableProps {
     onEdit: (report: Report) => void;
 }
 
-export default function ReportTable({
-    reports,
-    loading,
-    selectedYear,
-    businessProfile,
-    onView,
-    onEdit,
-}: ReportTableProps) {
+export default function ReportTable({ reports, loading, selectedYear, businessProfile, onView, onEdit }: ReportTableProps) {
     const router = useRouter();
 
     const tableRows = React.useMemo(() => {
-        const periods = ["6 tháng", "1 năm"];
+        const periods = ["6 tháng", "Cả năm"];
         return periods.map((period) => {
             const existing = reports.find((r) => r.reportPeriod === period && r.year === selectedYear);
             if (existing) return existing;
@@ -71,59 +64,30 @@ export default function ReportTable({
                         {tableRows.map((item) => {
                             const isPlaceholder = item.id < 0;
                             return (
-                                <div
-                                    key={item.id}
-                                    className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-3"
-                                    style={GRID_STYLE}
-                                >
+                                <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-3" style={GRID_STYLE}>
                                     <div className="flex items-center justify-center gap-3">
                                         {/* 1. View icon */}
                                         {isPlaceholder ? (
-                                            <button
-                                                type="button"
-                                                className="text-gray-200 cursor-not-allowed"
-                                                title="Báo cáo chưa được khai báo"
-                                                disabled
-                                            >
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo chưa được khai báo" disabled>
                                                 <Eye size={16} />
                                             </button>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => onView(item)}
-                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                title="Xem chi tiết"
-                                            >
+                                            <button type="button" onClick={() => onView(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem chi tiết">
                                                 <Eye size={16} />
                                             </button>
                                         )}
 
                                         {/* 2. Edit icon */}
                                         {isPlaceholder ? (
-                                            <button
-                                                type="button"
-                                                className="text-gray-200 cursor-not-allowed"
-                                                title="Không thể chỉnh sửa báo cáo chưa khai báo"
-                                                disabled
-                                            >
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Không thể chỉnh sửa báo cáo chưa khai báo" disabled>
                                                 <Pencil size={16} />
                                             </button>
                                         ) : item.status === "đang báo cáo" ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => onEdit(item)}
-                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                title="Chỉnh sửa"
-                                            >
+                                            <button type="button" onClick={() => onEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
                                                 <Pencil size={16} />
                                             </button>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                className="text-gray-200 cursor-not-allowed"
-                                                title="Báo cáo đã tiếp nhận không thể chỉnh sửa"
-                                                disabled
-                                            >
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã tiếp nhận không thể chỉnh sửa" disabled>
                                                 <Pencil size={16} />
                                             </button>
                                         )}
@@ -132,34 +96,21 @@ export default function ReportTable({
                                         {isPlaceholder ? (
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    router.push(
-                                                        `/company-accidents/create?year=${selectedYear}&period=${item.reportPeriod}`
-                                                    )
-                                                }
+                                                onClick={() => router.push(`/company-accidents/create?year=${selectedYear}&period=${item.reportPeriod}`)}
                                                 className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
                                                 title="Khai báo mới"
                                             >
                                                 <Plus size={16} />
                                             </button>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                className="text-gray-200 cursor-not-allowed"
-                                                title="Báo cáo đã được khai báo"
-                                                disabled
-                                            >
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã được khai báo" disabled>
                                                 <Plus size={16} />
                                             </button>
                                         )}
                                     </div>
 
-                                    <div className="font-semibold text-gray-800 truncate">
-                                        {item.companyInfo?.businessName || businessProfile?.name || "N/A"}
-                                    </div>
-                                    <div className="font-medium text-gray-650 tabular-nums">
-                                        {businessProfile?.taxCode || "N/A"}
-                                    </div>
+                                    <div className="font-semibold text-gray-800 truncate">{item.companyInfo?.businessName || businessProfile?.name || "N/A"}</div>
+                                    <div className="font-medium text-gray-650 tabular-nums">{businessProfile?.taxCode || "N/A"}</div>
                                     <div className="font-medium text-gray-650">{item.reportPeriod || "N/A"}</div>
                                     <div className="flex items-center gap-2">
                                         {item.status === "đang báo cáo" ? (

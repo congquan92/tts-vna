@@ -2,13 +2,14 @@ import type { LaborAccidentReport, LaborAccidentSupportReport } from "@/types/re
 
 export const CAUSES = [
     "Không có thiết bị an toàn hoặc thiết bị không đảm bảo an toàn",
-    "Thiếu thiết bị che chắn an toàn",
-    "Thiếu thiết bị bảo hộ cá nhân",
-    "Quy trình làm việc không an toàn",
-    "Vi phạm kỷ luật lao động",
-    "Thiết bị, máy móc bị lỗi",
-    "Điều kiện ánh sáng, thông gió kém",
-    "Khác"
+    "Không có phương tiện bảo vệ cá nhân hoặc phương tiện bảo vệ cá nhân không tốt",
+    "Tổ chức lao động không hợp lý",
+    "Chưa huấn luyện hoặc huấn luyện an toàn vệ sinh lao động chưa đầy đủ",
+    "Không có quy trình an toàn hoặc biện pháp làm việc an toàn",
+    "Điều kiện làm việc không tốt",
+    "Quy phạm nội quy, quy trình, quy chuẩn, biện pháp làm việc an toàn",
+    "Không sử dụng phương tiện bảo vệ cá nhân",
+    "Khách quan khó tránh/ Nguyên nhân chưa kể đến"
 ];
 
 export const FACTORS = [

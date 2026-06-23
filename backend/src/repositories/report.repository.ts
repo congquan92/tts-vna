@@ -25,7 +25,8 @@ export class ReportRepository {
       .leftJoinAndSelect('companyInfo.business', 'business')
       .leftJoinAndSelect('report.laborAccidentReport', 'laborAccidentReport')
       .leftJoinAndSelect('laborAccidentReport.accidentDetails', 'accidentDetails')
-      .leftJoinAndSelect('report.laborAccidentSupportReport', 'laborAccidentSupportReport');
+      .leftJoinAndSelect('report.laborAccidentSupportReport', 'laborAccidentSupportReport')
+      .leftJoinAndSelect('report.files', 'files');
 
     if (filters?.businessId) {
       qb.andWhere('companyInfo.businessId = :businessId', { businessId: filters.businessId });
@@ -81,6 +82,7 @@ export class ReportRepository {
         companyInfo: { business: true },
         laborAccidentReport: { accidentDetails: true },
         laborAccidentSupportReport: true,
+        files: true,
       },
       order: { id: 'DESC' },
       skip: (page - 1) * limit,
@@ -102,6 +104,7 @@ export class ReportRepository {
         companyInfo: { business: true },
         laborAccidentReport: { accidentDetails: true },
         laborAccidentSupportReport: true,
+        files: true,
       },
     });
   }
