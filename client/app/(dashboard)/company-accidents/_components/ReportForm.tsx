@@ -24,9 +24,13 @@ const formatNumber = (val: number | string | undefined | null): string => {
 
 const parseNumber = (val: string | number | undefined | null): number => {
     if (val === undefined || val === null) return 0;
-    if (typeof val === "number") return val;
+    if (typeof val === "number") return val < 0 ? 0 : val;
     let clean = val.trim();
     if (!clean) return 0;
+
+    if (clean.startsWith("-")) {
+        clean = clean.replace(/^-+/, "");
+    }
 
     if (clean.includes(".") && clean.includes(",")) {
         clean = clean.replace(/\./g, "").replace(/,/g, ".");
@@ -46,7 +50,7 @@ const parseNumber = (val: string | number | undefined | null): number => {
         }
     }
     const num = Number(clean);
-    return isNaN(num) ? 0 : num;
+    return isNaN(num) ? 0 : Math.max(0, num);
 };
 
 interface FormInputProps {
@@ -73,6 +77,17 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
     }
 
     const handleChange = (val: string) => {
+        if (type === "number" || label.toLowerCase().includes("số") || label.toLowerCase().includes("chi phí") || label.toLowerCase().includes("lương")) {
+            if (val.includes("-")) {
+                val = val.replace(/-/g, "");
+            }
+            if (type === "number" && val !== "") {
+                const num = Number(val);
+                if (!isNaN(num) && num < 0) {
+                    val = "0";
+                }
+            }
+        }
         setLocalValue(val);
         if (onChange) {
             onChange(val);
@@ -95,6 +110,12 @@ const FormInput: React.FC<FormInputProps> = ({ label, value, onChange, type = "t
                 value={disabled ? (value ?? "") : localValue}
                 onChange={(e) => handleChange(e.target.value)}
                 onBlur={handleBlur}
+                min={type === "number" ? 0 : undefined}
+                onKeyDown={(e) => {
+                    if (type === "number" && (e.key === "-" || e.key === "e" || e.key === "E")) {
+                        e.preventDefault();
+                    }
+                }}
                 className={`w-full bg-white border border-gray-200 rounded px-3 py-2 text-xs outline-none focus:border-primary font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-500 disabled:cursor-not-allowed ${suffix ? "pr-16" : ""}`}
             />
             {suffix && <span className="absolute right-3 text-[10px] text-gray-400 font-semibold pointer-events-none">{suffix}</span>}
@@ -302,6 +323,52 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
 
     // Validation helpers
     const validateSummary = useCallback((data: LaborAccidentReport | LaborAccidentSupportReport | AccidentDetail, prefixLabel: string) => {
+        const fieldsToCheck = [
+            "totalAccidentCases",
+            "totalCasesWithDeath",
+            "totalCasesWithTwoOrMoreVictims",
+            "totalVictims",
+            "totalFemaleVictims",
+            "totalDeaths",
+            "totalSeriouslyInjured",
+            "unmanagedVictims",
+            "unmanagedFemaleVictims",
+            "unmanagedDeaths",
+            "unmanagedSeriouslyInjured",
+            "medicalCost",
+            "salaryDuringTreatment",
+            "compensationCost",
+            "propertyDamage",
+            "totalSickDays"
+        ];
+        
+        for (const field of fieldsToCheck) {
+            const val = (data as any)[field];
+            if (val !== undefined && val !== null && Number(val) < 0) {
+                const fieldLabelMap: Record<string, string> = {
+                    totalAccidentCases: "Tổng số vụ",
+                    totalCasesWithDeath: "Số vụ có người chết",
+                    totalCasesWithTwoOrMoreVictims: "Số vụ có từ 2 người bị nạn trở lên",
+                    totalVictims: "Tổng số người bị nạn",
+                    totalFemaleVictims: "Số lao động nữ bị nạn",
+                    totalDeaths: "Số người chết",
+                    totalSeriouslyInjured: "Số người bị thương nặng",
+                    unmanagedVictims: "Số người bị nạn không quản lý",
+                    unmanagedFemaleVictims: "Số lao động nữ bị nạn không quản lý",
+                    unmanagedDeaths: "Số người chết không quản lý",
+                    unmanagedSeriouslyInjured: "Số người bị thương nặng không quản lý",
+                    medicalCost: "Chi phí y tế",
+                    salaryDuringTreatment: "Chi phí trả lương",
+                    compensationCost: "Chi phí bồi thường trợ cấp",
+                    propertyDamage: "Thiệt hại tài sản",
+                    totalSickDays: "Tổng số ngày nghỉ"
+                };
+                const fieldName = fieldLabelMap[field] || field;
+                toast.error(`${prefixLabel}: ${fieldName} không được nhỏ hơn 0`);
+                return false;
+            }
+        }
+
         const tCases = Number(data.totalAccidentCases || 0);
         const tDeaths = Number(data.totalCasesWithDeath || 0);
         const tTwoVictims = Number(data.totalCasesWithTwoOrMoreVictims || 0);
@@ -383,6 +450,13 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
 
     const validateLaborReport = useCallback((): boolean => {
         if (!validateSummary(laborReport, "Báo cáo có HĐLĐ")) return false;
+
+        const totalCases = laborReport.totalAccidentCases ?? 0;
+        const detailsCount = (laborReport.accidentDetails || []).length;
+        if (totalCases !== detailsCount) {
+            toast.error(`Tổng số vụ (${totalCases}) và số vụ chi tiết đã tạo (${detailsCount}) phải khớp nhau.`);
+            return false;
+        }
 
         // Check details for occupations
         if (laborReport.accidentDetails && laborReport.accidentDetails.length > 0) {
@@ -649,6 +723,59 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             }
             toast.success(`Đã xóa chi tiết vụ tai nạn số ${index + 1}`);
         }
+    };
+
+    const handleSyncTotalToDetails = () => {
+        const detailsCount = (laborReport.accidentDetails || []).length;
+        setLaborReport((prev) => ({
+            ...prev,
+            totalAccidentCases: detailsCount
+        }));
+        toast.success(`Đã cập nhật Tổng số vụ thành ${detailsCount}`);
+    };
+
+    const handleSyncDetailsToTotal = () => {
+        const targetCount = laborReport.totalAccidentCases ?? 0;
+        const currentDetails = laborReport.accidentDetails || [];
+        let updatedDetails = [...currentDetails];
+
+        if (targetCount > currentDetails.length) {
+            const diff = targetCount - currentDetails.length;
+            for (let i = 0; i < diff; i++) {
+                updatedDetails.push({
+                    accidentCause: CAUSES[0],
+                    injuryFactor: FACTORS[0],
+                    occupationCategory: OCCUPATIONS[0],
+                    totalAccidentCases: 1,
+                    totalCasesWithDeath: 0,
+                    totalCasesWithTwoOrMoreVictims: 0,
+                    totalVictims: 1,
+                    totalFemaleVictims: 0,
+                    totalDeaths: 0,
+                    totalSeriouslyInjured: 0,
+                    unmanagedVictims: 0,
+                    unmanagedFemaleVictims: 0,
+                    unmanagedDeaths: 0,
+                    unmanagedSeriouslyInjured: 0,
+                    medicalCost: 0,
+                    salaryDuringTreatment: 0,
+                    compensationCost: 0,
+                    propertyDamage: 0,
+                    totalSickDays: 0,
+                });
+            }
+            toast.success(`Đã tự động tạo thêm ${diff} chi tiết vụ tai nạn.`);
+        } else if (targetCount < currentDetails.length) {
+            const diff = currentDetails.length - targetCount;
+            updatedDetails = updatedDetails.slice(0, targetCount);
+            toast.success(`Đã tự động giảm bớt ${diff} chi tiết vụ tai nạn.`);
+        }
+
+        setLaborReport((prev) => ({
+            ...prev,
+            accidentDetails: updatedDetails
+        }));
+        setExpandedDetailIndex(updatedDetails.length > 0 ? 0 : null);
     };
 
     const handleDetailFieldChange = (index: number, field: keyof AccidentDetail, val: string | number | undefined) => {
@@ -1059,6 +1186,29 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                         {/* SUB-TAB 2: Accident detail accordions list */}
                         {activeSubTab === "details" && (
                             <div className="space-y-4 pt-2">
+                                {mode !== "view" && laborReport.totalAccidentCases !== (laborReport.accidentDetails || []).length && (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-855 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2 font-medium">
+                                        <div>
+                                            Số lượng vụ chi tiết ({ (laborReport.accidentDetails || []).length }) chưa khớp với Tổng số vụ đã khai báo ({ laborReport.totalAccidentCases || 0 }).
+                                        </div>
+                                        <div className="flex gap-2 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={handleSyncDetailsToTotal}
+                                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-2.5 py-1 rounded font-semibold text-[10px] transition-colors cursor-pointer"
+                                            >
+                                                Tự động khớp chi tiết
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleSyncTotalToDetails}
+                                                className="bg-white hover:bg-gray-100 text-yellow-800 border border-yellow-350 px-2.5 py-1 rounded font-semibold text-[10px] transition-colors cursor-pointer"
+                                            >
+                                                Cập nhật tổng số vụ
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 {(laborReport.accidentDetails || []).map((detail, idx) => {
                                     const isExpanded = expandedDetailIndex === idx;
                                     return (
@@ -1273,7 +1423,19 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 })}
 
                                 {laborReport.accidentDetails?.length === 0 && (
-                                    <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg text-gray-400 text-xs italic">Chưa có chi tiết vụ tai nạn nào được khai báo (Số liệu tổng hợp sẽ được nhập thủ công ở Tab 1)</div>
+                                    <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg text-gray-400 text-xs italic flex flex-col items-center gap-3">
+                                        <span>Chưa có chi tiết vụ tai nạn nào được khai báo (Số liệu tổng hợp sẽ được nhập thủ công ở Tab 1)</span>
+                                        {mode !== "view" && (laborReport.totalAccidentCases || 0) > 0 && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleSyncDetailsToTotal}
+                                                className="text-xs font-semibold px-4 py-2 mt-1 border-blue-200 text-blue-600 hover:bg-blue-50/50"
+                                            >
+                                                Tự động tạo {laborReport.totalAccidentCases} chi tiết vụ tai nạn
+                                            </Button>
+                                        )}
+                                    </div>
                                 )}
 
                                 {mode !== "view" && (
