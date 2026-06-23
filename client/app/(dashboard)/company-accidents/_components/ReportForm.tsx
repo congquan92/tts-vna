@@ -318,6 +318,29 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                     totalCost: calculated.medicalCost + calculated.salaryDuringTreatment + calculated.compensationCost,
                 }));
             });
+        } else {
+            // Reset summary stats but preserve totalAccidentCases entered by user
+            Promise.resolve().then(() => {
+                setLaborReport((prev) => ({
+                    ...prev,
+                    totalCasesWithDeath: 0,
+                    totalCasesWithTwoOrMoreVictims: 0,
+                    totalVictims: 0,
+                    totalFemaleVictims: 0,
+                    totalDeaths: 0,
+                    totalSeriouslyInjured: 0,
+                    unmanagedVictims: 0,
+                    unmanagedFemaleVictims: 0,
+                    unmanagedDeaths: 0,
+                    unmanagedSeriouslyInjured: 0,
+                    medicalCost: 0,
+                    salaryDuringTreatment: 0,
+                    compensationCost: 0,
+                    totalCost: 0,
+                    totalSickDays: 0,
+                    propertyDamage: 0,
+                }));
+            });
         }
     }, [laborReport.accidentDetails, calculateTotalsFromDetails]);
 
@@ -339,9 +362,9 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
             "salaryDuringTreatment",
             "compensationCost",
             "propertyDamage",
-            "totalSickDays"
+            "totalSickDays",
         ];
-        
+
         for (const field of fieldsToCheck) {
             const val = (data as any)[field];
             if (val !== undefined && val !== null && Number(val) < 0) {
@@ -361,7 +384,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                     salaryDuringTreatment: "Chi phí trả lương",
                     compensationCost: "Chi phí bồi thường trợ cấp",
                     propertyDamage: "Thiệt hại tài sản",
-                    totalSickDays: "Tổng số ngày nghỉ"
+                    totalSickDays: "Tổng số ngày nghỉ",
                 };
                 const fieldName = fieldLabelMap[field] || field;
                 toast.error(`${prefixLabel}: ${fieldName} không được nhỏ hơn 0`);
@@ -729,7 +752,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
         const detailsCount = (laborReport.accidentDetails || []).length;
         setLaborReport((prev) => ({
             ...prev,
-            totalAccidentCases: detailsCount
+            totalAccidentCases: detailsCount,
         }));
         toast.success(`Đã cập nhật Tổng số vụ thành ${detailsCount}`);
     };
@@ -773,7 +796,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
 
         setLaborReport((prev) => ({
             ...prev,
-            accidentDetails: updatedDetails
+            accidentDetails: updatedDetails,
         }));
         setExpandedDetailIndex(updatedDetails.length > 0 ? 0 : null);
     };
@@ -1041,7 +1064,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalAccidentCases: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={mode === "view"}
                                         />
                                         <FormInput
                                             label="Tổng số vụ có người chết"
@@ -1049,7 +1072,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalCasesWithDeath: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Tổng số vụ có 2 người bị nạn trở lên"
@@ -1057,7 +1080,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalCasesWithTwoOrMoreVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                     </div>
 
@@ -1068,7 +1091,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Tổng số lao động nữ bị nạn"
@@ -1076,7 +1099,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalFemaleVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Tổng số người bị chết"
@@ -1084,7 +1107,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalDeaths: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Tổng số người bị thương nặng"
@@ -1092,7 +1115,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalSeriouslyInjured: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                     </div>
 
@@ -1103,7 +1126,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, unmanagedVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Lao động nữ bị nạn không QL"
@@ -1111,7 +1134,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, unmanagedFemaleVictims: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Số người chết không QL"
@@ -1119,7 +1142,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, unmanagedDeaths: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Người bị thương nặng không QL"
@@ -1127,7 +1150,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, unmanagedSeriouslyInjured: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                     </div>
                                 </div>
@@ -1140,7 +1163,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             value={formatNumber(laborReport.medicalCost)}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, medicalCost: parseNumber(val) }))}
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                             suffix="(1.000đ)"
                                         />
                                         <FormInput
@@ -1148,7 +1171,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             value={formatNumber(laborReport.salaryDuringTreatment)}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, salaryDuringTreatment: parseNumber(val) }))}
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                             suffix="(1.000đ)"
                                         />
                                         <FormInput
@@ -1156,7 +1179,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             value={formatNumber(laborReport.compensationCost)}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, compensationCost: parseNumber(val) }))}
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                             suffix="(1.000đ)"
                                         />
                                         <FormInput label="Tổng số tiền chi phí" value={formatNumber(laborReport.totalCost)} required={true} disabled={true} suffix="(1.000đ)" />
@@ -1169,13 +1192,13 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, totalSickDays: Math.max(0, Number(val)) }))}
                                             type="number"
                                             required={true}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                         />
                                         <FormInput
                                             label="Thiệt hại tài sản"
                                             value={formatNumber(laborReport.propertyDamage)}
                                             onChange={(val) => setLaborReport((prev) => ({ ...prev, propertyDamage: parseNumber(val) }))}
-                                            disabled={mode === "view" || (laborReport.accidentDetails || []).length > 0}
+                                            disabled={true}
                                             suffix="(1.000đ)"
                                         />
                                     </div>
@@ -1189,14 +1212,10 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                 {mode !== "view" && laborReport.totalAccidentCases !== (laborReport.accidentDetails || []).length && (
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-855 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2 font-medium">
                                         <div>
-                                            Số lượng vụ chi tiết ({ (laborReport.accidentDetails || []).length }) chưa khớp với Tổng số vụ đã khai báo ({ laborReport.totalAccidentCases || 0 }).
+                                            Số lượng vụ chi tiết ({(laborReport.accidentDetails || []).length}) chưa khớp với Tổng số vụ đã khai báo ({laborReport.totalAccidentCases || 0}).
                                         </div>
                                         <div className="flex gap-2 shrink-0">
-                                            <button
-                                                type="button"
-                                                onClick={handleSyncDetailsToTotal}
-                                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-2.5 py-1 rounded font-semibold text-[10px] transition-colors cursor-pointer"
-                                            >
+                                            <button type="button" onClick={handleSyncDetailsToTotal} className="bg-yellow-600 hover:bg-yellow-700 text-white px-2.5 py-1 rounded font-semibold text-[10px] transition-colors cursor-pointer">
                                                 Tự động khớp chi tiết
                                             </button>
                                             <button
@@ -1266,11 +1285,11 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                             <FormInput
                                                                 label="Tổng số vụ"
-                                                                value={detail.totalAccidentCases ?? 0}
+                                                                value={detail.totalAccidentCases ?? 1}
                                                                 onChange={(val) => handleDetailFieldChange(idx, "totalAccidentCases", Math.max(0, Number(val)))}
                                                                 type="number"
                                                                 required={true}
-                                                                disabled={mode === "view"}
+                                                                disabled={true}
                                                             />
                                                             <FormInput
                                                                 label="Tổng số vụ có người chết"
@@ -1426,12 +1445,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                     <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg text-gray-400 text-xs italic flex flex-col items-center gap-3">
                                         <span>Chưa có chi tiết vụ tai nạn nào được khai báo (Số liệu tổng hợp sẽ được nhập thủ công ở Tab 1)</span>
                                         {mode !== "view" && (laborReport.totalAccidentCases || 0) > 0 && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleSyncDetailsToTotal}
-                                                className="text-xs font-semibold px-4 py-2 mt-1 border-blue-200 text-blue-600 hover:bg-blue-50/50"
-                                            >
+                                            <Button variant="outline" size="sm" onClick={handleSyncDetailsToTotal} className="text-xs font-semibold px-4 py-2 mt-1 border-blue-200 text-blue-600 hover:bg-blue-50/50">
                                                 Tự động tạo {laborReport.totalAccidentCases} chi tiết vụ tai nạn
                                             </Button>
                                         )}
