@@ -10,6 +10,7 @@ import { LaborAccidentReport } from './labor-accident-report.entity';
 import { LaborAccidentSupportReport } from './labor-accident-support-report.entity';
 import { ReportFile } from './report-file.entity';
 import { ReportStatus } from '../common/enums/report-status.enum';
+import { ReportHistory } from './report-history.entity';
 
 @Entity('reports')
 export class Report {
@@ -28,6 +29,9 @@ export class Report {
 
   @Column({ nullable: true })
   reportPeriod?: string;
+
+  @Column({ type: 'text', nullable: true, })
+  rejectReason?: string;
 
   @OneToOne(() => CompanyInfo, (companyInfo) => companyInfo.report, {
     cascade: true,
@@ -59,4 +63,9 @@ export class Report {
     cascade: true,
   })
   files?: ReportFile[];
+
+  @OneToMany(() => ReportHistory, (history) => history.report, {
+    cascade: true,
+  })
+  histories?: ReportHistory[];
 }
