@@ -989,14 +989,6 @@
           "response": []
         },
         {
-          "name": "New Request",
-          "request": {
-            "method": "GET",
-            "header": []
-          },
-          "response": []
-        },
-        {
           "name": "search",
           "request": {
             "method": "GET",
@@ -1060,6 +1052,35 @@
     {
       "name": "business",
       "item": [
+        {
+          "name": "register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"taxCode\": \"0312345677\",\r\n    \"businessName\": \"Công ty TNHH ABCDE\",\r\n    \"foreignName\": \"ABCDE Company Limited\",\r\n    \"typeOfBusinessId\": 1,\r\n    \"businessIndustryId\": 9,\r\n    \"businessLicenseDate\": \"2025-01-01\",\r\n    \"registeredProvince\": \"TP. Hồ Chí Minh\",\r\n    \"registeredWard\": \"Phường Hiệp Bình\",\r\n    \"registeredAddress\": \"123 Quốc lộ 13\",\r\n    \"email\": \"abcde@gmail.com\",\r\n    \"officePhone\": \"02812345678\",\r\n    \"operatingProvince\": \"TP. Hồ Chí Minh\",\r\n    \"operatingWard\": \"Phường Linh Đông\",\r\n    \"businessLocation\": \"Khu công nghiệp ABC\",\r\n    \"legalRepresentative\": \"Nguyễn Văn A\",\r\n    \"representativePhone\": \"0909123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/business/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "business",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
         {
           "name": "create",
           "request": {
@@ -1128,7 +1149,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"abc@gmail.com\",\r\n    \"businessName\": \"Công ty ABC\"\r\n}",
+              "raw": "{\r\n    \"email\": \"abc@gmail.com\",\r\n    \"businessName\": \"Công ty ABC\",\r\n    \"taxCode\": \"09998887776\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1227,7 +1248,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/business/search?businessName=ABC",
+              "raw": "http://localhost:3001/business/search?businessName=DEG",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1240,7 +1261,7 @@
               "query": [
                 {
                   "key": "businessName",
-                  "value": "ABC"
+                  "value": "DEG"
                 }
               ]
             }
@@ -1422,6 +1443,361 @@
       ]
     },
     {
+      "name": "report",
+      "item": [
+        {
+          "name": "create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"year\": 2026,\r\n  \"reportPeriod\": \"Cả năm\",\r\n  \"companyInfo\": {\r\n    \"totalNumberOfEmployees\": 100,\r\n    \"totalNumberOfFemaleEmployees\": 40,\r\n    \"totalSalary\": 500000000\r\n  },\r\n  \"laborAccidentReport\": {\r\n    \"totalAccidentCases\": 1,\r\n    \"totalCasesWithDeath\": 1,\r\n    \"totalCasesWithTwoOrMoreVictims\": 0,\r\n    \"totalVictims\": 6,\r\n    \"totalFemaleVictims\": 2,\r\n    \"totalDeaths\": 1,\r\n    \"totalSeriouslyInjured\": 2,\r\n    \"unmanagedVictims\": 0,\r\n    \"unmanagedFemaleVictims\": 0,\r\n    \"unmanagedDeaths\": 0,\r\n    \"unmanagedSeriouslyInjured\": 0,\r\n    \"medicalCost\": 10000000,\r\n    \"salaryDuringTreatment\": 5000000,\r\n    \"compensationCost\": 3000000,\r\n    \"totalCost\": 18000000,\r\n    \"totalSickDays\": 30,\r\n    \"propertyDamage\": 2000000,\r\n    \"accidentDetails\": [\r\n      {\r\n        \"id\": 1,\r\n        \"accidentCause\": \"Thiếu an toàn lao động\",\r\n        \"injuryFactor\": \"Máy móc, thiết bị\",\r\n        \"occupationCategory\": \"Công nhân sản xuất\",\r\n        \"totalAccidentCases\": 1,\r\n        \"totalCasesWithDeath\": 1,\r\n        \"totalCasesWithTwoOrMoreVictims\": 0,\r\n        \"totalVictims\": 6,\r\n        \"totalFemaleVictims\": 2,\r\n        \"totalDeaths\": 1,\r\n        \"totalSeriouslyInjured\": 2,\r\n        \"unmanagedVictims\": 0,\r\n        \"unmanagedFemaleVictims\": 0,\r\n        \"unmanagedDeaths\": 0,\r\n        \"unmanagedSeriouslyInjured\": 0,\r\n        \"medicalCost\": 10000000,\r\n        \"salaryDuringTreatment\": 5000000,\r\n        \"compensationCost\": 3000000,\r\n        \"totalSickDays\": 30,\r\n        \"propertyDamage\": 2000000,\r\n        \"totalCost\": 18000000\r\n      }\r\n    ]\r\n  },\r\n  \"laborAccidentSupportReport\": {\r\n    \"totalAccidentCases\": 1,\r\n    \"totalCasesWithDeath\": 1,\r\n    \"totalCasesWithTwoOrMoreVictims\": 0,\r\n    \"totalVictims\": 6,\r\n    \"totalFemaleVictims\": 2,\r\n    \"totalDeaths\": 1,\r\n    \"totalSeriouslyInjured\": 2,\r\n    \"unmanagedVictims\": 0,\r\n    \"unmanagedFemaleVictims\": 0,\r\n    \"unmanagedDeaths\": 0,\r\n    \"unmanagedSeriouslyInjured\": 0,\r\n    \"medicalCost\": 10000000,\r\n    \"salaryDuringTreatment\": 5000000,\r\n    \"compensationCost\": 3000000,\r\n    \"totalCost\": 18000000,\r\n    \"totalSickDays\": 30,\r\n    \"propertyDamage\": 2000000\r\n  }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/reports",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-all-reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports?page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-report-detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports?status=đang báo cáo",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "businessName",
+                  "value": "a",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "đang báo cáo"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"year\": 2026,\r\n  \"reportPeriod\": \"Cả năm\",\r\n  \"companyInfo\": {\r\n    \"totalNumberOfEmployees\": 100,\r\n    \"totalNumberOfFemaleEmployees\": 40,\r\n    \"totalSalary\": 500000000\r\n  },\r\n  \"laborAccidentReport\": {\r\n    \"totalAccidentCases\": 1,\r\n    \"totalCasesWithDeath\": 1,\r\n    \"totalCasesWithTwoOrMoreVictims\": 0,\r\n    \"totalVictims\": 6,\r\n    \"totalFemaleVictims\": 2,\r\n    \"totalDeaths\": 1,\r\n    \"totalSeriouslyInjured\": 2,\r\n    \"unmanagedVictims\": 0,\r\n    \"unmanagedFemaleVictims\": 0,\r\n    \"unmanagedDeaths\": 0,\r\n    \"unmanagedSeriouslyInjured\": 0,\r\n    \"medicalCost\": 10000000,\r\n    \"salaryDuringTreatment\": 5000000,\r\n    \"compensationCost\": 3000000,\r\n    \"totalCost\": 18000000,\r\n    \"totalSickDays\": 30,\r\n    \"propertyDamage\": 2000000,\r\n    \"accidentDetails\": [\r\n      {\r\n        \"id\": 1,\r\n        \"accidentCause\": \"Thiếu an toàn lao động\",\r\n        \"injuryFactor\": \"Máy móc, thiết bị\",\r\n        \"occupationCategory\": \"Công nhân sản xuất\",\r\n        \"totalAccidentCases\": 1,\r\n        \"totalCasesWithDeath\": 1,\r\n        \"totalCasesWithTwoOrMoreVictims\": 0,\r\n        \"totalVictims\": 6,\r\n        \"totalFemaleVictims\": 2,\r\n        \"totalDeaths\": 1,\r\n        \"totalSeriouslyInjured\": 2,\r\n        \"unmanagedVictims\": 0,\r\n        \"unmanagedFemaleVictims\": 0,\r\n        \"unmanagedDeaths\": 0,\r\n        \"unmanagedSeriouslyInjured\": 0,\r\n        \"medicalCost\": 10000000,\r\n        \"salaryDuringTreatment\": 5000000,\r\n        \"compensationCost\": 3000000,\r\n        \"totalSickDays\": 30,\r\n        \"propertyDamage\": 2000000,\r\n        \"totalCost\": 18000000\r\n      }\r\n    ]\r\n  },\r\n  \"laborAccidentSupportReport\": {\r\n    \"totalAccidentCases\": 1,\r\n    \"totalCasesWithDeath\": 1,\r\n    \"totalCasesWithTwoOrMoreVictims\": 0,\r\n    \"totalVictims\": 6,\r\n    \"totalFemaleVictims\": 2,\r\n    \"totalDeaths\": 1,\r\n    \"totalSeriouslyInjured\": 2,\r\n    \"unmanagedVictims\": 0,\r\n    \"unmanagedFemaleVictims\": 0,\r\n    \"unmanagedDeaths\": 0,\r\n    \"unmanagedSeriouslyInjured\": 0,\r\n    \"medicalCost\": 10000000,\r\n    \"salaryDuringTreatment\": 5000000,\r\n    \"compensationCost\": 3000000,\r\n    \"totalCost\": 18000000,\r\n    \"totalSickDays\": 30,\r\n    \"propertyDamage\": 2000000\r\n  }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/reports/4",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "4"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "submit-report",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports/1/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "1",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "approve-report",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports/52/approve",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "52",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reject-report",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"reason\": \"File đính kèm không khớp với dữ liệu đã nhập\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/reports/3/reject",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "3",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reopen-report",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/reports/3/reopen",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "reports",
+                "3",
+                "reopen"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "report-history",
+      "item": [
+        {
+          "name": "get-all-history-report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/report-histories",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "report-histories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-by-id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/report-histories/51",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "report-histories",
+                "51"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "report-file",
+      "item": [
+        {
+          "name": "upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "31a9fb94-057e-4863-85e0-c6e352153889",
+                  "src": "/D:/25-26_TT_VNA/tts-vna/BC tinh hinh TNLD - PHU LUC XII.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3001/report-files/12/upload",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "report-files",
+                "12",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-list-file-upload",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/report-files/12",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "report-files",
+                "12"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/report-files/6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "report-files",
+                "6"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "logout",
       "request": {
         "method": "POST",
@@ -1447,7 +1823,7 @@
     "bearer": [
       {
         "key": "token",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE4LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjEwLCJidXNpbmVzc0lkIjpudWxsLCJpYXQiOjE3ODE5MzkxNjEsImV4cCI6MTc4MTk0Mjc2MX0.r80FptYMcuv02tvjFtRGJckWum3rLoJX5Sj2rF_eZNE",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE4LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjEwLCJidXNpbmVzc0lkIjpudWxsLCJkaXNwbGF5TmFtZSI6ImFkbWluIiwiaWF0IjoxNzgyMzExNDIyLCJleHAiOjE3ODIzMTUwMjJ9.CMI25UHD9uIHbKgiD8V3mjvE_1mdT2y6ltPi5aEI1Vo",
         "type": "string"
       }
     ]
