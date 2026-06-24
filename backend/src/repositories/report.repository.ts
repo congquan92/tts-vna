@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DataSource, DeepPartial, Repository } from 'typeorm';
 import { Report } from '../entities/report.entity';
+import { ReportHistory } from '../entities/report-history.entity';
+import { ReportStatus } from '../common/enums/report-status.enum';
 
 @Injectable()
 export class ReportRepository {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
-  ) {}
+    private readonly dataSource: DataSource,
+  ) { }
 
   get manager() {
     return this.reportRepository.manager;
@@ -113,7 +116,34 @@ export class ReportRepository {
     return this.reportRepository.save(report);
   }
 
-  async delete(id: number) {
-    return this.reportRepository.delete(id);
+  async updateStatus(
+    id: number,
+    status: ReportStatus,
+    actor: { id: number; type: 'SO' | 'DOANH_NGHIEP'; name: string },
+    rejectReason?: string,
+  ) {
+    const report = await this.reportRepository.findOne({ where: { id } });
+
+    if (!report) {
+      throw new NotFoundException('Không tìm thấy báo cáo');
+    }
+
+    return await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(Report).update(id, {
+        status,
+        rejectReason: rejectReason ?? undefined,
+      });
+
+      await manager.getRepository(ReportHistory).save({
+        reportId: id,
+        status,
+        reason: rejectReason ?? null,
+        actorId: actor.id,
+        actorType: actor.type,
+        actorName: actor.name,
+      });
+
+      return this.findById(id);
+    });
   }
 }

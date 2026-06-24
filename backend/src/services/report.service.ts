@@ -14,6 +14,7 @@ import { validateLaborAccidentReport } from '../common/validators/labor-accident
 import { validateLaborAccidentSupportReport } from '../common/validators/labor-accident-support-report.validator';
 import * as fs from 'fs';
 import * as path from 'path';
+import { BusinessRepository } from '../repositories/business.repository';
 
 type CompanyYearReportItem = {
   reportId: number;
@@ -25,7 +26,10 @@ type CompanyYearReportItem = {
 
 @Injectable()
 export class ReportService {
-  constructor(private readonly reportRepository: ReportRepository) {}
+  constructor(
+    private readonly reportRepository: ReportRepository,
+    private readonly businessRepository: BusinessRepository,
+  ) { }
 
   async createReport(dto: CreateReportDto) {
     const reportData: DeepPartial<Report> = {};
@@ -143,7 +147,7 @@ export class ReportService {
       if (!report.laborAccidentReport) {
         report.laborAccidentReport = new LaborAccidentReport();
       }
-      
+
       const oldDetails = report.laborAccidentReport.accidentDetails || [];
       const reportId = report.laborAccidentReport.id;
       if (reportId && oldDetails.length > 0) {
@@ -178,37 +182,40 @@ export class ReportService {
     };
   }
 
-  async deleteReport(id: number) {
-    const report = await this.reportRepository.findById(id);
+  async submitReport(id: number, req: any) {
+    return this.reportRepository.updateStatus(id, ReportStatus.PENDING, {
+      id: req.user.id,
+      type: req.user.orgType,
+      name: req.user.displayName,
+    });
+  }
 
-    if (!report) {
-      throw new NotFoundException('Không tìm thấy báo cáo');
-    }
+  async approveReport(id: number, req: any) {
+    return this.reportRepository.updateStatus(id, ReportStatus.RECEIVED, {
+      id: req.user.id,
+      type: req.user.orgType,
+      name: req.user.displayName,
+    });
+  }
 
-    // Delete associated physical files from file system
-    if (report.files && report.files.length > 0) {
-      for (const file of report.files) {
-        const relativePath = file.filePath.replace(/^\//, '');
-        const fullPath = path.join(process.cwd(), relativePath);
+  async rejectReport(id: number, reason: string, req: any) {
+    return this.reportRepository.updateStatus(
+      id,
+      ReportStatus.REJECTED,
+      {
+        id: req.user.id,
+        type: req.user.orgType,
+        name: req.user.displayName,
+      },
+      reason,
+    );
+  }
 
-        try {
-          if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-          }
-        } catch (err) {
-          console.error(`Failed to delete physical file: ${fullPath}`, err);
-        }
-      }
-    }
-
-    const result = await this.reportRepository.delete(id);
-
-    if (!result.affected) {
-      throw new NotFoundException('Không tìm thấy báo cáo');
-    }
-
-    return {
-      message: 'Xóa báo cáo thành công',
-    };
+  async reopenReport(id: number, req: any) {
+    return this.reportRepository.updateStatus(id, ReportStatus.REPORTING, {
+      id: req.user.id,
+      type: req.user.orgType,
+      name: req.user.displayName,
+    });
   }
 }
