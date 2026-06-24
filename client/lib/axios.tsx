@@ -46,11 +46,14 @@ axiosInstance.interceptors.response.use(
 
         // Không refresh cho login/register/refresh/change-password....
         const url = originalRequest.url || "";
-        const isAuthAPI = 
-            url.includes("/auth/login") || 
-            url.includes("/auth/register") || 
+        const isAuthAPI =
+            url.includes("/auth/login") ||
+            url.includes("/auth/register") ||
             url.includes("/auth/refresh") ||
-            url.includes("/auth/change-password");
+            url.includes("/auth/change-password") ||
+            url.includes("/business/register") ||
+            url.includes("/business/request-otp") ||
+            url.includes("/business/verify-otp");
 
         if (isExpired && !originalRequest._retry && !isAuthAPI) {
             originalRequest._retry = true;
