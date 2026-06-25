@@ -143,7 +143,22 @@ export class ReportRepository {
         actorName: actor.name,
       });
 
-      return this.findById(id);
+      return await manager.getRepository(Report).findOne({
+        where: { id },
+        relations: {
+          companyInfo: true,
+          laborAccidentReport: {
+            accidentDetails: true,
+          },
+          laborAccidentSupportReport: true,
+          histories: true,
+        },
+        order: {
+          histories: {
+            createdAt: 'ASC',
+          },
+        },
+      });
     });
   }
 }

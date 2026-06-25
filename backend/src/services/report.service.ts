@@ -183,19 +183,28 @@ export class ReportService {
   }
 
   async submitReport(id: number, req: any) {
-    return this.reportRepository.updateStatus(id, ReportStatus.PENDING, {
-      id: req.user.id,
-      type: req.user.orgType,
-      name: req.user.displayName,
-    });
+    console.log(req.user);
+
+    return this.reportRepository.updateStatus(id, ReportStatus.PENDING,
+      {
+        id:
+          req.user.accountType === 'BUSINESS'
+            ? req.user.businessId
+            : req.user.userId,
+        type: req.user.orgType,
+        name: req.user.displayName,
+      },);
   }
 
   async approveReport(id: number, req: any) {
     return this.reportRepository.updateStatus(id, ReportStatus.RECEIVED, {
-      id: req.user.id,
+      id:
+        req.user.accountType === 'BUSINESS'
+          ? req.user.businessId
+          : req.user.userId,
       type: req.user.orgType,
       name: req.user.displayName,
-    });
+    },);
   }
 
   async rejectReport(id: number, reason: string, req: any) {
@@ -203,7 +212,10 @@ export class ReportService {
       id,
       ReportStatus.REJECTED,
       {
-        id: req.user.id,
+        id:
+          req.user.accountType === 'BUSINESS'
+            ? req.user.businessId
+            : req.user.userId,
         type: req.user.orgType,
         name: req.user.displayName,
       },
@@ -213,9 +225,12 @@ export class ReportService {
 
   async reopenReport(id: number, req: any) {
     return this.reportRepository.updateStatus(id, ReportStatus.REPORTING, {
-      id: req.user.id,
+      id:
+        req.user.accountType === 'BUSINESS'
+          ? req.user.businessId
+          : req.user.userId,
       type: req.user.orgType,
       name: req.user.displayName,
-    });
+    },);
   }
 }
