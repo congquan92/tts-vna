@@ -145,9 +145,9 @@ const AccountPage = () => {
                 const wards =
                     province && province.wards
                         ? province.wards.map((w: Ward) => ({
-                              label: w.name,
-                              value: w.name,
-                          }))
+                            label: w.name,
+                            value: w.name,
+                        }))
                         : [];
                 setAvailableWards(wards);
                 setFormData((prev) => ({ ...prev, ward: "" })); // Reset ward khi đổi tỉnh
@@ -178,7 +178,9 @@ const AccountPage = () => {
             const updatedProfile = await AuthApi.updateProfile(payload);
 
             setProfile(updatedProfile);
-            updateUser(updatedProfile);
+            await AuthApi.getProfile().then((freshUser) => {
+                updateUser(freshUser);
+            });
             setFormData((prev) => ({
                 ...prev,
                 avatarUrl: updatedProfile.avatarUrl,

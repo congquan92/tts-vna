@@ -54,9 +54,12 @@ export class CreateUserDto {
     description: 'Loại tổ chức (SO hoặc DOANH_NGHIEP) - Hệ thống tự gán',
     enum: OrgType
   })
-  @IsOptional() 
+  @IsOptional()
   @IsEnum(OrgType)
-  orgType?: string; 
+  orgType?: string;
 }
 
-export class UpdateUserDto extends PartialType(CreateUserDto) { }
+export class UpdateUserDto extends PartialType(CreateUserDto) {
+  @ApiPropertyOptional({ description: 'Không được cập nhật username' })
+  username?: never;
+}

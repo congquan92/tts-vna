@@ -265,6 +265,11 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         try {
             // Remove avatarUrl and handle password dynamically
             const cleanData = { ...formData };
+            
+            if (editingItem) {
+                delete (cleanData as any).username;
+            }
+
             delete (cleanData as { avatarUrl?: string }).avatarUrl;
             const password = cleanData.password;
             delete (cleanData as { password?: string }).password;

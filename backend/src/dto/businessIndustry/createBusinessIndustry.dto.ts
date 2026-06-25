@@ -9,13 +9,13 @@ import {
 import { BusinessStatus } from '../../entities/BusinessIndustry.entity';
 
 const CODE_PATTERN =
-  /^[A-Z0-9]{1,5}$/;
+  /^[A-Z0-9]{1,4}$/;
 
 export class CreateBusinessIndustryDto {
   @IsString()
   @Matches(CODE_PATTERN, {
     message:
-      'code must be a valid alphanumeric string (1-5 characters)',
+      'code must be a valid alphanumeric string (1-4 characters)',
   })
   code!: string;
 

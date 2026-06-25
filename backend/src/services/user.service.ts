@@ -114,14 +114,8 @@ export class UserService {
     if (account) {
       let accountUpdated = false;
 
-      if (dto.username && dto.username !== account.username) {
-        const existedUsername =
-          await this.accountRepository.findAccountByUsername(dto.username);
-        if (existedUsername && existedUsername.id !== account.id) {
-          throw new ConflictException('Tên đăng nhập đã tồn tại');
-        }
-        account.username = dto.username;
-        accountUpdated = true;
+      if (dto.username) {
+        throw new BadRequestException('Không được phép cập nhật tên đăng nhập');
       }
 
       if (dto.roleId && dto.roleId !== account.roleId) {

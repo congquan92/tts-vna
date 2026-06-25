@@ -33,31 +33,42 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
     };
 
     // Initialize form data when isOpen changes to avoid cascading renders in useEffect
-    const [lastOpened, setLastOpened] = useState(false);
-    if (isOpen && !lastOpened) {
-        setLastOpened(true);
+    useEffect(() => {
+        if (!isOpen) return;
+
         if (editingItem) {
-            setCode(editingItem.code);
-            setName(editingItem.name);
+            setCode(editingItem.code || "");
+            setName(editingItem.name || "");
             setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
-            setStatus(editingItem.status);
+            setStatus(editingItem.status || BusinessStatus.ACTIVE);
         } else {
             setCode("");
             setName("");
             setParentId("");
             setStatus(BusinessStatus.ACTIVE);
         }
+
         setErrors({});
-    } else if (!isOpen && lastOpened) {
-        setLastOpened(false);
-    }
+    }, [isOpen, editingItem]);
+
+    useEffect(() => {
+        if (!editingItem) return;
+        if (parentOptions.length === 0) return;
+
+        const exists = parentOptions.find(o => o.value === String(editingItem.parentId));
+        if (!exists) return;
+
+        setParentId(String(editingItem.parentId));
+    }, [parentOptions, editingItem]);
 
     // Fetch parent options based on current level
     useEffect(() => {
         const fetchParents = async () => {
             try {
                 const list = await BusinessIndustryApi.findAll();
-                const currentLevel = calculateLevel(code);
+                const currentLevel =
+                    editingItem?.level ?? calculateLevel(code);
+
                 const parentLevel = currentLevel - 1;
 
                 const filtered = list.filter((item) => {
@@ -159,7 +170,11 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
                             value={parentId}
                             isSelect
                             isSearchable
-                            placeholder="Chọn nhóm ngành cha"
+                            placeholder={
+                                parentOptions.length === 0
+                                    ? "Không có nhóm ngành cha"
+                                    : "Chọn nhóm ngành cha"
+                            }
                             options={parentOptions}
                             onChange={(e) => setParentId(e.target.value)}
                             disabled={!!editingItem}

@@ -20,7 +20,7 @@ export class BusinessIndustryRepository {
     return this.repo.save(e) as Promise<BusinessIndustry>;
   }
 
-  findAll(): Promise<BusinessIndustry[]> {
+  async findAll(): Promise<BusinessIndustry[]> {
     return this.repo.find({
       order: {
         id: 'DESC',
