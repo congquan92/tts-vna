@@ -82,12 +82,12 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                             <button type="button" className="text-gray-200 cursor-not-allowed" title="Không thể chỉnh sửa báo cáo chưa khai báo" disabled>
                                                 <Pencil size={16} />
                                             </button>
-                                        ) : item.status === "đang báo cáo" ? (
+                                        ) : (item.status === "đang báo cáo" || item.status === "đã từ chối") ? (
                                             <button type="button" onClick={() => onEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
                                                 <Pencil size={16} />
                                             </button>
                                         ) : (
-                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã tiếp nhận không thể chỉnh sửa" disabled>
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã gửi không thể chỉnh sửa" disabled>
                                                 <Pencil size={16} />
                                             </button>
                                         )}
@@ -118,11 +118,28 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                                 <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
                                                 <span className="text-orange-600 font-semibold">Đang báo cáo</span>
                                             </>
+                                        ) : item.status === "chờ tiếp nhận" ? (
+                                            <>
+                                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block" />
+                                                <span className="text-yellow-600 font-semibold">Chờ tiếp nhận</span>
+                                            </>
                                         ) : item.status === "đã tiếp nhận" ? (
                                             <>
-                                                <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                                                <span className="text-blue-600 font-semibold">Đã tiếp nhận</span>
+                                                <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                                                <span className="text-green-600 font-semibold">Đã tiếp nhận</span>
                                             </>
+                                        ) : item.status === "đã từ chối" ? (
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                                                    <span className="text-red-600 font-semibold">Đã từ chối</span>
+                                                </div>
+                                                {(item as any).rejectReason && (
+                                                    <span className="text-[10px] text-red-500 italic max-w-[200px] truncate" title={(item as any).rejectReason}>
+                                                        Lý do: {(item as any).rejectReason}
+                                                    </span>
+                                                )}
+                                            </div>
                                         ) : (
                                             <>
                                                 <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />

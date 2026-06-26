@@ -37,4 +37,24 @@ export const ReportApi = {
         const res = await axiosInstance.delete<{ message: string; data: any }>(`/reports/${id}`);
         return res.data;
     },
+
+    submit: async (id: number): Promise<Report> => {
+        const res = await axiosInstance.patch<Report>(`/reports/${id}/submit`);
+        return res.data;
+    },
+
+    approve: async (id: number): Promise<Report> => {
+        const res = await axiosInstance.patch<Report>(`/reports/${id}/approve`);
+        return res.data;
+    },
+
+    reject: async (id: number, reason: string): Promise<Report> => {
+        const res = await axiosInstance.patch<Report>(`/reports/${id}/reject`, { reason });
+        return res.data;
+    },
+
+    reopen: async (id: number): Promise<Report> => {
+        const res = await axiosInstance.patch<Report>(`/reports/${id}/reopen`);
+        return res.data;
+    },
 };

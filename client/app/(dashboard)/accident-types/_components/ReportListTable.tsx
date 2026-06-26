@@ -121,7 +121,9 @@ export default function ReportListTable({
                         >
                             <option value="">Tất cả</option>
                             <option value="đang báo cáo">Đang báo cáo</option>
+                            <option value="chờ tiếp nhận">Chờ tiếp nhận</option>
                             <option value="đã tiếp nhận">Đã tiếp nhận</option>
+                            <option value="đã từ chối">Đã từ chối</option>
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                     </div>
@@ -155,13 +157,35 @@ export default function ReportListTable({
                                 <div className="flex items-center gap-2">
                                     {item.status === "đang báo cáo" ? (
                                         <>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />
-                                            <span className="text-gray-500 font-semibold">Đang báo cáo</span>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
+                                            <span className="text-orange-600 font-semibold">Đang báo cáo</span>
                                         </>
+                                    ) : item.status === "chờ tiếp nhận" ? (
+                                        <>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block animate-pulse" />
+                                            <span className="text-yellow-600 font-semibold">Chờ tiếp nhận</span>
+                                        </>
+                                    ) : item.status === "đã tiếp nhận" ? (
+                                        <>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                                            <span className="text-green-600 font-semibold">Đã tiếp nhận</span>
+                                        </>
+                                    ) : item.status === "đã từ chối" ? (
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                                                <span className="text-red-600 font-semibold">Đã từ chối</span>
+                                            </div>
+                                            {item.rejectReason && (
+                                                <span className="text-[10px] text-red-500 italic max-w-[200px] truncate" title={item.rejectReason}>
+                                                    Lý do: {item.rejectReason}
+                                                </span>
+                                            )}
+                                        </div>
                                     ) : (
                                         <>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                                            <span className="text-blue-600 font-semibold">Đã tiếp nhận</span>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" />
+                                            <span className="text-gray-500 font-semibold">Không xác định</span>
                                         </>
                                     )}
                                 </div>

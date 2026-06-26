@@ -535,7 +535,9 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
     const handleSave = async (statusToSave: "đang báo cáo" | "đã tiếp nhận") => {
         if (!validateForm()) return;
 
-        if (statusToSave === "đã tiếp nhận" && !stampedFile && !existingFile) {
+        const isSubmit = statusToSave === "đã tiếp nhận";
+
+        if (isSubmit && !stampedFile && !existingFile) {
             toast.error("Vui lòng đính kèm file báo cáo có dấu mộc công ty trước khi gửi báo cáo!");
             return;
         }
@@ -543,7 +545,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
         const payload: CreateReportPayload = {
             year: formYear,
             reportPeriod: formPeriod,
-            status: statusToSave,
+            status: "đang báo cáo",
             companyInfo: {
                 totalNumberOfEmployees: Number(totalEmployees),
                 totalNumberOfFemaleEmployees: Number(totalFemaleEmployees),
@@ -618,7 +620,10 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 if (stampedFile && createdReportId) {
                     await ReportFileApi.upload(createdReportId, stampedFile, "attachment");
                 }
-                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Lưu nháp thành công!");
+                if (isSubmit && createdReportId) {
+                    await ReportApi.submit(createdReportId);
+                }
+                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Lưu nháp thành công!");
             } else if (mode === "edit" && report !== null) {
                 await ReportApi.update(report.id, payload as UpdateReportPayload);
                 if (stampedFile) {
@@ -631,7 +636,10 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                     }
                     await ReportFileApi.upload(report.id, stampedFile, "attachment");
                 }
-                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Cập nhật nháp thành công!");
+                if (isSubmit) {
+                    await ReportApi.submit(report.id);
+                }
+                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Cập nhật nháp thành công!");
             }
             onSaveSuccess();
             onClose();

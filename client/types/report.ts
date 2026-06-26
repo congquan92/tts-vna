@@ -91,6 +91,7 @@ export interface UpdateReportPayload extends Partial<CreateReportPayload> {}
 export interface Report {
     id: number;
     status: string;
+    rejectReason?: string;
     year?: number;
     reportPeriod?: string;
     companyInfo?: CompanyInfo;
