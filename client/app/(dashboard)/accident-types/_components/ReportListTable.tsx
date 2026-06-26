@@ -167,8 +167,8 @@ export default function ReportListTable({
                                         </>
                                     ) : item.status === "đã tiếp nhận" ? (
                                         <>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                                            <span className="text-green-600 font-semibold">Đã tiếp nhận</span>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                                            <span className="text-blue-600 font-semibold">Đã tiếp nhận</span>
                                         </>
                                     ) : item.status === "đã từ chối" ? (
                                         <div className="flex flex-col gap-0.5">

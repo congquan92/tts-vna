@@ -143,12 +143,12 @@ export default function ViewReportPage() {
             {/* Status Banner */}
             <div className="mx-6 mt-3 shrink-0 print:hidden">
                 {report.status === "đã tiếp nhận" && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between text-xs text-green-800 shadow-sm">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between text-xs text-blue-800 shadow-sm">
                         <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="w-2 h-2 rounded-full bg-blue-500" />
                             <span className="font-semibold">Trạng thái: Đã tiếp nhận</span>
                         </div>
-                        <span className="text-[11px] text-green-600 font-medium">Báo cáo này đã được Sở tiếp nhận thành công.</span>
+                        <span className="text-[11px] text-blue-600 font-medium">Báo cáo này đã được Sở tiếp nhận thành công.</span>
                     </div>
                 )}
                 {report.status === "đã từ chối" && (
