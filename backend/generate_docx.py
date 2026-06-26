@@ -14,21 +14,63 @@ def get_cell_text(cell):
     t_tags = cell.findall('.//w:t', namespaces)
     return "".join([t.text for t in t_tags if t.text]).strip()
 
-def set_cell_text(cell, text):
-    p = cell.find('.//w:p', namespaces)
-    if p is None:
+def set_cell_text(cell, text, bold=False, align=None):
+    paragraphs = cell.findall('.//w:p', namespaces)
+    if not paragraphs:
         p = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p')
         cell.append(p)
+        paragraphs = [p]
+        
+    p = paragraphs[0]
+    for extra_p in paragraphs[1:]:
+        cell.remove(extra_p)
+        
     pPr = p.find('w:pPr', namespaces)
+    if pPr is None:
+        pPr = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}pPr')
+        p.insert(0, pPr)
+        
+    if align:
+        jc = pPr.find('w:jc', namespaces)
+        if jc is None:
+            jc = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}jc')
+            pPr.append(jc)
+        jc.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val', align)
     
+    # Clone rPr from first w:r if it exists, to preserve font size/family in the table cell!
+    first_r = p.find('.//w:r', namespaces)
+    rPr = None
+    if first_r is not None:
+        rPr_elem = first_r.find('w:rPr', namespaces)
+        if rPr_elem is not None:
+            rPr = copy.deepcopy(rPr_elem)
+            
     # Remove all children of the paragraph except pPr
     p_children = list(p)
     for child in p_children:
         if child != pPr:
             p.remove(child)
             
-    # Add new run and text
+    # Create new run
     r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+    if rPr is not None:
+        r.append(rPr)
+        # Handle bold override
+        b = rPr.find('w:b', namespaces)
+        if bold:
+            if b is None:
+                b = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}b')
+                rPr.append(b)
+        else:
+            if b is not None:
+                rPr.remove(b)
+    else:
+        if bold:
+            rPr = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}rPr')
+            b = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}b')
+            rPr.append(b)
+            r.append(rPr)
+        
     t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
     t.text = str(text)
     if len(t.text) > 0 and (t.text.startswith(' ') or t.text.endswith(' ')):
@@ -36,7 +78,7 @@ def set_cell_text(cell, text):
     r.append(t)
     p.append(r)
 
-def fill_row_data(cells, data_obj):
+def fill_row_data(cells, data_obj, bold=False):
     # Map cells to columns based on gridSpan
     col_cells = [None] * 13
     current_col = 0
@@ -59,7 +101,7 @@ def fill_row_data(cells, data_obj):
     if code_val is not None:
         target_code_cell = col_cells[1]
         if target_code_cell is not None:
-            set_cell_text(target_code_cell, code_val)
+            set_cell_text(target_code_cell, code_val, bold=bold, align='center')
 
     # Cells 2 to 12 map to the fields in the data object
     fields = [
@@ -79,7 +121,7 @@ def fill_row_data(cells, data_obj):
         val = data_obj.get(field, 0)
         target_cell = col_cells[idx + 2]
         if target_cell is not None:
-            set_cell_text(target_cell, val if val is not None else 0)
+            set_cell_text(target_cell, val if val is not None else 0, bold=bold, align='center')
 
 def main():
     if len(sys.argv) < 4:
@@ -104,8 +146,11 @@ def main():
     business_name = data.get('businessName', '')
     tax_code = data.get('taxCode', '')
     type_of_business = data.get('typeOfBusiness', '')
+    type_of_business_code = data.get('typeOfBusinessCode', '')
     business_industry = data.get('businessIndustry', '')
+    business_industry_code = data.get('businessIndustryCode', '')
     registered_address = data.get('registeredAddress', '')
+    district_code = data.get('districtCode', '')
     
     is_single_report = bool(business_name)
     
@@ -165,9 +210,19 @@ def main():
                     
                     if "Đơn vị báo cáo:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
+                        first_r = p.find('.//w:r', namespaces)
+                        rPr = None
+                        if first_r is not None:
+                            rPr_elem = first_r.find('w:rPr', namespaces)
+                            if rPr_elem is not None:
+                                rPr = copy.deepcopy(rPr_elem)
+
                         for child in list(p):
                             if child != pPr: p.remove(child)
+                            
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r.append(rPr)
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         if is_single_report:
                             t.text = f"Đơn vị báo cáo: {business_name}"
@@ -176,43 +231,75 @@ def main():
                         r.append(t)
                         p.append(r)
                         
-                    elif "Địa chỉ:" in clean_text and not is_single_report:
-                        pPr = p.find('w:pPr', namespaces)
-                        for child in list(p):
-                            if child != pPr: p.remove(child)
-                        r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
-                        t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t.text = f"Địa chỉ: {location_str or '...'}"
-                        r.append(t)
-                        p.append(r)
-                        
                     elif "Kỳ báo cáo" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
+                        first_r = p.find('.//w:r', namespaces)
+                        rPr = None
+                        if first_r is not None:
+                            rPr_elem = first_r.find('w:rPr', namespaces)
+                            if rPr_elem is not None:
+                                rPr = copy.deepcopy(rPr_elem)
+                        
                         for child in list(p):
                             if child != pPr: p.remove(child)
                         
+                        # Title run
                         r1 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r1.append(copy.deepcopy(rPr))
                         t1 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t1.text = f"BÁO CÁO TỔNG HỢP TÌNH HÌNH TAI NẠN LAO ĐỘNG"
+                        t1.text = "BÁO CÁO TỔNG HỢP TÌNH HÌNH TAI NẠN LAO ĐỘNG"
                         r1.append(t1)
                         p.append(r1)
                         
+                        # Br 1
                         r2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         br = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br')
                         r2.append(br)
                         p.append(r2)
                         
+                        # Period run
                         r3 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r3.append(copy.deepcopy(rPr))
                         t2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t2.text = f"Kỳ báo cáo: {period} năm {year}"
+                        if period == "Cả năm":
+                            t2.text = f"Kỳ báo cáo: Cả năm"
+                        else:
+                            t2.text = f"Kỳ báo cáo: {period} năm {year}"
                         r3.append(t2)
                         p.append(r3)
+
+                        # Br 2
+                        r4 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        br2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br')
+                        r4.append(br2)
+                        p.append(r4)
+
+                        # Date run
+                        r5 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r5.append(copy.deepcopy(rPr))
+                        t3 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
+                        t3.text = "Ngày báo cáo: ………………"
+                        r5.append(t3)
+                        p.append(r5)
                         
                     elif "Tổng số lao động của cơ sở:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
+                        first_r = p.find('.//w:r', namespaces)
+                        rPr = None
+                        if first_r is not None:
+                            rPr_elem = first_r.find('w:rPr', namespaces)
+                            if rPr_elem is not None:
+                                rPr = copy.deepcopy(rPr_elem)
+
                         for child in list(p):
                             if child != pPr: p.remove(child)
+                        
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r.append(rPr)
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         label = "Tổng số lao động của các cơ sở tham gia báo cáo" if not is_single_report else "Tổng số lao động của cơ sở"
                         t.text = f"{label}: {total_employees:,} người, trong đó nữ: {female_employees:,} người"
@@ -221,12 +308,22 @@ def main():
                         
                     elif "Tổng quỹ lương:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
+                        first_r = p.find('.//w:r', namespaces)
+                        rPr = None
+                        if first_r is not None:
+                            rPr_elem = first_r.find('w:rPr', namespaces)
+                            if rPr_elem is not None:
+                                rPr = copy.deepcopy(rPr_elem)
+
                         for child in list(p):
                             if child != pPr: p.remove(child)
+
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        if rPr is not None:
+                            r.append(rPr)
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        salary_val = f"{total_salary:,}" if total_salary else "............"
-                        t.text = f"Tổng quỹ lương: {salary_val} triệu đồng"
+                        salary_val = f"{total_salary:,}" if total_salary else "0"
+                        t.text = f"Tổng quỹ lương: {salary_val} đồng"
                         r.append(t)
                         p.append(r)
 
@@ -239,20 +336,23 @@ def main():
                     if len(tables) >= 1:
                         t1_cells = tables[0].findall('.//w:tc', namespaces)
                         if t1_cells:
-                            set_cell_text(t1_cells[0], f"Địa chỉ: {registered_address or '...'}")
-                            set_cell_text(t1_cells[1], f"Mã số thuế: {tax_code or '...'}")
+                            address_parts = [p.strip().replace('\r', '').replace('\n', '') for p in [registered_address, ward, province] if p and p.strip() and p.strip() != 'Tất cả']
+                            full_address = ", ".join(address_parts)
+                            set_cell_text(t1_cells[0], f"Địa chỉ: {full_address or '...'}")
+                            if len(t1_cells) >= 2:
+                                set_cell_text(t1_cells[1], f"Mã huyện, quận: {district_code or '...'}", align='right')
                             
                     # Table 2: Business Type Info
                     if len(tables) >= 2:
                         t2_cells = tables[1].findall('.//w:tc', namespaces)
                         if t2_cells:
-                            set_cell_text(t2_cells[0], f"Thuộc loại hình cơ sở (doanh nghiệp): {type_of_business or '...'}")
+                            set_cell_text(t2_cells[0], f"Thuộc loại hình cơ sở (doanh nghiệp): {type_of_business or '...'}    Mã loại hình cơ sở: {type_of_business_code or '...'}")
                             
                     # Table 3: Industry Sector Info
                     if len(tables) >= 3:
                         t3_cells = tables[2].findall('.//w:tc', namespaces)
                         if t3_cells:
-                            set_cell_text(t3_cells[0], f"Lĩnh vực sản xuất chính của cơ sở: {business_industry or '...'}")
+                            set_cell_text(t3_cells[0], f"Lĩnh vực sản xuất chính của cơ sở: {business_industry or '...'}    Mã lĩnh vực: {business_industry_code or '...'}")
 
                 # Populate Table 4 & Table 5
                 if len(tables) >= 5:
@@ -274,17 +374,20 @@ def main():
                         # Set Grand Total
                         if "3. Tổng số" in clean_text:
                             table2_grand['code'] = '3'
-                            fill_row_data(cells, table2_grand)
+                            fill_row_data(cells, table2_grand, bold=True)
+                            set_cell_text(cells[0], cell_0_text, bold=True)
                         
                         # Set Labor Accident Report sum (Row 6: 1. Tai nạn lao động)
                         elif "1. Tai nạn lao động" in clean_text:
                             labor_grand['code'] = '1'
-                            fill_row_data(cells, labor_grand)
+                            fill_row_data(cells, labor_grand, bold=True)
+                            set_cell_text(cells[0], cell_0_text, bold=True)
                             
                         # Set Support Report sum (Row 23: 2. Tai nạn được hưởng trợ cấp...)
                         elif "2. Tai nạn được hưởng trợ cấp" in clean_text:
                             support_grand['code'] = '2'
-                            fill_row_data(cells, support_grand)
+                            fill_row_data(cells, support_grand, bold=True)
+                            set_cell_text(cells[0], cell_0_text, bold=True)
                         
                         # Set Cause Rows
                         elif clean_text in cause_name_map:
@@ -308,7 +411,7 @@ def main():
                             new_row = copy.deepcopy(placeholder_factor_row)
                             new_cells = new_row.findall('.//w:tc', namespaces)
                             set_cell_text(new_cells[0], factor.get('name', ''))
-                            set_cell_text(new_cells[1], str(idx + 1))
+                            set_cell_text(new_cells[1], str(idx + 1), align='center')
                             fill_row_data(new_cells, factor)
                             parent_tbl.insert(p_idx + idx, new_row)
                         
@@ -323,7 +426,7 @@ def main():
                             new_row = copy.deepcopy(placeholder_occupation_row)
                             new_cells = new_row.findall('.//w:tc', namespaces)
                             set_cell_text(new_cells[0], occ.get('name', ''))
-                            set_cell_text(new_cells[1], str(idx + 1))
+                            set_cell_text(new_cells[1], str(idx + 1), align='center')
                             fill_row_data(new_cells, occ)
                             t4.insert(p_idx + idx, new_row)
                             
@@ -340,12 +443,12 @@ def main():
                             val = table2_grand.get(key)
                             return val if val is not None else 0
 
-                        set_cell_text(d_cells[0], f"{get_val('sickDays'):,}")
-                        set_cell_text(d_cells[1], f"{get_val('totalCost'):,}")
-                        set_cell_text(d_cells[2], f"{get_val('medicalCost'):,}")
-                        set_cell_text(d_cells[3], f"{get_val('salaryCost'):,}")
-                        set_cell_text(d_cells[4], f"{get_val('compensationCost'):,}")
-                        set_cell_text(d_cells[5], f"{get_val('propertyDamage'):,}")
+                        set_cell_text(d_cells[0], f"{get_val('sickDays'):,}", bold=True, align='center')
+                        set_cell_text(d_cells[1], f"{get_val('totalCost'):,}", bold=True, align='center')
+                        set_cell_text(d_cells[2], f"{get_val('medicalCost'):,}", bold=True, align='center')
+                        set_cell_text(d_cells[3], f"{get_val('salaryCost'):,}", bold=True, align='center')
+                        set_cell_text(d_cells[4], f"{get_val('compensationCost'):,}", bold=True, align='center')
+                        set_cell_text(d_cells[5], f"{get_val('propertyDamage'):,}", bold=True, align='center')
                         
                         t5.append(data_row)
  

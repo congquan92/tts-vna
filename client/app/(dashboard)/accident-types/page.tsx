@@ -13,6 +13,7 @@ import ReportListTable from "./_components/ReportListTable";
 import ReportFilterBar, { Province } from "./_components/ReportFilterBar";
 import BulkSelectionBanner from "@/components/popup/bulk-selection-banner";
 import RejectReasonPopup from "@/components/popup/reject-reason-popup";
+import ProcessingHistoryPopup from "@/components/popup/processing-history-popup";
 
 export default function AccidentTypesPage() {
     const router = useRouter();
@@ -25,6 +26,8 @@ export default function AccidentTypesPage() {
 
     // Rejection modal & processing state
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [historyReportId, setHistoryReportId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
     // Location dropdown lists & selections
@@ -305,6 +308,10 @@ export default function AccidentTypesPage() {
                 selectedIds={selectedIds}
                 onSelectAll={handleSelectAll}
                 onSelectOne={handleSelectOne}
+                onViewHistory={(id) => {
+                    setHistoryReportId(id);
+                    setShowHistoryModal(true);
+                }}
             />
 
             <BulkSelectionBanner
@@ -323,6 +330,7 @@ export default function AccidentTypesPage() {
             />
 
             <RejectReasonPopup isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} onSubmit={handleRejectSelectedSubmit} processing={processing} />
+            <ProcessingHistoryPopup isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} reportId={historyReportId} />
         </main>
     );
 }

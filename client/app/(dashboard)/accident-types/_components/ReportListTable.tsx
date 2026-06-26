@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Eye, ChevronLeft, ChevronRight, FileText, ChevronDown } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight, FileText, ChevronDown, History } from "lucide-react";
 import type { Report } from "@/types/report";
 
 interface ReportListTableProps {
@@ -26,6 +26,7 @@ interface ReportListTableProps {
     selectedIds: number[];
     onSelectAll: (checked: boolean) => void;
     onSelectOne: (id: number) => void;
+    onViewHistory: (id: number) => void;
 }
 
 const GRID_STYLE = { gridTemplateColumns: "40px 80px 2.2fr 0.9fr 0.8fr 1.7fr" };
@@ -49,6 +50,7 @@ export default function ReportListTable({
     selectedIds,
     onSelectAll,
     onSelectOne,
+    onViewHistory,
 }: ReportListTableProps) {
     const totalPages = Math.max(1, Math.ceil(totalReports / pageSize));
     const allSelected = reports.length > 0 && reports.every((r) => selectedIds.includes(r.id));
@@ -143,11 +145,19 @@ export default function ReportListTable({
                                     <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => onSelectOne(item.id)} />
                                 </div>
 
-                                {/* Action View button */}
-                                <div className="flex items-center justify-center">
+                                {/* Action View & History button */}
+                                <div className="flex items-center justify-center gap-1.5">
                                     <Link href={`/accident-types/view/${item.id}`} className="text-gray-400 hover:text-primary transition-colors cursor-pointer p-1 rounded hover:bg-gray-100 flex items-center justify-center" title="Xem chi tiết">
                                         <Eye size={16} />
                                     </Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => onViewHistory(item.id)}
+                                        className="text-gray-400 hover:text-primary transition-colors cursor-pointer p-1 rounded hover:bg-gray-100 flex items-center justify-center"
+                                        title="Tiến độ xử lý"
+                                    >
+                                        <History size={16} />
+                                    </button>
                                 </div>
 
                                 {/* Business details */}
@@ -167,8 +177,8 @@ export default function ReportListTable({
                                         </>
                                     ) : item.status === "đã tiếp nhận" ? (
                                         <>
-                                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                                            <span className="text-green-600 font-semibold">Đã tiếp nhận</span>
+                                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                                            <span className="text-blue-600 font-semibold">Đã tiếp nhận</span>
                                         </>
                                     ) : item.status === "đã từ chối" ? (
                                         <div className="flex flex-col gap-0.5">
