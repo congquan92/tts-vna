@@ -10,7 +10,7 @@ export class CreateUserDto {
   @ApiProperty({ description: 'Tên đăng nhập', example: 'admin123456' })
   @IsString()
   @IsNotEmpty({ message: 'Vui lòng nhập tên đăng nhập' })
-  @Matches(/^[a-zA-Z0-9]([._](?![._])|[a-zA-Z0-9]){6,18}[a-zA-Z0-9]$/, {
+  @Matches(/^(?=.{8,20}$)[a-zA-Z0-9](?:[a-zA-Z0-9]|[._](?![._]))*[a-zA-Z0-9]$/, {
     message: 'Tên đăng nhập 8-20 ký tự, không bắt đầu/kết thúc bằng . hoặc _'
   })
   username!: string;
