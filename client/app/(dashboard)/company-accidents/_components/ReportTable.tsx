@@ -77,9 +77,14 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                             </button>
                                         )}
 
-                                        {/* 2. Edit icon */}
+                                        {/* Edit / Declare icon */}
                                         {isPlaceholder ? (
-                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Không thể chỉnh sửa báo cáo chưa khai báo" disabled>
+                                            <button
+                                                type="button"
+                                                onClick={() => router.push(`/company-accidents/create?year=${selectedYear}&period=${item.reportPeriod}`)}
+                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                                                title="Khai báo mới"
+                                            >
                                                 <Pencil size={16} />
                                             </button>
                                         ) : (item.status === "đang báo cáo" || item.status === "đã từ chối") ? (
@@ -89,22 +94,6 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                         ) : (
                                             <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã gửi không thể chỉnh sửa" disabled>
                                                 <Pencil size={16} />
-                                            </button>
-                                        )}
-
-                                        {/* 3. Add icon */}
-                                        {isPlaceholder ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => router.push(`/company-accidents/create?year=${selectedYear}&period=${item.reportPeriod}`)}
-                                                className="text-gray-400 hover:text-primary transition-colors cursor-pointer"
-                                                title="Khai báo mới"
-                                            >
-                                                <Plus size={16} />
-                                            </button>
-                                        ) : (
-                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã được khai báo" disabled>
-                                                <Plus size={16} />
                                             </button>
                                         )}
                                     </div>

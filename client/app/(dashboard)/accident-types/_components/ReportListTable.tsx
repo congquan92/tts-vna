@@ -28,7 +28,7 @@ interface ReportListTableProps {
     onSelectOne: (id: number) => void;
 }
 
-const GRID_STYLE = { gridTemplateColumns: "40px 80px 2fr 1.2fr 1fr 1.2fr" };
+const GRID_STYLE = { gridTemplateColumns: "40px 80px 2.2fr 0.9fr 0.8fr 1.7fr" };
 
 export default function ReportListTable({
     reports,
