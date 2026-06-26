@@ -646,13 +646,7 @@ export default function ReportModal({ isOpen, onClose, mode, report, businessPro
                                         placeholder="0"
                                         size="sm"
                                     />
-                                    <InputField
-                                        label="TỔNG CHI PHÍ THIỆT HẠI (AUTO SUM)"
-                                        disabled
-                                        value={(laborReport.totalCost || 0).toLocaleString()}
-                                        size="sm"
-                                        className="font-bold text-blue-700 disabled:bg-gray-100"
-                                    />
+                                    <InputField label="TỔNG CHI PHÍ THIỆT HẠI (AUTO SUM)" disabled value={(laborReport.totalCost || 0).toLocaleString()} size="sm" className="font-bold text-blue-700 disabled:bg-gray-100" />
                                 </div>
                             </div>
 
@@ -877,13 +871,7 @@ export default function ReportModal({ isOpen, onClose, mode, report, businessPro
                                         placeholder="0"
                                         size="sm"
                                     />
-                                    <InputField
-                                        label="TỔNG CHI PHÍ THIỆT HẠI (AUTO SUM)"
-                                        disabled
-                                        value={(supportReport.totalCost || 0).toLocaleString()}
-                                        size="sm"
-                                        className="font-bold text-blue-700 disabled:bg-gray-100"
-                                    />
+                                    <InputField label="TỔNG CHI PHÍ THIỆT HẠI (AUTO SUM)" disabled value={(supportReport.totalCost || 0).toLocaleString()} size="sm" className="font-bold text-blue-700 disabled:bg-gray-100" />
                                 </div>
                             </div>
                         </div>
@@ -893,41 +881,21 @@ export default function ReportModal({ isOpen, onClose, mode, report, businessPro
                 {/* Modal Footer */}
                 <div className="shrink-0 px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
                     {mode === "view" ? (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onClose}
-                            className="px-5 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 text-xs font-bold"
-                        >
+                        <Button variant="outline" size="sm" onClick={onClose} className="px-5 py-2 border-gray-300 text-gray-700 hover:bg-gray-100 text-xs font-bold">
                             Đóng
                         </Button>
                     ) : (
                         <>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={onClose}
-                                className="border-none bg-transparent hover:bg-gray-100 text-gray-600 hover:text-gray-800 text-xs font-semibold px-5 py-2"
-                            >
+                            <Button variant="outline" size="sm" onClick={onClose} className="border-none bg-transparent hover:bg-gray-100 text-gray-600 hover:text-gray-800 text-xs font-semibold px-5 py-2">
                                 Hủy bỏ
                             </Button>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSave("đang báo cáo")}
-                                className="gap-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2"
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleSave("đang báo cáo")} className="gap-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2">
                                 <Save size={14} />
                                 <span>Lưu nháp</span>
                             </Button>
 
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleSave("đã tiếp nhận")}
-                                className="gap-1.5 text-xs font-bold px-4 py-2 shadow-sm"
-                            >
+                            <Button variant="primary" size="sm" onClick={() => handleSave("đã tiếp nhận")} className="gap-1.5 text-xs font-bold px-4 py-2 shadow-sm">
                                 <Send size={14} />
                                 <span>Gửi báo cáo</span>
                             </Button>

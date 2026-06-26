@@ -9,30 +9,12 @@ export const CAUSES = [
     "Điều kiện làm việc không tốt",
     "Quy phạm nội quy, quy trình, quy chuẩn, biện pháp làm việc an toàn",
     "Không sử dụng phương tiện bảo vệ cá nhân",
-    "Khách quan khó tránh/ Nguyên nhân chưa kể đến"
+    "Khách quan khó tránh/ Nguyên nhân chưa kể đến",
 ];
 
-export const FACTORS = [
-    "Thiết bị nâng",
-    "Ngã từ trên cao",
-    "Vật rơi trúng",
-    "Điện giật",
-    "Mắc kẹt vào máy móc",
-    "Bỏng (nhiệt, hóa chất)",
-    "Tai nạn giao thông lao động",
-    "Sập giàn giáo, đất đá",
-    "Khác"
-];
+export const FACTORS = ["Thiết bị nâng", "Ngã từ trên cao", "Vật rơi trúng", "Điện giật", "Mắc kẹt vào máy móc", "Bỏng (nhiệt, hóa chất)", "Tai nạn giao thông lao động", "Sập giàn giáo, đất đá", "Khác"];
 
-export const OCCUPATIONS = [
-    "Nhà lãnh đạo cơ quan Đảng Cộng sản Việt Nam cấp Trung ương",
-    "Kỹ sư cơ khí",
-    "Công nhân xây dựng",
-    "Nhân viên văn phòng",
-    "Lao động vận hành máy móc",
-    "Lao động thủ công đơn giản",
-    "Khác"
-];
+export const OCCUPATIONS = ["Nhà lãnh đạo cơ quan Đảng Cộng sản Việt Nam cấp Trung ương", "Kỹ sư cơ khí", "Công nhân xây dựng", "Nhân viên văn phòng", "Lao động vận hành máy móc", "Lao động thủ công đơn giản", "Khác"];
 
 export const initialLaborReport = (): LaborAccidentReport => ({
     totalAccidentCases: 0,
@@ -52,7 +34,7 @@ export const initialLaborReport = (): LaborAccidentReport => ({
     totalCost: 0,
     totalSickDays: 0,
     propertyDamage: 0,
-    accidentDetails: []
+    accidentDetails: [],
 });
 
 export const initialSupportReport = (): LaborAccidentSupportReport => ({
@@ -72,5 +54,5 @@ export const initialSupportReport = (): LaborAccidentSupportReport => ({
     compensationCost: 0,
     totalCost: 0,
     totalSickDays: 0,
-    propertyDamage: 0
+    propertyDamage: 0,
 });
