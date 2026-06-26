@@ -32,24 +32,39 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         return 0;
     };
 
-    // Initialize form data when isOpen changes to avoid cascading renders in useEffect
-    const [lastOpened, setLastOpened] = useState(false);
-    if (isOpen && !lastOpened) {
-        setLastOpened(true);
-        if (editingItem) {
-            setCode(editingItem.code);
-            setName(editingItem.name);
-            setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
-            setStatus(editingItem.status);
-        } else {
-            setCode("");
-            setName("");
-            setParentId("");
-            setStatus(BusinessStatus.ACTIVE);
+    // Adjust state during rendering when prop (isOpen or editingItem) changes to avoid cascading renders inside effects
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    const [prevEditingItem, setPrevEditingItem] = useState(editingItem);
+    const [prevParentOptions, setPrevParentOptions] = useState(parentOptions);
+
+    if (isOpen !== prevIsOpen || editingItem !== prevEditingItem) {
+        setPrevIsOpen(isOpen);
+        setPrevEditingItem(editingItem);
+
+        if (isOpen) {
+            if (editingItem) {
+                setCode(editingItem.code || "");
+                setName(editingItem.name || "");
+                setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
+                setStatus(editingItem.status || BusinessStatus.ACTIVE);
+            } else {
+                setCode("");
+                setName("");
+                setParentId("");
+                setStatus(BusinessStatus.ACTIVE);
+            }
+            setErrors({});
         }
-        setErrors({});
-    } else if (!isOpen && lastOpened) {
-        setLastOpened(false);
+    }
+
+    if (parentOptions !== prevParentOptions) {
+        setPrevParentOptions(parentOptions);
+        if (isOpen && editingItem && parentOptions.length > 0) {
+            const exists = parentOptions.find((o) => o.value === String(editingItem.parentId));
+            if (exists) {
+                setParentId(String(editingItem.parentId));
+            }
+        }
     }
 
     // Fetch parent options based on current level
@@ -57,7 +72,9 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         const fetchParents = async () => {
             try {
                 const list = await BusinessIndustryApi.findAll();
-                const currentLevel = calculateLevel(code);
+                const currentLevel =
+                    editingItem?.level ?? calculateLevel(code);
+
                 const parentLevel = currentLevel - 1;
 
                 const filtered = list.filter((item) => {
@@ -133,7 +150,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         <>
             <LoadingOverlay isLoading={submitting} />
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-                <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
+                <div className="w-full max-w-105 rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
                     {/* Header */}
                     <div className="bg-blue-600 px-6 py-3.5 text-center rounded-t-xl">
                         <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>
@@ -159,7 +176,11 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
                             value={parentId}
                             isSelect
                             isSearchable
-                            placeholder="Chọn nhóm ngành cha"
+                            placeholder={
+                                parentOptions.length === 0
+                                    ? "Không có nhóm ngành cha"
+                                    : "Chọn nhóm ngành cha"
+                            }
                             options={parentOptions}
                             onChange={(e) => setParentId(e.target.value)}
                             disabled={!!editingItem}

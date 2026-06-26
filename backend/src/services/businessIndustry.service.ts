@@ -14,7 +14,7 @@ import { SearchBusinessIndustryDto } from '../dto/businessIndustry/searchBusines
 
 @Injectable()
 export class BusinessIndustryService {
-  constructor(private readonly repo: BusinessIndustryRepository) {}
+  constructor(private readonly repo: BusinessIndustryRepository) { }
 
   async create(
     dto: CreateBusinessIndustryDto,
@@ -75,6 +75,8 @@ export class BusinessIndustryService {
       code: i.code,
       name: i.name,
       level: i.level,
+      parentId: i.parentId,
+      status: i.status,
     }));
   }
 

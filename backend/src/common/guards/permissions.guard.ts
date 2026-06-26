@@ -21,13 +21,6 @@ export class PermissionsGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const user = request.user; // { id, roleId, orgType }
 
-        const ADMIN_ROLE_ID = 1;
-
-        // Bypass cho Admin
-        if (user && user.roleId === ADMIN_ROLE_ID) {
-            return true;
-        }
-
         if (!user || !user.roleId) {
             throw new ForbiddenException('Bạn không có quyền truy cập');
         }

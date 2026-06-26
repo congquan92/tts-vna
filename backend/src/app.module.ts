@@ -52,6 +52,10 @@ import { ReportFile } from './entities/report-file.entity';
 import { ReportFileController } from './controllers/reportFile.controller';
 import { ReportFileService } from './services/reportFile.service';
 import { ReportFileRepository } from './repositories/reportFile.repository';
+import { ReportHistory } from './entities/report-history.entity';
+import { ReportHistoryController } from './controllers/reportHistory.controller';
+import { ReportHistoryService } from './services/reportHistory.service';
+import { ReportHistoryRepository } from './repositories/reportHistory.repository';
 
 @Module({
   imports: [
@@ -103,9 +107,9 @@ import { ReportFileRepository } from './repositories/reportFile.repository';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile, ReportHistory]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository],
 })
 export class AppModule { }

@@ -3,7 +3,6 @@
 import TextInput from "@/components/form/TextInput";
 import PasswordInput from "@/components/form/PasswordInput";
 import Button from "@/components/ui/Button";
-import Alert from "@/components/ui/Alert";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { AuthApi } from "@/api/auth";
@@ -22,9 +21,6 @@ type FormErrors = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_CONSTRAINTS = {
     LENGTH: 6,
-};
-const PASSWORD_CONSTRAINTS = {
-    MIN_LENGTH: 6,
 };
 const TIMERS = {
     RESEND_OTP: 60,

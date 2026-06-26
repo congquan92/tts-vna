@@ -42,8 +42,6 @@ export class SeedService implements OnModuleInit {
             { name: 'MANAGER_SO', orgType: 'SO' },
             { name: 'CHUYENVIEN_SO', orgType: 'SO' },
             { name: 'CEO_DN', orgType: 'DOANH_NGHIEP' },
-            // { name: 'MANAGER_DN', orgType: 'DOANH_NGHIEP' },
-            // { name: 'USER_DN', orgType: 'DOANH_NGHIEP' },
         ];
 
         for (const roleData of roles) {
@@ -64,39 +62,74 @@ export class SeedService implements OnModuleInit {
 
         // 2. Định nghĩa cấu trúc quyền (Mapping)
         const mappings = [
-            // ADMIN_SO - full quyền
+            // ADMIN_SO - toàn quyền bên sở, trừ những quyền REPORT_DN_*
             {
                 role: 'ADMIN_SO',
-                perms: perms.map(p => p.code),
+                perms: [
+                    // USER 
+                    'USER_VIEW',
+                    'USER_CREATE',
+                    'USER_UPDATE',
+                    'USER_DELETE',
+                    'USER_IMPORT',
+                    'USER_EXPORT',
+                    'USER_TOGGLE_STATUS',
+                    'USER_RESET_PASSWORD',
+
+                    // BUSINESS
+                    'BUSINESS_VIEW',
+                    'BUSINESS_CREATE',
+                    'BUSINESS_UPDATE',
+                    'BUSINESS_DELETE',
+                    'BUSINESS_UPLOAD_FILE',
+                    'BUSINESS_TOGGLE_STATUS',
+                    'BUSINESS_RESET_PASSWORD',
+
+                    // REPORT SỞ 
+                    'REPORT_SO_VIEW',
+                    'REPORT_SO_APPROVE',
+                    'REPORT_SO_REJECT',
+                    'REPORT_SO_REOPEN',
+                ],
             },
 
-            // MANAGER_SO - quản lý + xem + report sở
+            // MANAGER_SO
             {
                 role: 'MANAGER_SO',
                 perms: [
+                    // USER
                     'USER_VIEW',
                     'USER_CREATE',
                     'USER_UPDATE',
                     'USER_TOGGLE_STATUS',
                     'USER_RESET_PASSWORD',
 
+                    // BUSINESS
                     'BUSINESS_VIEW',
 
+                    // REPORT SỞ
                     'REPORT_SO_VIEW',
+                    'REPORT_SO_APPROVE',
+                    'REPORT_SO_REJECT',
+                    'REPORT_SO_REOPEN',
                 ],
             },
 
-            // CHUYENVIEN_SO - chỉ xem
+            // CHUYENVIEN_SO
             {
                 role: 'CHUYENVIEN_SO',
                 perms: [
                     'USER_VIEW',
                     'BUSINESS_VIEW',
+
+                    // báo cáo
                     'REPORT_SO_VIEW',
+                    'REPORT_SO_APPROVE',
+                    'REPORT_SO_REJECT',
                 ],
             },
 
-            // CEO_DN - doanh nghiệp (full nghiệp vụ DN)
+            // CEO_DN
             {
                 role: 'CEO_DN',
                 perms: [
@@ -104,14 +137,16 @@ export class SeedService implements OnModuleInit {
                     'BUSINESS_VIEW',
                     'BUSINESS_CREATE',
                     'BUSINESS_UPDATE',
+                    'BUSINESS_DELETE',
                     'BUSINESS_UPLOAD_FILE',
                     'BUSINESS_TOGGLE_STATUS',
                     'BUSINESS_RESET_PASSWORD',
-
+                    
                     // REPORT DOANH NGHIỆP
                     'REPORT_DN_VIEW',
                     'REPORT_DN_CREATE',
                     'REPORT_DN_UPDATE',
+                    'REPORT_DN_SUBMIT',
                     'REPORT_DN_EXPORT',
                 ],
             },

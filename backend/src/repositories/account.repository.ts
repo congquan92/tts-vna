@@ -24,6 +24,11 @@ export class AccountRepository {
     async findAccountByUsername(username: string) {
         return await this.accountRepository.findOne({
             where: { username },
+            relations: {
+                role: true,
+                user: true,
+                business: true,
+            },
         });
     }
 

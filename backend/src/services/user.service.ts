@@ -114,14 +114,8 @@ export class UserService {
     if (account) {
       let accountUpdated = false;
 
-      if (dto.username && dto.username !== account.username) {
-        const existedUsername =
-          await this.accountRepository.findAccountByUsername(dto.username);
-        if (existedUsername && existedUsername.id !== account.id) {
-          throw new ConflictException('Tên đăng nhập đã tồn tại');
-        }
-        account.username = dto.username;
-        accountUpdated = true;
+      if (dto.username) {
+        throw new BadRequestException('Không được phép cập nhật tên đăng nhập');
       }
 
       if (dto.roleId && dto.roleId !== account.roleId) {
@@ -217,6 +211,8 @@ export class UserService {
 
     const errors: any[] = [];
     const success: any[] = [];
+    const importedUsernames = new Set<string>();
+    const importedEmails = new Set<string>();
 
     for (let index = 0; index < data.length; index++) {
       const row: any = data[index];
@@ -230,17 +226,60 @@ export class UserService {
         const position = String(row['Chức danh'] || row.position || '').trim();
         const isActive = row.isActive !== undefined ? !!row.isActive : true;
 
+        if (
+          !fullName &&
+          !username &&
+          !email &&
+          !roleValue &&
+          !position
+        ) {
+          continue;
+        }
+
         const rowErrors: string[] = [];
 
         // ================= VALIDATE =================
         if (!fullName) rowErrors.push('Họ tên không được để trống');
-        if (!username) rowErrors.push('Tài khoản không được để trống');
+
+        const usernameRegex =
+          /^(?=.{8,20}$)[a-zA-Z0-9](?:[a-zA-Z0-9]|[._](?![._]))*[a-zA-Z0-9]$/;
+
+        if (!username) {
+          rowErrors.push('Tài khoản không được để trống');
+        } else if (/\s/.test(username)) {
+          rowErrors.push('Tài khoản không được chứa khoảng trắng');
+        } else if (!usernameRegex.test(username)) {
+          rowErrors.push(
+            'Tài khoản phải từ 8-20 ký tự, không bắt đầu/kết thúc bằng . hoặc _',
+          );
+        }
+
+        if (username && usernameRegex.test(username)) {
+          const usernameLower = username.toLowerCase();
+
+          if (importedUsernames.has(usernameLower)) {
+            rowErrors.push('Tài khoản bị trùng trong danh sách import');
+          } else {
+            importedUsernames.add(usernameLower);
+          }
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email) {
           rowErrors.push('Email không được để trống');
         } else {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(email)) {
             rowErrors.push('Email không hợp lệ');
+          }
+        }
+
+        if (email && emailRegex.test(email)) {
+          const emailLower = email.toLowerCase();
+
+          if (importedEmails.has(emailLower)) {
+            rowErrors.push('Email bị trùng trong danh sách import');
+          } else {
+            importedEmails.add(emailLower);
           }
         }
 

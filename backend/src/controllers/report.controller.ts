@@ -10,8 +10,12 @@ import {
   Query,
   UseGuards,
   Req,
+  Res,
   NotFoundException,
+  BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -24,24 +28,32 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ReportService } from '../services/report.service';
 import { CreateReportDto } from '../dto/report/create-report.dto';
 import { UpdateReportDto } from '../dto/report/update-report.dto';
+import { RejectReportDto } from '../dto/report/reject-report.dto';
+import { ReportStatus } from '../common/enums/report-status.enum';
+import { RequirePermissions } from '../common/decorators/permissions.decorator';
+import { Permission } from '../common/enums/permission.enum';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 
 @ApiTags('Report Management')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('reports')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) {}
+  constructor(private readonly reportService: ReportService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Tạo báo cáo mới' })
-  @ApiResponse({ status: 201, description: 'Tạo báo cáo thành công' })
+  @RequirePermissions(Permission.REPORT_DN_CREATE)
   createReport(@Req() req, @Body() dto: CreateReportDto) {
-    if (req.user.orgType === 'DOANH_NGHIEP') {
-      if (!dto.companyInfo) {
-        dto.companyInfo = {};
-      }
-      dto.companyInfo.businessId = req.user.businessId;
+
+    if (req.user.orgType !== 'DOANH_NGHIEP') {
+      throw new ForbiddenException(
+        'Chỉ doanh nghiệp mới được tạo báo cáo',
+      );
     }
+
+    dto.companyInfo ??= {};
+    dto.companyInfo.businessId = req.user.businessId;
+
     return this.reportService.createReport(dto);
   }
 
@@ -114,7 +126,39 @@ export class ReportController {
     return report;
   }
 
+  @Get(':id/export-docx')
+  @ApiOperation({ summary: 'Xuất chi tiết báo cáo ra file Word (.docx)' })
+  @ApiParam({ name: 'id', example: 1 })
+  async exportReportDocx(
+    @Req() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const report = await this.reportService.getReportById(id);
+    if (
+      req.user.orgType === 'DOANH_NGHIEP' &&
+      report.companyInfo?.businessId !== req.user.businessId
+    ) {
+      throw new NotFoundException(
+        'Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này',
+      );
+    }
+    const buffer = await this.reportService.exportReportDocx(id);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=BC_TNLD_${id}.docx`,
+    );
+
+    return res.end(buffer);
+  }
+
   @Patch(':id')
+  @RequirePermissions(Permission.REPORT_DN_UPDATE)
   @ApiOperation({ summary: 'Cập nhật báo cáo' })
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, description: 'Cập nhật báo cáo thành công' })
@@ -138,20 +182,82 @@ export class ReportController {
     return this.reportService.updateReport(id, dto);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Xóa báo cáo' })
-  @ApiParam({ name: 'id', example: 1 })
-  @ApiResponse({ status: 200, description: 'Xóa báo cáo thành công' })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy báo cáo' })
-  async deleteReport(@Req() req, @Param('id', ParseIntPipe) id: number) {
-    if (req.user.orgType === 'DOANH_NGHIEP') {
-      const report = await this.reportService.getReportById(id);
-      if (report.companyInfo?.businessId !== req.user.businessId) {
-        throw new NotFoundException(
-          'Không tìm thấy báo cáo hoặc bạn không có quyền xóa báo cáo này',
-        );
-      }
+  @Patch(':id/submit')
+  @RequirePermissions(Permission.REPORT_DN_SUBMIT)
+  @ApiOperation({ summary: 'Gửi báo cáo' })
+  async submitReport(
+    @Req() req,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const report = await this.reportService.getReportById(id);
+
+    if (
+      req.user.orgType === 'DOANH_NGHIEP' &&
+      report.companyInfo?.businessId !== req.user.businessId
+    ) {
+      throw new NotFoundException('Không tìm thấy báo cáo hoặc bạn không có quyền gửi báo cáo này');
     }
-    return this.reportService.deleteReport(id);
+
+    if (report.status !== ReportStatus.REPORTING) {
+      throw new BadRequestException('Chỉ có thể gửi báo cáo đang báo cáo',);
+    }
+
+    return this.reportService.submitReport(id, req);
+  }
+
+  @Patch(':id/approve')
+  @RequirePermissions(Permission.REPORT_SO_APPROVE)
+  @ApiOperation({ summary: 'Tiếp nhận báo cáo' })
+  async approveReport(@Req() req, @Param('id', ParseIntPipe) id: number,) {
+    const report = await this.reportService.getReportById(id);
+
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('Chỉ có thể tiếp nhận báo cáo đang chờ tiếp nhận',);
+    }
+
+    return this.reportService.approveReport(id, req);
+  }
+
+  @Patch(':id/reject')
+  @RequirePermissions(Permission.REPORT_SO_REJECT)
+  @ApiOperation({ summary: 'Từ chối báo cáo' })
+  async rejectReport(@Req() req, @Param('id', ParseIntPipe) id: number, @Body() dto: RejectReportDto) {
+    const report = await this.reportService.getReportById(id);
+
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('Chỉ có thể từ chối báo cáo đang chờ tiếp nhận',);
+    }
+
+    return this.reportService.rejectReport(id, dto.reason, req);
+  }
+
+  @Patch(':id/reopen')
+  @RequirePermissions(Permission.REPORT_SO_REOPEN)
+  @ApiOperation({ summary: 'Cho phép sửa lại báo cáo' })
+  async reopenReport(@Req() req, @Param('id', ParseIntPipe) id: number,) {
+    const report = await this.reportService.getReportById(id);
+
+    if (report.status !== ReportStatus.REJECTED) {
+      throw new BadRequestException('Chỉ có thể mở lại báo cáo đã từ chối',);
+    }
+
+    return this.reportService.reopenReport(id, req);
+  }
+
+  @Post('summary/export-docx')
+  @ApiOperation({ summary: 'Xuất báo cáo tổng hợp tình hình TNLĐ ra file Word (.docx)' })
+  async exportSummaryDocx(@Body() body: any, @Res() res: Response) {
+    const buffer = await this.reportService.exportSummaryDocx(body);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=BC_tinh_hinh_TNLD.docx',
+    );
+
+    return res.end(buffer);
   }
 }

@@ -118,6 +118,8 @@ export class AuthRepository {
             .createQueryBuilder('account')
             .addSelect('account.password')
             .leftJoinAndSelect('account.role', 'role')
+            .leftJoinAndSelect('account.user', 'user')
+            .leftJoinAndSelect('account.business', 'business')
             .where('account.username = :username', { username })
             .getOne();
     }

@@ -12,7 +12,6 @@ import { RequestOtpDto } from "../dto/business/request-otp.dto";
 import { VerifyOtpDto } from "../dto/business/verify-otp.dto";
 
 @ApiTags('Business Management')
-@ApiBearerAuth()
 @Controller('business')
 export class BusinessController {
     constructor(
@@ -20,6 +19,7 @@ export class BusinessController {
     ) { }
 
     // Thêm mới doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_CREATE)
     @Post()
@@ -49,6 +49,7 @@ export class BusinessController {
     }
 
     // Lấy danh sách doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_VIEW)
     @Get()
@@ -67,6 +68,7 @@ export class BusinessController {
     }
 
     // Tìm kiếm doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_VIEW)
     @Get('search')
@@ -151,6 +153,7 @@ export class BusinessController {
     }
 
     // Cập nhật thông tinh doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_UPDATE)
     @Patch(':id')
@@ -179,6 +182,7 @@ export class BusinessController {
     }
 
     // Lấy chi tiết doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_VIEW)
     @Get(':id')
@@ -191,6 +195,7 @@ export class BusinessController {
     }
 
     // Xóa doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_DELETE)
     @Delete(':id')
@@ -219,6 +224,7 @@ export class BusinessController {
     }
 
     // Xác nhận thông tin doanh nghiệp sau khi thêm mới/sửa
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_UPDATE)
     @Patch(':id/confirm')
@@ -245,6 +251,7 @@ export class BusinessController {
     }
 
     // Bật/Tắt trạng thái doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_TOGGLE_STATUS)
     @Patch(':id/toggle-status')
@@ -280,6 +287,7 @@ export class BusinessController {
     }
 
     // Khởi tạo mật khẩu doanh nghiệp
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @RequirePermissions(Permission.BUSINESS_RESET_PASSWORD)
     @Post(':id/set-password')

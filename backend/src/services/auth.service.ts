@@ -83,8 +83,6 @@ export class AuthService {
 
     const accountType = account.userId ? 'USER' : 'BUSINESS';
 
-    const profileId = account.userId ?? account.businessId;
-
     const payload = {
       sub: account.id,
       username: account.username,
@@ -94,6 +92,11 @@ export class AuthService {
       accountType,
       userId: account.userId ?? null,
       businessId: account.businessId ?? null,
+
+      displayName:
+        account.user?.fullName ??
+        account.business?.businessName ??
+        account.username,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -139,6 +142,10 @@ export class AuthService {
       accountType,
       userId: account.userId,
       businessId: account.businessId,
+      displayName:
+        account.user?.fullName ??
+        account.business?.businessName ??
+        account.username,
     };
 
     const newAccessToken = this.jwtService.sign(payload, {
