@@ -10,6 +10,7 @@ import type { Report } from "@/types/report";
 import { ChevronRight, Save, Printer, Send } from "lucide-react";
 import ReportForm from "../../_components/ReportForm";
 import Button from "@/components/ui/Button";
+import { toast } from "sonner";
 
 export default function EditReportPage() {
     const router = useRouter();
@@ -83,6 +84,26 @@ export default function EditReportPage() {
         router.push("/company-accidents");
     }, [router]);
 
+    const handleExportReportDocx = async () => {
+        if (!reportId) return;
+        try {
+            toast.loading("Đang xuất báo cáo ra file Word...", { id: "export-report-docx" });
+            const blob = await ReportApi.exportReportDocx(reportId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `BC_TNLĐ_PHỤ_LỤC_XII_${report?.companyInfo?.businessName || "DoanhNghiep"}_${report?.year || ""}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Xuất file Word thành công!", { id: "export-report-docx" });
+        } catch (e) {
+            console.error("Failed to export report to DOCX", e);
+            toast.error("Không thể xuất file Word. Vui lòng thử lại sau.", { id: "export-report-docx" });
+        }
+    };
+
     const isOverview = formTriggers?.selectedSection === "Xem tổng quan báo cáo tai nạn lao động";
 
     if (loading) {
@@ -117,7 +138,7 @@ export default function EditReportPage() {
 
                             {isOverview ? (
                                 <>
-                                    <Button variant="outline" size="sm" onClick={() => formTriggers?.print()} className="gap-1.5 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
+                                    <Button variant="outline" size="sm" onClick={handleExportReportDocx} className="gap-1.5 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
                                         <Printer className="size-3.5" />
                                         <span>In báo cáo</span>
                                     </Button>

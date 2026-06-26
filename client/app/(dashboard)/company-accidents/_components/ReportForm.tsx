@@ -1678,10 +1678,10 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                             <table className="w-full text-left border-collapse border border-gray-200 text-[10px]">
                                 <thead>
                                     <tr className="bg-[#F4F6F8] font-bold text-gray-700">
-                                        <th rowSpan={3} className="border border-gray-200 p-2 text-left align-middle w-62.5">
+                                        <th rowSpan={4} className="border border-gray-200 p-2 text-left align-middle w-62.5">
                                             Tên chỉ tiêu thống kê
                                         </th>
-                                        <th rowSpan={3} className="border border-gray-200 p-2 text-center align-middle w-11.25">
+                                        <th rowSpan={4} className="border border-gray-200 p-2 text-center align-middle w-11.25">
                                             Mã số
                                         </th>
                                         <th colSpan={11} className="border border-gray-200 p-2 text-center align-middle">
@@ -1696,23 +1696,30 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                                             Số người bị nạn (Người)
                                         </th>
                                     </tr>
-                                    <tr className="bg-[#F4F6F8] font-bold text-gray-600 text-[9px]">
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-750 text-[9px]">
                                         {/* Số vụ */}
-                                        <th className="border border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">Số vụ có người chết</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">Số vụ có 2 người bị nạn trở lên</th>
+                                        <th rowSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th rowSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Số vụ có người chết</th>
+                                        <th rowSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Số vụ có từ 2 người bị nạn trở lên</th>
+                                        {/* Số người bị nạn groups */}
+                                        <th colSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th colSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Số LĐ nữ</th>
+                                        <th colSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Số người bị chết</th>
+                                        <th colSpan={2} className="border border-gray-200 p-1.5 text-center align-middle">Số người bị thương nặng</th>
+                                    </tr>
+                                    <tr className="bg-[#F4F6F8] font-bold text-gray-600 text-[9px]">
                                         {/* Số người bị nạn - Tổng số */}
-                                        <th className="border border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">NN không thuộc quyền quản lý</th>
-                                        {/* Số người bị nạn - Số LD nữ */}
-                                        <th className="border border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">NN không thuộc quyền quản lý</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
+                                        {/* Số người bị nạn - Số LĐ nữ */}
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
                                         {/* Số người bị nạn - Số người bị chết */}
-                                        <th className="border border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">NN không thuộc quyền quản lý</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
                                         {/* Số người bị nạn - Số người bị thương nặng */}
-                                        <th className="border border-gray-200 p-1.5 text-center">Tổng số</th>
-                                        <th className="border border-gray-200 p-1.5 text-center">NN không thuộc quyền quản lý</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">Tổng số</th>
+                                        <th className="border border-gray-200 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
