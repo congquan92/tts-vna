@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserApi } from "@/api/user";
 import TopHero from "@/components/TopHero";
@@ -37,15 +37,100 @@ export default function ImportPreviewPage() {
         return null;
     });
     const [loading, setLoading] = useState(false);
+    const [isValidated, setIsValidated] = useState(false);
+
+    const debounceMap = useRef(new Map<string, NodeJS.Timeout>());
+
+    const checkRowDB = async (index: number, row: ImportPreviewRow) => {
+        try {
+            // importUsers typed for file upload; cast to any to call endpoint that checks existence
+            const res = await (UserApi.importUsers as any)({
+                username: row.username,
+                email: row.email,
+            });
+
+            setImportRows((prev) => {
+                if (!prev) return prev;
+
+                const next = [...prev];
+                const row = next[index];
+
+                const errors = row.errors || [];
+
+                const filtered = errors.filter(
+                    e => !e.includes("đã tồn tại")
+                );
+
+                if (res.data.usernameExists) {
+                    filtered.push("Tài khoản đã tồn tại");
+                }
+
+                if (res.data.emailExists) {
+                    filtered.push("Email đã tồn tại");
+                }
+
+                next[index] = {
+                    ...row,
+                    errors: filtered,
+                };
+
+                return next;
+            });
+        } catch (err) { }
+    };
+
+    const markDuplicates = (rows: ImportPreviewRow[]) => {
+        const emailMap: Record<string, number> = {};
+        const usernameMap: Record<string, number> = {};
+
+        rows.forEach((r) => {
+            const email = r.email?.trim().toLowerCase();
+            const username = r.username?.trim().toLowerCase();
+
+            if (email) emailMap[email] = (emailMap[email] || 0) + 1;
+            if (username) usernameMap[username] = (usernameMap[username] || 0) + 1;
+        });
+
+        return rows.map((r) => {
+            const email = r.email?.trim().toLowerCase();
+            const username = r.username?.trim().toLowerCase();
+
+            let errors = r.errors ? [...r.errors] : [];
+
+            // xoá lỗi cũ duplicate để tránh lặp
+            errors = errors.filter(
+                (e) =>
+                    !e.includes("Email bị trùng") &&
+                    !e.includes("Tài khoản bị trùng")
+            );
+
+            if (email && emailMap[email] > 1) {
+                errors.push("Email bị trùng trong danh sách import");
+            }
+
+            if (username && usernameMap[username] > 1) {
+                errors.push("Tài khoản bị trùng trong danh sách import");
+            }
+
+            return {
+                ...r,
+                errors,
+            };
+        });
+    };
 
     // Save changes to sessionStorage whenever state changes
     const updateRowsState = (nextRows: ImportPreviewRow[] | null) => {
-        setImportRows(nextRows);
-        if (nextRows) {
-            sessionStorage.setItem("import_preview_rows", JSON.stringify(nextRows));
-        } else {
+        if (!nextRows) {
+            setImportRows(null);
             sessionStorage.removeItem("import_preview_rows");
+            return;
         }
+
+        const processed = markDuplicates(nextRows);
+
+        setImportRows(processed);
+        sessionStorage.setItem("import_preview_rows", JSON.stringify(processed));
     };
 
     const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +175,7 @@ export default function ImportPreviewPage() {
 
             const allRows = [...successRows, ...errorRows].sort((a, b) => a.row - b.row);
             updateRowsState(allRows);
+            setIsValidated(false);
             toast.success("Đã tải dữ liệu xem trước");
         } catch (error: unknown) {
             console.error("Lỗi khi preview dữ liệu:", error);
@@ -109,6 +195,9 @@ export default function ImportPreviewPage() {
         if (!importRows) return;
         const next = [...importRows];
         next[index] = { ...next[index], [field]: value } as ImportPreviewRow;
+
+        const processed = markDuplicates(next);
+        updateRowsState(processed);
 
         // Dynamic frontend validation check (basic) to help user
         if (field === "email" && typeof value === "string") {
@@ -131,19 +220,58 @@ export default function ImportPreviewPage() {
             next[index].errors = updatedErrors;
         } else if (field === "username" && typeof value === "string") {
             const currentErrors = next[index].errors || [];
-            const updatedErrors = currentErrors.filter((err) => !err.includes("Tài khoản"));
+
+            const updatedErrors = currentErrors.filter(
+                (err) =>
+                    !err.includes("Tài khoản") &&
+                    !err.includes("8-20") &&
+                    !err.includes("khoảng trắng")
+            );
+
+            const usernameRegex =
+                /^(?=.{8,20}$)[a-zA-Z0-9](?:[a-zA-Z0-9]|[._](?![._]))*[a-zA-Z0-9]$/;
+
             if (!value.trim()) {
                 updatedErrors.push("Tài khoản không được để trống");
+            } else if (/\s/.test(value)) {
+                updatedErrors.push("Tài khoản không được chứa khoảng trắng");
+            } else if (!usernameRegex.test(value)) {
+                updatedErrors.push(
+                    "Tài khoản phải từ 8-20 ký tự, không bắt đầu/kết thúc bằng . hoặc _"
+                );
             }
+
             next[index].errors = updatedErrors;
         }
 
+        setIsValidated(false);
         updateRowsState(next);
+
+        const key = `${index}-${field}`;
+
+        if (field === "email" || field === "username") {
+            if (debounceMap.current.has(key)) {
+                clearTimeout(debounceMap.current.get(key));
+            }
+
+            debounceMap.current.set(
+                key,
+                setTimeout(() => {
+                    const row = next[index];
+
+                    // chỉ check nếu dữ liệu hợp lệ cơ bản
+                    if (row.email && row.username) {
+                        checkRowDB(index, row);
+                    }
+                }, 500)
+            );
+        }
     };
 
     const handleDeleteRow = (index: number) => {
         if (!importRows) return;
         const next = importRows.filter((_, idx) => idx !== index);
+        setIsValidated(false);
         updateRowsState(next);
     };
 
@@ -190,6 +318,7 @@ export default function ImportPreviewPage() {
             // Merge and sort
             const allRows = [...successRows, ...errorRows].sort((a, b) => a.row - b.row);
             updateRowsState(allRows);
+            setIsValidated(true);
             toast.success("Kiểm tra dữ liệu hoàn tất!");
         } catch (error: unknown) {
             console.error("Lỗi khi kiểm tra lại dữ liệu:", error);
@@ -207,6 +336,11 @@ export default function ImportPreviewPage() {
     const handleConfirmImport = async () => {
         if (!importRows || importRows.length === 0) {
             toast.error("Không có dữ liệu để import.");
+            return;
+        }
+
+        if (!isValidated) {
+            toast.warning("Dữ liệu đã thay đổi, vui lòng kiểm tra lại trước khi import.");
             return;
         }
 
@@ -367,6 +501,7 @@ export default function ImportPreviewPage() {
                                 ) : (
                                     importRows.map((row, index) => {
                                         const hasErrors = row.errors && row.errors.length > 0;
+                                        const isValid = isValidated && !hasErrors;
                                         return (
                                             <div
                                                 key={index}
@@ -422,10 +557,14 @@ export default function ImportPreviewPage() {
                                                                 </span>
                                                             ))}
                                                         </div>
-                                                    ) : (
+                                                    ) : isValid ? (
                                                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-50 text-green-700">
                                                             <Check className="size-3" />
                                                             Hợp lệ
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-50 text-yellow-700">
+                                                            Chưa kiểm tra
                                                         </span>
                                                     )}
                                                 </div>
