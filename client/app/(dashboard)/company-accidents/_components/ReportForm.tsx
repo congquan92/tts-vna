@@ -623,7 +623,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 if (isSubmit && createdReportId) {
                     await ReportApi.submit(createdReportId);
                 }
-                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Lưu nháp thành công!");
+                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Lưu thành công!");
             } else if (mode === "edit" && report !== null) {
                 await ReportApi.update(report.id, payload as UpdateReportPayload);
                 if (stampedFile) {
@@ -639,7 +639,7 @@ export default function ReportForm({ mode, report, businessProfile, existingRepo
                 if (isSubmit) {
                     await ReportApi.submit(report.id);
                 }
-                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Cập nhật nháp thành công!");
+                toast.success(isSubmit ? "Gửi báo cáo thành công!" : "Cập nhật thành công!");
             }
             onSaveSuccess();
             onClose();

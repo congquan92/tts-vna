@@ -64,4 +64,11 @@ export const ReportApi = {
         });
         return res.data;
     },
+
+    exportReportDocx: async (id: number): Promise<Blob> => {
+        const res = await axiosInstance.get(`/reports/${id}/export-docx`, {
+            responseType: "blob",
+        });
+        return res.data;
+    },
 };

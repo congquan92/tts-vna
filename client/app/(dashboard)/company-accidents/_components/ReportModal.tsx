@@ -309,10 +309,10 @@ export default function ReportModal({ isOpen, onClose, mode, report, businessPro
         try {
             if (mode === "create") {
                 await ReportApi.create(payload);
-                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Lưu nháp thành công!");
+                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Lưu thành công!");
             } else if (mode === "edit" && report !== null) {
                 await ReportApi.update(report.id, payload as UpdateReportPayload);
-                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Cập nhật nháp thành công!");
+                toast.success(statusToSave === "đã tiếp nhận" ? "Gửi báo cáo thành công!" : "Cập nhật thành công!");
             }
             onSaveSuccess();
             onClose();
@@ -892,7 +892,7 @@ export default function ReportModal({ isOpen, onClose, mode, report, businessPro
 
                             <Button variant="outline" size="sm" onClick={() => handleSave("đang báo cáo")} className="gap-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold px-4 py-2">
                                 <Save size={14} />
-                                <span>Lưu nháp</span>
+                                <span>Lưu báo cáo</span>
                             </Button>
 
                             <Button variant="primary" size="sm" onClick={() => handleSave("đã tiếp nhận")} className="gap-1.5 text-xs font-bold px-4 py-2 shadow-sm">

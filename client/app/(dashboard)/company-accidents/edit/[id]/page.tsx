@@ -183,7 +183,7 @@ export default function EditReportPage() {
                                 <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
                                 <span className="font-semibold">Trạng thái: Đang báo cáo</span>
                             </div>
-                            <span className="text-[11px] text-orange-650 font-medium">Bản nháp báo cáo của doanh nghiệp chưa gửi đi.</span>
+                            <span className="text-[11px] text-orange-650 font-medium">Bản báo cáo của doanh nghiệp chưa gửi đi.</span>
                         </div>
                     )}
                 </div>

@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import copy
+import re
 
 namespaces = {
     'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -34,6 +35,23 @@ def set_cell_text(cell, text):
     p.append(r)
 
 def fill_row_data(cells, data_obj):
+    # Map cells to columns based on gridSpan
+    col_cells = [None] * 13
+    current_col = 0
+    for cell in cells:
+        tPr = cell.find('w:tcPr', namespaces)
+        gridSpan = 1
+        if tPr is not None:
+            gs = tPr.find('w:gridSpan', namespaces)
+            if gs is not None:
+                val = gs.attrib.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val')
+                if val:
+                    gridSpan = int(val)
+        
+        if current_col < 13:
+            col_cells[current_col] = cell
+        current_col += gridSpan
+
     # Cells 2 to 12 map to the fields in the data object
     fields = [
         'cases',               # Col 3
@@ -50,7 +68,9 @@ def fill_row_data(cells, data_obj):
     ]
     for idx, field in enumerate(fields):
         val = data_obj.get(field, 0)
-        set_cell_text(cells[idx + 2], val if val != 0 else '-')
+        target_cell = col_cells[idx + 2]
+        if target_cell is not None:
+            set_cell_text(target_cell, val if val is not None else 0)
 
 def main():
     if len(sys.argv) < 4:
@@ -71,6 +91,15 @@ def main():
     province = data.get('province', '')
     ward = data.get('ward', '')
     
+    # Check if this is a single business report or Department summary
+    business_name = data.get('businessName', '')
+    tax_code = data.get('taxCode', '')
+    type_of_business = data.get('typeOfBusiness', '')
+    business_industry = data.get('businessIndustry', '')
+    registered_address = data.get('registeredAddress', '')
+    
+    is_single_report = bool(business_name)
+    
     location_str = province
     if ward and ward != 'Tất cả':
         location_str = f"{ward}, {province}"
@@ -81,6 +110,9 @@ def main():
     total_salary = totals.get('totalSalary', 0)
     
     table2_grand = data.get('table2GrandTotal', {})
+    labor_grand = data.get('laborGrandTotal', {})
+    support_grand = data.get('supportGrandTotal', {})
+    
     causes_data = {c['name']: c for c in data.get('causes', [])}
     factors_data = data.get('factors', [])
     occupations_data = data.get('occupations', [])
@@ -95,13 +127,20 @@ def main():
         "Điều kiện làm việc không tốt": "Điều kiện làm việc không tốt",
         "Vi phạm nội quy, quy trình, quy chuẩn, biện pháp làm việc an toàn": "Quy phạm nội quy, quy trình, quy chuẩn, biện pháp làm việc an toàn",
         "Không sử dụng phương tiện bảo vệ cá nhân": "Không sử dụng phương tiện bảo vệ cá nhân",
-        "Khách quan khó tránh/\xa0Nguyên nhân chưa kể đến": "Khách quan khó tránh/ Nguyên nhân chưa kể đến"
+        "Khách quan khó tránh/ Nguyên nhân chưa kể đến": "Khách quan khó tránh/ Nguyên nhân chưa kể đến"
     }
 
     with zipfile.ZipFile(template_path, 'r') as yin, zipfile.ZipFile(output_path, 'w') as yout:
         for item in yin.infolist():
             if item.filename == 'word/document.xml':
                 doc_xml = yin.read(item.filename)
+                
+                # Register namespaces dynamically to prevent Word 'unreadable content' error
+                raw_xml_str = doc_xml.decode('utf-8', errors='ignore')
+                ns_list = re.findall(r'xmlns:([a-zA-Z0-9_.-]+)="([^"]+)"', raw_xml_str)
+                for prefix, uri in ns_list:
+                    ET.register_namespace(prefix, uri)
+                
                 root = ET.fromstring(doc_xml)
                 body = root.find('.//w:body', namespaces)
                 
@@ -110,18 +149,22 @@ def main():
                 for p in paragraphs:
                     t_tags = p.findall('.//w:t', namespaces)
                     full_text = "".join([t.text for t in t_tags if t.text]).strip()
+                    clean_text = full_text.replace('\xa0', ' ').strip()
                     
-                    if "Đơn vị báo cáo:" in full_text:
+                    if "Đơn vị báo cáo:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
                         p.clear()
                         if pPr is not None: p.append(pPr)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t.text = f"Đơn vị báo cáo: Sở Lao động - Thương binh và Xã hội {location_str or 'tỉnh/thành phố'}"
+                        if is_single_report:
+                            t.text = f"Đơn vị báo cáo: {business_name}"
+                        else:
+                            t.text = f"Đơn vị báo cáo: Sở Lao động - Thương binh và Xã hội {location_str or 'tỉnh/thành phố'}"
                         r.append(t)
                         p.append(r)
                         
-                    elif "Địa chỉ:" in full_text:
+                    elif "Địa chỉ:" in clean_text and not is_single_report:
                         pPr = p.find('w:pPr', namespaces)
                         p.clear()
                         if pPr is not None: p.append(pPr)
@@ -131,7 +174,7 @@ def main():
                         r.append(t)
                         p.append(r)
                         
-                    elif "Kỳ báo cáo" in full_text:
+                    elif "Kỳ báo cáo" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
                         p.clear()
                         if pPr is not None: p.append(pPr)
@@ -147,33 +190,57 @@ def main():
                         r2.append(t2)
                         p.append(r2)
                         
-                    elif "Tổng số lao động của cơ sở:" in full_text:
+                    elif "Tổng số lao động của cơ sở:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
                         p.clear()
                         if pPr is not None: p.append(pPr)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t.text = f"Tổng số lao động của các cơ sở tham gia báo cáo: {total_employees:,} người, trong đó nữ: {female_employees:,} người"
+                        label = "Tổng số lao động của các cơ sở tham gia báo cáo" if not is_single_report else "Tổng số lao động của cơ sở"
+                        t.text = f"{label}: {total_employees:,} người, trong đó nữ: {female_employees:,} người"
                         r.append(t)
                         p.append(r)
                         
-                    elif "Tổng quỹ lương:" in full_text:
+                    elif "Tổng quỹ lương:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
                         p.clear()
                         if pPr is not None: p.append(pPr)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t.text = f"Tổng quỹ lương: {total_salary:,} triệu đồng"
+                        salary_val = f"{total_salary:,}" if total_salary else "............"
+                        t.text = f"Tổng quỹ lương: {salary_val} triệu đồng"
                         r.append(t)
                         p.append(r)
 
-                # 2. Update Table 4 (Classifications) & Table 5 (Damages)
+                # 2. Update Tables
                 tables = body.findall('.//w:tbl', namespaces)
+                
+                # Check tables for single report info insertion (Table 1, Table 2, Table 3)
+                if is_single_report:
+                    # Table 1: Address Info
+                    if len(tables) >= 1:
+                        t1_cells = tables[0].findall('.//w:tc', namespaces)
+                        if t1_cells:
+                            set_cell_text(t1_cells[0], f"Địa chỉ: {registered_address or '...'}")
+                            set_cell_text(t1_cells[1], f"Mã số thuế: {tax_code or '...'}")
+                            
+                    # Table 2: Business Type Info
+                    if len(tables) >= 2:
+                        t2_cells = tables[1].findall('.//w:tc', namespaces)
+                        if t2_cells:
+                            set_cell_text(t2_cells[0], f"Thuộc loại hình cơ sở (doanh nghiệp): {type_of_business or '...'}")
+                            
+                    # Table 3: Industry Sector Info
+                    if len(tables) >= 3:
+                        t3_cells = tables[2].findall('.//w:tc', namespaces)
+                        if t3_cells:
+                            set_cell_text(t3_cells[0], f"Lĩnh vực sản xuất chính của cơ sở: {business_industry or '...'}")
+
+                # Populate Table 4 & Table 5
                 if len(tables) >= 5:
                     t4 = tables[3] # Table 4
                     t5 = tables[4] # Table 5
                     
-                    # Process Table 4 rows
                     t4_rows = t4.findall('.//w:tr', namespaces)
                     
                     placeholder_factor_row = None
@@ -184,46 +251,50 @@ def main():
                         if not cells:
                             continue
                         cell_0_text = get_cell_text(cells[0])
+                        clean_text = cell_0_text.replace('\xa0', ' ').strip()
                         
                         # Set Grand Total
-                        if cell_0_text == '3. Tổng số (3=1+2)':
+                        if "3. Tổng số" in clean_text:
                             fill_row_data(cells, table2_grand)
                         
+                        # Set Labor Accident Report sum (Row 6: 1. Tai nạn lao động)
+                        elif "1. Tai nạn lao động" in clean_text:
+                            fill_row_data(cells, labor_grand)
+                            
+                        # Set Support Report sum (Row 23: 2. Tai nạn được hưởng trợ cấp...)
+                        elif "2. Tai nạn được hưởng trợ cấp" in clean_text:
+                            fill_row_data(cells, support_grand)
+                        
                         # Set Cause Rows
-                        elif cell_0_text in cause_name_map:
-                            db_cause_name = cause_name_map[cell_0_text]
+                        elif clean_text in cause_name_map:
+                            db_cause_name = cause_name_map[clean_text]
                             cause_obj = causes_data.get(db_cause_name, {})
                             fill_row_data(cells, cause_obj)
                             
                         # Capture Placeholder Rows for Factors and Occupations
-                        elif cell_0_text == '…':
+                        elif clean_text == '…':
                             placeholder_factor_row = row
-                        elif cell_0_text == '....':
+                        elif clean_text == '....':
                             placeholder_occupation_row = row
                     
                     # Insert factors dynamically
                     if placeholder_factor_row is not None:
-                        # Find index of placeholder in parent w:tbl
                         parent_tbl = t4
                         children = list(parent_tbl)
                         p_idx = children.index(placeholder_factor_row)
                         
-                        # Insert rows
                         for idx, factor in enumerate(factors_data):
                             new_row = copy.deepcopy(placeholder_factor_row)
                             new_cells = new_row.findall('.//w:tc', namespaces)
                             set_cell_text(new_cells[0], factor.get('name', ''))
-                            # Set number code
                             set_cell_text(new_cells[1], str(idx + 1))
                             fill_row_data(new_cells, factor)
                             parent_tbl.insert(p_idx + idx, new_row)
                         
-                        # Remove placeholder row
                         parent_tbl.remove(placeholder_factor_row)
                         
                     # Insert occupations dynamically
                     if placeholder_occupation_row is not None:
-                        # Re-locate children as we modified table size
                         children = list(t4)
                         p_idx = children.index(placeholder_occupation_row)
                         
@@ -238,16 +309,12 @@ def main():
                         t4.remove(placeholder_occupation_row)
                         
                     # Process Table 5 (Damage data)
-                    # Table 5 in template has 4 header rows. We need to add 1 data row.
                     t5_rows = t5.findall('.//w:tr', namespaces)
                     if len(t5_rows) >= 4:
-                        # Duplicate row 4 (the numbering row)
                         num_row = t5_rows[3]
                         data_row = copy.deepcopy(num_row)
                         d_cells = data_row.findall('.//w:tc', namespaces)
                         
-                        # Populate Table 5 cells: Col 1 to 6
-                        # 1: sickDays, 2: totalCost, 3: medicalCost, 4: salaryCost, 5: compensationCost, 6: propertyDamage
                         set_cell_text(d_cells[0], f"{table2_grand.get('sickDays', 0):,}")
                         set_cell_text(d_cells[1], f"{table2_grand.get('totalCost', 0):,}")
                         set_cell_text(d_cells[2], f"{table2_grand.get('medicalCost', 0):,}")

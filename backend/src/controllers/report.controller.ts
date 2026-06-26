@@ -126,6 +126,37 @@ export class ReportController {
     return report;
   }
 
+  @Get(':id/export-docx')
+  @ApiOperation({ summary: 'Xuất chi tiết báo cáo ra file Word (.docx)' })
+  @ApiParam({ name: 'id', example: 1 })
+  async exportReportDocx(
+    @Req() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const report = await this.reportService.getReportById(id);
+    if (
+      req.user.orgType === 'DOANH_NGHIEP' &&
+      report.companyInfo?.businessId !== req.user.businessId
+    ) {
+      throw new NotFoundException(
+        'Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này',
+      );
+    }
+    const buffer = await this.reportService.exportReportDocx(id);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=BC_TNLD_${id}.docx`,
+    );
+
+    return res.end(buffer);
+  }
+
   @Patch(':id')
   @RequirePermissions(Permission.REPORT_DN_UPDATE)
   @ApiOperation({ summary: 'Cập nhật báo cáo' })
