@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Printer, ArrowLeft, FileDown } from "lucide-react";
+import { Printer, ArrowLeft } from "lucide-react";
 import { ReportApi } from "@/api/report";
 import { BusinessApi } from "@/api/business";
 

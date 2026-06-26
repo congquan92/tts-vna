@@ -7,7 +7,7 @@ import TopHero from "@/components/TopHero";
 import Button from "@/components/ui/Button";
 import { InputField } from "@/components/form/InputField";
 import { toast } from "sonner";
-import { Check, Upload, AlertCircle, ArrowLeft } from "lucide-react";
+import { Check, Upload, AlertCircle } from "lucide-react";
 import axios from "axios";
 
 interface ImportPreviewRow {

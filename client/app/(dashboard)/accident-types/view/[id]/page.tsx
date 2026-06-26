@@ -7,7 +7,7 @@ import type { Report } from "@/types/report";
 import TopHero from "@/components/TopHero";
 import ReportForm from "../../../company-accidents/_components/ReportForm";
 import Button from "@/components/ui/Button";
-import { ChevronRight, Printer, FileDown } from "lucide-react";
+import { ChevronRight, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ViewReportPage() {
