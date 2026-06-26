@@ -1,5 +1,5 @@
 import { axiosInstance } from "@/lib/axios";
-import type { CreateReportPayload, UpdateReportPayload, Report, ReportListResponse } from "@/types/report";
+import type { CreateReportPayload, UpdateReportPayload, Report, ReportListResponse, ReportHistory } from "@/types/report";
 
 export const ReportApi = {
     create: async (payload: CreateReportPayload): Promise<Report> => {
@@ -69,6 +69,11 @@ export const ReportApi = {
         const res = await axiosInstance.get(`/reports/${id}/export-docx`, {
             responseType: "blob",
         });
+        return res.data;
+    },
+
+    getHistory: async (reportId: number): Promise<ReportHistory[]> => {
+        const res = await axiosInstance.get<ReportHistory[]>(`/report-histories/${reportId}`);
         return res.data;
     },
 };

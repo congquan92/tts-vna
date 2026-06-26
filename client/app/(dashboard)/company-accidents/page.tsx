@@ -11,6 +11,7 @@ import type { Report } from "@/types/report";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
 import ReportTable from "./_components/ReportTable";
+import ProcessingHistoryPopup from "@/components/popup/processing-history-popup";
 
 export default function CompanyAccidentsPage() {
     const router = useRouter();
@@ -18,6 +19,8 @@ export default function CompanyAccidentsPage() {
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [historyReportId, setHistoryReportId] = useState<number | null>(null);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -124,7 +127,12 @@ export default function CompanyAccidentsPage() {
                 }}
                 onView={openView}
                 onEdit={openEdit}
+                onViewHistory={(id) => {
+                    setHistoryReportId(id);
+                    setShowHistoryModal(true);
+                }}
             />
+            <ProcessingHistoryPopup isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} reportId={historyReportId} />
         </main>
     );
 }

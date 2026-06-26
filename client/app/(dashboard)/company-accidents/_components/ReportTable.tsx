@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Pencil, Plus, FileText } from "lucide-react";
+import { Eye, Pencil, Plus, FileText, History } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Report } from "@/types/report";
 
@@ -19,9 +19,10 @@ interface ReportTableProps {
     onPageSizeChange: (pageSize: number) => void;
     onView: (report: Report) => void;
     onEdit: (report: Report) => void;
+    onViewHistory: (id: number) => void;
 }
 
-export default function ReportTable({ reports, loading, selectedYear, businessProfile, onView, onEdit }: ReportTableProps) {
+export default function ReportTable({ reports, loading, selectedYear, businessProfile, onView, onEdit, onViewHistory }: ReportTableProps) {
     const router = useRouter();
 
     const tableRows = React.useMemo(() => {
@@ -87,13 +88,24 @@ export default function ReportTable({ reports, loading, selectedYear, businessPr
                                             >
                                                 <Pencil size={16} />
                                             </button>
-                                        ) : (item.status === "đang báo cáo" || item.status === "đã từ chối") ? (
+                                        ) : item.status === "đang báo cáo" || item.status === "đã từ chối" ? (
                                             <button type="button" onClick={() => onEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
                                                 <Pencil size={16} />
                                             </button>
                                         ) : (
                                             <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo đã gửi không thể chỉnh sửa" disabled>
                                                 <Pencil size={16} />
+                                            </button>
+                                        )}
+
+                                        {/* History icon */}
+                                        {isPlaceholder ? (
+                                            <button type="button" className="text-gray-200 cursor-not-allowed" title="Báo cáo chưa được khai báo" disabled>
+                                                <History size={16} />
+                                            </button>
+                                        ) : (
+                                            <button type="button" onClick={() => onViewHistory(item.id)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Tiến độ xử lý">
+                                                <History size={16} />
                                             </button>
                                         )}
                                     </div>

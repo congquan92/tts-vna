@@ -109,3 +109,15 @@ export interface ReportListResponse {
     limit: number;
     totalPages: number;
 }
+
+export interface ReportHistory {
+    id: number;
+    reportId: number;
+    status: string;
+    reason?: string | null;
+    actorId: number;
+    actorType: "SO" | "DOANH_NGHIEP";
+    actorName: string;
+    createdAt: string;
+}
+
