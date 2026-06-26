@@ -57,4 +57,11 @@ export const ReportApi = {
         const res = await axiosInstance.patch<Report>(`/reports/${id}/reopen`);
         return res.data;
     },
+
+    exportDocx: async (payload: any): Promise<Blob> => {
+        const res = await axiosInstance.post("/reports/summary/export-docx", payload, {
+            responseType: "blob",
+        });
+        return res.data;
+    },
 };

@@ -10,10 +10,12 @@ import {
   Query,
   UseGuards,
   Req,
+  Res,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -209,5 +211,22 @@ export class ReportController {
     }
 
     return this.reportService.reopenReport(id, req);
+  }
+
+  @Post('summary/export-docx')
+  @ApiOperation({ summary: 'Xuất báo cáo tổng hợp tình hình TNLĐ ra file Word (.docx)' })
+  async exportSummaryDocx(@Body() body: any, @Res() res: Response) {
+    const buffer = await this.reportService.exportSummaryDocx(body);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=BC_tinh_hinh_TNLD.docx',
+    );
+
+    return res.end(buffer);
   }
 }
