@@ -405,8 +405,11 @@ export class ReportService {
       businessName: report.companyInfo?.businessName || business?.businessName || '',
       taxCode: business?.taxCode || '',
       typeOfBusiness: business?.typeOfBusiness?.name || '',
+      typeOfBusinessCode: business?.typeOfBusiness?.code || '',
       businessIndustry: business?.businessIndustry?.name || '',
+      businessIndustryCode: business?.businessIndustry?.code || '',
       registeredAddress: business?.registeredAddress || '',
+      districtCode: '',
       totals: {
         totalEmployees: Number(report.companyInfo?.totalNumberOfEmployees || 0),
         femaleEmployees: Number(report.companyInfo?.totalNumberOfFemaleEmployees || 0),
