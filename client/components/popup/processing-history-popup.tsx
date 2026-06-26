@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { ReportApi } from "@/api/report";
 import type { ReportHistory } from "@/types/report";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProcessingHistoryPopupProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface ProcessingHistoryPopupProps {
 }
 
 export default function ProcessingHistoryPopup({ isOpen, onClose, reportId }: ProcessingHistoryPopupProps) {
+    const { user } = useAuth();
     const [histories, setHistories] = useState<ReportHistory[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -53,6 +55,18 @@ export default function ProcessingHistoryPopup({ isOpen, onClose, reportId }: Pr
         }
     };
 
+    const getDisplayName = (item: ReportHistory) => {
+        if (user?.orgType === "DOANH_NGHIEP") {
+            if (item.actorType === "DOANH_NGHIEP") {
+                return "Bạn";
+            }
+            if (item.actorType === "SO") {
+                return "Sở";
+            }
+        }
+        return item.actorName;
+    };
+
     const getActionText = (status: string, actorType: string) => {
         if (status === "đang báo cáo") {
             return actorType === "SO" ? "đã mở lại báo cáo" : "đã lập báo cáo";
@@ -61,10 +75,10 @@ export default function ProcessingHistoryPopup({ isOpen, onClose, reportId }: Pr
             return "đã gửi báo cáo";
         }
         if (status === "đã tiếp nhận") {
-            return "đã tiếp nhận báo cáo";
+            return actorType === "SO" && user?.orgType === "DOANH_NGHIEP" ? "đã duyệt báo cáo" : "đã tiếp nhận báo cáo";
         }
         if (status === "đã từ chối") {
-            return "từ chối báo cáo";
+            return actorType === "SO" && user?.orgType === "DOANH_NGHIEP" ? "đã từ chối báo cáo" : "từ chối báo cáo";
         }
         return `đã chuyển trạng thái sang ${status}`;
     };
@@ -107,7 +121,7 @@ export default function ProcessingHistoryPopup({ isOpen, onClose, reportId }: Pr
                                             <p className="text-xs text-gray-400 font-semibold mb-0.5">{formatDateTime(item.createdAt)}</p>
                                             {/* Actor & Action */}
                                             <p className="text-sm text-gray-800">
-                                                <span className="font-bold text-gray-900">{item.actorName}</span> <span className="text-gray-500">{getActionText(item.status, item.actorType)}</span>
+                                                <span className="font-bold text-gray-900">{getDisplayName(item)}</span> <span className="text-gray-500">{getActionText(item.status, item.actorType)}</span>
                                             </p>
                                             {/* Rejection Reason */}
                                             {item.status === "đã từ chối" && item.reason && (
