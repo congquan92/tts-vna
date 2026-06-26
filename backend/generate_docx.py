@@ -31,6 +31,8 @@ def set_cell_text(cell, text):
     r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
     t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
     t.text = str(text)
+    if len(t.text) > 0 and (t.text.startswith(' ') or t.text.endswith(' ')):
+        t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
     r.append(t)
     p.append(r)
 
@@ -51,6 +53,13 @@ def fill_row_data(cells, data_obj):
         if current_col < 13:
             col_cells[current_col] = cell
         current_col += gridSpan
+
+    # Write 'code' to Column 2 (Index 1 in col_cells) if present
+    code_val = data_obj.get('code')
+    if code_val is not None:
+        target_code_cell = col_cells[1]
+        if target_code_cell is not None:
+            set_cell_text(target_code_cell, code_val)
 
     # Cells 2 to 12 map to the fields in the data object
     fields = [
@@ -116,8 +125,7 @@ def main():
     causes_data = {c['name']: c for c in data.get('causes', [])}
     factors_data = data.get('factors', [])
     occupations_data = data.get('occupations', [])
-    
-    # Map cause names from database/frontend to template cell names
+     # Map cause names from database/frontend to template cell names
     cause_name_map = {
         "Không có thiết bị an toàn hoặc thiết bị không đảm bảo an toàn": "Không có thiết bị an toàn hoặc thiết bị không đảm bảo an toàn",
         "Không có phương tiện bảo vệ cá nhân hoặc phương tiện bảo vệ cá nhân không tốt": "Không có phương tiện bảo vệ cá nhân hoặc phương tiện bảo vệ cá nhân không tốt",
@@ -130,10 +138,14 @@ def main():
         "Khách quan khó tránh/ Nguyên nhân chưa kể đến": "Khách quan khó tránh/ Nguyên nhân chưa kể đến"
     }
 
-    with zipfile.ZipFile(template_path, 'r') as yin, zipfile.ZipFile(output_path, 'w') as yout:
+    with zipfile.ZipFile(template_path, 'r') as yin, zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as yout:
         for item in yin.infolist():
             if item.filename == 'word/document.xml':
                 doc_xml = yin.read(item.filename)
+                
+                # Extract the w:document start tag to preserve namespaces
+                match = re.search(rb'<w:document\s[^>]*>', doc_xml)
+                original_start_tag = match.group(0) if match else None
                 
                 # Register namespaces dynamically to prevent Word 'unreadable content' error
                 raw_xml_str = doc_xml.decode('utf-8', errors='ignore')
@@ -153,8 +165,8 @@ def main():
                     
                     if "Đơn vị báo cáo:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
-                        p.clear()
-                        if pPr is not None: p.append(pPr)
+                        for child in list(p):
+                            if child != pPr: p.remove(child)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         if is_single_report:
@@ -166,8 +178,8 @@ def main():
                         
                     elif "Địa chỉ:" in clean_text and not is_single_report:
                         pPr = p.find('w:pPr', namespaces)
-                        p.clear()
-                        if pPr is not None: p.append(pPr)
+                        for child in list(p):
+                            if child != pPr: p.remove(child)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         t.text = f"Địa chỉ: {location_str or '...'}"
@@ -176,24 +188,30 @@ def main():
                         
                     elif "Kỳ báo cáo" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
-                        p.clear()
-                        if pPr is not None: p.append(pPr)
-                        r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
-                        t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t.text = f"BÁO CÁO TỔNG HỢP TÌNH HÌNH TAI NẠN LAO ĐỘNG"
-                        r.append(t)
-                        p.append(r)
+                        for child in list(p):
+                            if child != pPr: p.remove(child)
+                        
+                        r1 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        t1 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
+                        t1.text = f"BÁO CÁO TỔNG HỢP TÌNH HÌNH TAI NẠN LAO ĐỘNG"
+                        r1.append(t1)
+                        p.append(r1)
                         
                         r2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
-                        t2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
-                        t2.text = f"\nKỳ báo cáo: {period} năm {year}"
-                        r2.append(t2)
+                        br = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br')
+                        r2.append(br)
                         p.append(r2)
+                        
+                        r3 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
+                        t2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
+                        t2.text = f"Kỳ báo cáo: {period} năm {year}"
+                        r3.append(t2)
+                        p.append(r3)
                         
                     elif "Tổng số lao động của cơ sở:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
-                        p.clear()
-                        if pPr is not None: p.append(pPr)
+                        for child in list(p):
+                            if child != pPr: p.remove(child)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         label = "Tổng số lao động của các cơ sở tham gia báo cáo" if not is_single_report else "Tổng số lao động của cơ sở"
@@ -203,8 +221,8 @@ def main():
                         
                     elif "Tổng quỹ lương:" in clean_text:
                         pPr = p.find('w:pPr', namespaces)
-                        p.clear()
-                        if pPr is not None: p.append(pPr)
+                        for child in list(p):
+                            if child != pPr: p.remove(child)
                         r = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r')
                         t = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         salary_val = f"{total_salary:,}" if total_salary else "............"
@@ -255,14 +273,17 @@ def main():
                         
                         # Set Grand Total
                         if "3. Tổng số" in clean_text:
+                            table2_grand['code'] = '3'
                             fill_row_data(cells, table2_grand)
                         
                         # Set Labor Accident Report sum (Row 6: 1. Tai nạn lao động)
                         elif "1. Tai nạn lao động" in clean_text:
+                            labor_grand['code'] = '1'
                             fill_row_data(cells, labor_grand)
                             
                         # Set Support Report sum (Row 23: 2. Tai nạn được hưởng trợ cấp...)
                         elif "2. Tai nạn được hưởng trợ cấp" in clean_text:
+                            support_grand['code'] = '2'
                             fill_row_data(cells, support_grand)
                         
                         # Set Cause Rows
@@ -315,19 +336,28 @@ def main():
                         data_row = copy.deepcopy(num_row)
                         d_cells = data_row.findall('.//w:tc', namespaces)
                         
-                        set_cell_text(d_cells[0], f"{table2_grand.get('sickDays', 0):,}")
-                        set_cell_text(d_cells[1], f"{table2_grand.get('totalCost', 0):,}")
-                        set_cell_text(d_cells[2], f"{table2_grand.get('medicalCost', 0):,}")
-                        set_cell_text(d_cells[3], f"{table2_grand.get('salaryCost', 0):,}")
-                        set_cell_text(d_cells[4], f"{table2_grand.get('compensationCost', 0):,}")
-                        set_cell_text(d_cells[5], f"{table2_grand.get('propertyDamage', 0):,}")
+                        def get_val(key):
+                            val = table2_grand.get(key)
+                            return val if val is not None else 0
+
+                        set_cell_text(d_cells[0], f"{get_val('sickDays'):,}")
+                        set_cell_text(d_cells[1], f"{get_val('totalCost'):,}")
+                        set_cell_text(d_cells[2], f"{get_val('medicalCost'):,}")
+                        set_cell_text(d_cells[3], f"{get_val('salaryCost'):,}")
+                        set_cell_text(d_cells[4], f"{get_val('compensationCost'):,}")
+                        set_cell_text(d_cells[5], f"{get_val('propertyDamage'):,}")
                         
                         t5.append(data_row)
-
+ 
                 # Write XML back to zip
-                yout.writestr(item.filename, ET.tostring(root, encoding='utf-8'))
+                xml_data = ET.tostring(root, encoding='utf-8')
+                if original_start_tag:
+                    xml_data = re.sub(rb'<[a-zA-Z0-9_:-]+:document[^>]*>', original_start_tag, xml_data, count=1)
+                if not xml_data.startswith(b'<?xml'):
+                    xml_data = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xml_data
+                yout.writestr(item, xml_data)
             else:
-                yout.writestr(item.filename, yin.read(item.filename))
+                yout.writestr(item, yin.read(item.filename))
                 
     print("Document successfully generated at:", output_path)
 
