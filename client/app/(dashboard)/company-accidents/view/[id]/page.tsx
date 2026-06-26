@@ -7,7 +7,8 @@ import type { Report } from "@/types/report";
 import TopHero from "@/components/TopHero";
 import ReportForm from "../../_components/ReportForm";
 import Button from "@/components/ui/Button";
-import { ChevronRight, Printer } from "lucide-react";
+import { ChevronRight, Printer, FileDown } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ViewReportPage() {
     const router = useRouter();
@@ -48,6 +49,26 @@ export default function ViewReportPage() {
     const handleBack = useCallback(() => {
         router.push("/company-accidents");
     }, [router]);
+
+    const handleExportReportDocx = async () => {
+        if (!reportId) return;
+        try {
+            toast.loading("Đang xuất báo cáo ra file Word...", { id: "export-report-docx" });
+            const blob = await ReportApi.exportReportDocx(reportId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `BC_TNLĐ_PHỤ_LỤC_XII_${report?.companyInfo?.businessName || "DoanhNghiep"}_${report?.year || ""}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Xuất file Word thành công!", { id: "export-report-docx" });
+        } catch (e) {
+            console.error("Failed to export report to DOCX", e);
+            toast.error("Không thể xuất file Word. Vui lòng thử lại sau.", { id: "export-report-docx" });
+        }
+    };
 
     if (loading) {
         return (
@@ -93,7 +114,7 @@ export default function ViewReportPage() {
                             </Button>
 
                             {isOverview ? (
-                                <Button variant="outline" size="sm" onClick={() => formTriggers?.print()} className="gap-1.5 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
+                                <Button variant="outline" size="sm" onClick={handleExportReportDocx} className="gap-1.5 border-gray-200 text-blue-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5">
                                     <Printer className="size-3.5" />
                                     <span>In báo cáo</span>
                                 </Button>
@@ -106,6 +127,50 @@ export default function ViewReportPage() {
                         </div>
                     }
                 />
+            </div>
+
+            {/* Status Banner */}
+            <div className="mx-6 mt-3 shrink-0 print:hidden">
+                {report.status === "đã tiếp nhận" && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between text-xs text-green-800 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="font-semibold">Trạng thái: Đã tiếp nhận</span>
+                        </div>
+                        <span className="text-[11px] text-green-600 font-medium">Báo cáo này đã được Sở tiếp nhận thành công.</span>
+                    </div>
+                )}
+                {report.status === "đã từ chối" && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 space-y-1 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500" />
+                            <span className="font-semibold">Trạng thái: Đã từ chối</span>
+                        </div>
+                        {report.rejectReason && (
+                            <p className="text-[11px] text-red-650 font-medium">
+                                Lý do từ chối: <span className="font-semibold italic">{report.rejectReason}</span>
+                            </p>
+                        )}
+                    </div>
+                )}
+                {report.status === "chờ tiếp nhận" && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between text-xs text-yellow-800 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                            <span className="font-semibold">Trạng thái: Chờ tiếp nhận</span>
+                        </div>
+                        <span className="text-[11px] text-yellow-600 font-medium">Báo cáo đang chờ Sở duyệt hoặc từ chối.</span>
+                    </div>
+                )}
+                {report.status === "đang báo cáo" && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between text-xs text-orange-800 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-orange-400" />
+                            <span className="font-semibold">Trạng thái: Đang báo cáo</span>
+                        </div>
+                        <span className="text-[11px] text-orange-650 font-medium">Bản báo cáo của doanh nghiệp chưa gửi đi.</span>
+                    </div>
+                )}
             </div>
 
             <ReportForm mode="view" report={report} businessProfile={businessProfile} existingReports={[]} onSaveSuccess={() => {}} onClose={handleBack} registerTriggers={setFormTriggers} />

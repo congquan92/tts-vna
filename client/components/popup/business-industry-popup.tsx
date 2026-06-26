@@ -32,34 +32,40 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         return 0;
     };
 
-    // Initialize form data when isOpen changes to avoid cascading renders in useEffect
-    useEffect(() => {
-        if (!isOpen) return;
+    // Adjust state during rendering when prop (isOpen or editingItem) changes to avoid cascading renders inside effects
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    const [prevEditingItem, setPrevEditingItem] = useState(editingItem);
+    const [prevParentOptions, setPrevParentOptions] = useState(parentOptions);
 
-        if (editingItem) {
-            setCode(editingItem.code || "");
-            setName(editingItem.name || "");
-            setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
-            setStatus(editingItem.status || BusinessStatus.ACTIVE);
-        } else {
-            setCode("");
-            setName("");
-            setParentId("");
-            setStatus(BusinessStatus.ACTIVE);
+    if (isOpen !== prevIsOpen || editingItem !== prevEditingItem) {
+        setPrevIsOpen(isOpen);
+        setPrevEditingItem(editingItem);
+
+        if (isOpen) {
+            if (editingItem) {
+                setCode(editingItem.code || "");
+                setName(editingItem.name || "");
+                setParentId(editingItem.parentId ? String(editingItem.parentId) : "");
+                setStatus(editingItem.status || BusinessStatus.ACTIVE);
+            } else {
+                setCode("");
+                setName("");
+                setParentId("");
+                setStatus(BusinessStatus.ACTIVE);
+            }
+            setErrors({});
         }
+    }
 
-        setErrors({});
-    }, [isOpen, editingItem]);
-
-    useEffect(() => {
-        if (!editingItem) return;
-        if (parentOptions.length === 0) return;
-
-        const exists = parentOptions.find(o => o.value === String(editingItem.parentId));
-        if (!exists) return;
-
-        setParentId(String(editingItem.parentId));
-    }, [parentOptions, editingItem]);
+    if (parentOptions !== prevParentOptions) {
+        setPrevParentOptions(parentOptions);
+        if (isOpen && editingItem && parentOptions.length > 0) {
+            const exists = parentOptions.find((o) => o.value === String(editingItem.parentId));
+            if (exists) {
+                setParentId(String(editingItem.parentId));
+            }
+        }
+    }
 
     // Fetch parent options based on current level
     useEffect(() => {
@@ -144,7 +150,7 @@ export default function BusinessIndustryPopup({ isOpen, editingItem, onClose, on
         <>
             <LoadingOverlay isLoading={submitting} />
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-                <div className="w-full max-w-[420px] rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
+                <div className="w-full max-w-105 rounded-xl bg-white shadow-2xl animate-[fadeInScale_0.25s_ease-out]">
                     {/* Header */}
                     <div className="bg-blue-600 px-6 py-3.5 text-center rounded-t-xl">
                         <h2 className="text-white text-[16px] font-bold tracking-wide">{editingItem ? "Cập nhật nghề kinh doanh" : "Thêm mới ngành nghề kinh doanh"}</h2>

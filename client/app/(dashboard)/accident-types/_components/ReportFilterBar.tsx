@@ -70,6 +70,7 @@ export default function ReportFilterBar({ selectedProvince, setSelectedProvince,
                 }}
                 options={wardOptions}
                 size="md"
+                disabled={selectedProvince === "Tất cả"}
             />
         </div>
     );

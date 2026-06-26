@@ -4,18 +4,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import TopHero from "@/components/TopHero";
 import Button from "@/components/ui/Button";
-import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import { ReportApi } from "@/api/report";
 import type { Report } from "@/types/report";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/contexts/AuthContext";
 import ReportListTable from "./_components/ReportListTable";
 import ReportFilterBar, { Province } from "./_components/ReportFilterBar";
+import BulkSelectionBanner from "@/components/popup/bulk-selection-banner";
+import RejectReasonPopup from "@/components/popup/reject-reason-popup";
 
 export default function AccidentTypesPage() {
-    const { user } = useAuth();
     const router = useRouter();
 
     // List state
@@ -23,6 +22,10 @@ export default function AccidentTypesPage() {
     const [loading, setLoading] = useState(false);
     const [selectedYear, setSelectedYear] = useState<number | "">("");
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    // Rejection modal & processing state
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
     // Location dropdown lists & selections
     const [provinces, setProvinces] = useState<Province[]>([]);
@@ -67,16 +70,7 @@ export default function AccidentTypesPage() {
             const provParam = selectedProvince && selectedProvince !== "Tất cả" ? selectedProvince : undefined;
             const wardParam = selectedWard && selectedWard !== "Tất cả" ? selectedWard : undefined;
 
-            const res = await ReportApi.getAll(
-                currentPage,
-                pageSize,
-                selectedYear || undefined,
-                searchStatus || undefined,
-                searchBusinessName || undefined,
-                searchTaxCode || undefined,
-                provParam,
-                wardParam
-            );
+            const res = await ReportApi.getAll(currentPage, pageSize, selectedYear || undefined, searchStatus || undefined, searchBusinessName || undefined, searchTaxCode || undefined, provParam, wardParam);
 
             // Filter additionally by period locally if required, since NestJS doesn't filter period in the database.
             let list = res.data || [];
@@ -170,31 +164,79 @@ export default function AccidentTypesPage() {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
 
-    const handleDeleteSelected = async () => {
+    const handleApproveSelected = async () => {
         if (selectedIds.length === 0) return;
-        const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} báo cáo tai nạn lao động đã chọn?`);
-        if (!confirmDelete) return;
 
+        const pendingSelected = reports.filter((r) => selectedIds.includes(r.id) && r.status === "chờ tiếp nhận");
+        if (pendingSelected.length === 0) {
+            toast.error("Không có báo cáo nào ở trạng thái 'Chờ tiếp nhận' được chọn!");
+            return;
+        }
+
+        const confirmApprove = window.confirm(`Bạn có chắc chắn muốn TIẾP NHẬN ${pendingSelected.length} báo cáo đã chọn?`);
+        if (!confirmApprove) return;
+
+        setProcessing(true);
         let successCount = 0;
         let failCount = 0;
-        for (const id of selectedIds) {
+        for (const rep of pendingSelected) {
             try {
-                await ReportApi.delete(id);
+                await ReportApi.approve(rep.id);
                 successCount++;
-            } catch {
+            } catch (error) {
+                console.error(`Failed to approve report ${rep.id}:`, error);
                 failCount++;
             }
         }
 
         if (successCount > 0) {
-            toast.success(`Đã xóa thành công ${successCount} báo cáo`);
+            toast.success(`Đã tiếp nhận thành công ${successCount} báo cáo`);
         }
         if (failCount > 0) {
-            toast.error(`Không thể xóa ${failCount} báo cáo`);
+            toast.error(`Tiếp nhận thất bại ${failCount} báo cáo`);
         }
 
         setSelectedIds([]);
         fetchReports();
+        setProcessing(false);
+    };
+
+    const handleRejectSelectedSubmit = async (reason: string) => {
+        if (selectedIds.length === 0 || !reason.trim()) {
+            toast.error("Vui lòng nhập lý do từ chối");
+            return;
+        }
+
+        const pendingSelected = reports.filter((r) => selectedIds.includes(r.id) && r.status === "chờ tiếp nhận");
+        if (pendingSelected.length === 0) {
+            toast.error("Không có báo cáo nào ở trạng thái 'Chờ tiếp nhận' được chọn!");
+            return;
+        }
+
+        setProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+        for (const rep of pendingSelected) {
+            try {
+                await ReportApi.reject(rep.id, reason);
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to reject report ${rep.id}:`, error);
+                failCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(`Đã từ chối thành công ${successCount} báo cáo`);
+        }
+        if (failCount > 0) {
+            toast.error(`Từ chối thất bại ${failCount} báo cáo`);
+        }
+
+        setShowRejectModal(false);
+        setSelectedIds([]);
+        fetchReports();
+        setProcessing(false);
     };
 
     const handleViewSummaryReport = () => {
@@ -232,12 +274,7 @@ export default function AccidentTypesPage() {
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                             </div>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleViewSummaryReport}
-                                className="flex items-center gap-2 text-xs font-semibold"
-                            >
+                            <Button variant="outline" size="sm" onClick={handleViewSummaryReport} className="flex items-center gap-2 text-xs font-semibold">
                                 <span>Báo cáo tổng hợp</span>
                             </Button>
                         </div>
@@ -246,14 +283,7 @@ export default function AccidentTypesPage() {
             </div>
 
             {/* Region select boxes */}
-            <ReportFilterBar
-                selectedProvince={selectedProvince}
-                setSelectedProvince={handleProvinceChange}
-                selectedWard={selectedWard}
-                setSelectedWard={handleWardChange}
-                provinces={provinces}
-                activeWards={activeWards}
-            />
+            <ReportFilterBar selectedProvince={selectedProvince} setSelectedProvince={handleProvinceChange} selectedWard={selectedWard} setSelectedWard={handleWardChange} provinces={provinces} activeWards={activeWards} />
 
             {/* Reports table */}
             <ReportListTable
@@ -277,12 +307,22 @@ export default function AccidentTypesPage() {
                 onSelectOne={handleSelectOne}
             />
 
-            {/* Bulk Selection delete banner */}
-            <DeleteSelectionBanner
+            <BulkSelectionBanner
                 selectedCount={selectedIds.length}
-                onDelete={handleDeleteSelected}
+                processing={processing}
+                onReject={() => {
+                    const pendingSelected = reports.filter((r) => selectedIds.includes(r.id) && r.status === "chờ tiếp nhận");
+                    if (pendingSelected.length === 0) {
+                        toast.error("Không có báo cáo nào ở trạng thái 'Chờ tiếp nhận' được chọn!");
+                        return;
+                    }
+                    setShowRejectModal(true);
+                }}
+                onApprove={handleApproveSelected}
                 onClear={() => setSelectedIds([])}
             />
+
+            <RejectReasonPopup isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} onSubmit={handleRejectSelectedSubmit} processing={processing} />
         </main>
     );
 }

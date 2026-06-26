@@ -10,10 +10,12 @@ import {
   Query,
   UseGuards,
   Req,
+  Res,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -124,6 +126,37 @@ export class ReportController {
     return report;
   }
 
+  @Get(':id/export-docx')
+  @ApiOperation({ summary: 'Xuất chi tiết báo cáo ra file Word (.docx)' })
+  @ApiParam({ name: 'id', example: 1 })
+  async exportReportDocx(
+    @Req() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const report = await this.reportService.getReportById(id);
+    if (
+      req.user.orgType === 'DOANH_NGHIEP' &&
+      report.companyInfo?.businessId !== req.user.businessId
+    ) {
+      throw new NotFoundException(
+        'Không tìm thấy báo cáo hoặc bạn không có quyền xem báo cáo này',
+      );
+    }
+    const buffer = await this.reportService.exportReportDocx(id);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=BC_TNLD_${id}.docx`,
+    );
+
+    return res.end(buffer);
+  }
+
   @Patch(':id')
   @RequirePermissions(Permission.REPORT_DN_UPDATE)
   @ApiOperation({ summary: 'Cập nhật báo cáo' })
@@ -209,5 +242,22 @@ export class ReportController {
     }
 
     return this.reportService.reopenReport(id, req);
+  }
+
+  @Post('summary/export-docx')
+  @ApiOperation({ summary: 'Xuất báo cáo tổng hợp tình hình TNLĐ ra file Word (.docx)' })
+  async exportSummaryDocx(@Body() body: any, @Res() res: Response) {
+    const buffer = await this.reportService.exportSummaryDocx(body);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=BC_tinh_hinh_TNLD.docx',
+    );
+
+    return res.end(buffer);
   }
 }

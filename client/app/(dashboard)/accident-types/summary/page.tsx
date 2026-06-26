@@ -86,6 +86,10 @@ interface Table2Row {
     salaryCost: number;
     compensationCost: number;
     propertyDamage: number;
+    unmanagedVictims: number;
+    unmanagedFemaleVictims: number;
+    unmanagedDeaths: number;
+    unmanagedSeriouslyInjured: number;
     isHeader?: boolean;
 }
 
@@ -99,6 +103,8 @@ export default function AccidentSummaryPage() {
     const [table1Rows, setTable1Rows] = useState<any[]>([]);
     const [table1GrandTotal, setTable1GrandTotal] = useState<any | null>(null);
     const [table2Rows, setTable2Rows] = useState<Table2Row[]>([]);
+    const [laborGrandTotal, setLaborGrandTotal] = useState<Table2Row | null>(null);
+    const [supportGrandTotal, setSupportGrandTotal] = useState<Table2Row | null>(null);
 
     // Get search filters from URL parameters
     const yearStr = searchParams?.get("year");
@@ -246,6 +252,7 @@ export default function AccidentSummaryPage() {
                 setTable1GrandTotal(t1GrandTotal);
 
                 // --- 2. AGGREGATE TABLE II: CLASSIFICATION OF ACCIDENTS ---
+                // --- 2. AGGREGATE TABLE II: CLASSIFICATION OF ACCIDENTS ---
                 // Grand total row for table II
                 const t2GrandTotal: Table2Row = {
                     name: "Tổng số",
@@ -263,12 +270,99 @@ export default function AccidentSummaryPage() {
                     salaryCost: 0,
                     compensationCost: 0,
                     propertyDamage: 0,
+                    unmanagedVictims: 0,
+                    unmanagedFemaleVictims: 0,
+                    unmanagedDeaths: 0,
+                    unmanagedSeriouslyInjured: 0,
+                };
+
+                const lGrandTotal: Table2Row = {
+                    name: "1. Tai nạn lao động",
+                    code: "",
+                    cases: 0,
+                    deathCases: 0,
+                    twoVictimsCases: 0,
+                    victims: 0,
+                    femaleVictims: 0,
+                    deaths: 0,
+                    serious: 0,
+                    sickDays: 0,
+                    totalCost: 0,
+                    medicalCost: 0,
+                    salaryCost: 0,
+                    compensationCost: 0,
+                    propertyDamage: 0,
+                    unmanagedVictims: 0,
+                    unmanagedFemaleVictims: 0,
+                    unmanagedDeaths: 0,
+                    unmanagedSeriouslyInjured: 0,
+                };
+
+                const sGrandTotal: Table2Row = {
+                    name: "2. Tai nạn được hưởng trợ cấp theo quy định tại Khoản 2 Điều 39 Luật ATVSLĐ",
+                    code: "",
+                    cases: 0,
+                    deathCases: 0,
+                    twoVictimsCases: 0,
+                    victims: 0,
+                    femaleVictims: 0,
+                    deaths: 0,
+                    serious: 0,
+                    sickDays: 0,
+                    totalCost: 0,
+                    medicalCost: 0,
+                    salaryCost: 0,
+                    compensationCost: 0,
+                    propertyDamage: 0,
+                    unmanagedVictims: 0,
+                    unmanagedFemaleVictims: 0,
+                    unmanagedDeaths: 0,
+                    unmanagedSeriouslyInjured: 0,
                 };
 
                 filteredReports.forEach((r: any) => {
                     const labor = r.laborAccidentReport || {};
                     const support = r.laborAccidentSupportReport || {};
 
+                    // Sum labor reports
+                    lGrandTotal.cases += Number(labor.totalAccidentCases || 0);
+                    lGrandTotal.deathCases += Number(labor.totalCasesWithDeath || 0);
+                    lGrandTotal.twoVictimsCases += Number(labor.totalCasesWithTwoOrMoreVictims || 0);
+                    lGrandTotal.victims += Number(labor.totalVictims || 0);
+                    lGrandTotal.femaleVictims += Number(labor.totalFemaleVictims || 0);
+                    lGrandTotal.deaths += Number(labor.totalDeaths || 0);
+                    lGrandTotal.serious += Number(labor.totalSeriouslyInjured || 0);
+                    lGrandTotal.sickDays += Number(labor.totalSickDays || 0);
+                    lGrandTotal.totalCost += Number(labor.totalCost || 0);
+                    lGrandTotal.medicalCost += Number(labor.medicalCost || 0);
+                    lGrandTotal.salaryCost += Number(labor.salaryDuringTreatment || 0);
+                    lGrandTotal.compensationCost += Number(labor.compensationCost || 0);
+                    lGrandTotal.propertyDamage += Number(labor.propertyDamage || 0);
+                    lGrandTotal.unmanagedVictims += Number(labor.unmanagedVictims || 0);
+                    lGrandTotal.unmanagedFemaleVictims += Number(labor.unmanagedFemaleVictims || 0);
+                    lGrandTotal.unmanagedDeaths += Number(labor.unmanagedDeaths || 0);
+                    lGrandTotal.unmanagedSeriouslyInjured += Number(labor.unmanagedSeriouslyInjured || 0);
+
+                    // Sum support reports
+                    sGrandTotal.cases += Number(support.totalAccidentCases || 0);
+                    sGrandTotal.deathCases += Number(support.totalCasesWithDeath || 0);
+                    sGrandTotal.twoVictimsCases += Number(support.totalCasesWithTwoOrMoreVictims || 0);
+                    sGrandTotal.victims += Number(support.totalVictims || 0);
+                    sGrandTotal.femaleVictims += Number(support.totalFemaleVictims || 0);
+                    sGrandTotal.deaths += Number(support.totalDeaths || 0);
+                    sGrandTotal.serious += Number(support.totalSeriouslyInjured || 0);
+                    sGrandTotal.sickDays += Number(support.totalSickDays || 0);
+                    sGrandTotal.totalCost += Number(support.totalCost || 0);
+                    sGrandTotal.medicalCost += Number(support.medicalCost || 0);
+                    sGrandTotal.salaryCost += Number(support.salaryDuringTreatment || 0);
+                    sGrandTotal.compensationCost += Number(support.compensationCost || 0);
+                    sGrandTotal.propertyDamage += Number(support.propertyDamage || 0);
+                    sGrandTotal.unmanagedVictims += Number(support.unmanagedVictims || 0);
+                    sGrandTotal.unmanagedFemaleVictims += Number(support.unmanagedFemaleVictims || 0);
+                    sGrandTotal.unmanagedDeaths += Number(support.unmanagedDeaths || 0);
+                    sGrandTotal.unmanagedSeriouslyInjured += Number(support.unmanagedSeriouslyInjured || 0);
+
+                    // Table II Grand Total is the sum of both
                     t2GrandTotal.cases += Number(labor.totalAccidentCases || 0) + Number(support.totalAccidentCases || 0);
                     t2GrandTotal.deathCases += Number(labor.totalCasesWithDeath || 0) + Number(support.totalCasesWithDeath || 0);
                     t2GrandTotal.twoVictimsCases += Number(labor.totalCasesWithTwoOrMoreVictims || 0) + Number(support.totalCasesWithTwoOrMoreVictims || 0);
@@ -282,7 +376,14 @@ export default function AccidentSummaryPage() {
                     t2GrandTotal.salaryCost += Number(labor.salaryDuringTreatment || 0) + Number(support.salaryDuringTreatment || 0);
                     t2GrandTotal.compensationCost += Number(labor.compensationCost || 0) + Number(support.compensationCost || 0);
                     t2GrandTotal.propertyDamage += Number(labor.propertyDamage || 0) + Number(support.propertyDamage || 0);
+                    t2GrandTotal.unmanagedVictims += Number(labor.unmanagedVictims || 0) + Number(support.unmanagedVictims || 0);
+                    t2GrandTotal.unmanagedFemaleVictims += Number(labor.unmanagedFemaleVictims || 0) + Number(support.unmanagedFemaleVictims || 0);
+                    t2GrandTotal.unmanagedDeaths += Number(labor.unmanagedDeaths || 0) + Number(support.unmanagedDeaths || 0);
+                    t2GrandTotal.unmanagedSeriouslyInjured += Number(labor.unmanagedSeriouslyInjured || 0) + Number(support.unmanagedSeriouslyInjured || 0);
                 });
+
+                setLaborGrandTotal(lGrandTotal);
+                setSupportGrandTotal(sGrandTotal);
 
                 // Extract all details for grouping
                 const allDetails: any[] = [];
@@ -310,6 +411,10 @@ export default function AccidentSummaryPage() {
                         salaryCost: 0,
                         compensationCost: 0,
                         propertyDamage: 0,
+                        unmanagedVictims: 0,
+                        unmanagedFemaleVictims: 0,
+                        unmanagedDeaths: 0,
+                        unmanagedSeriouslyInjured: 0,
                     };
                     allDetails.forEach((d: any) => {
                         if (d.occupationCategory === occ) {
@@ -326,6 +431,10 @@ export default function AccidentSummaryPage() {
                             row.salaryCost += Number(d.salaryDuringTreatment || 0);
                             row.compensationCost += Number(d.compensationCost || 0);
                             row.propertyDamage += Number(d.propertyDamage || 0);
+                            row.unmanagedVictims += Number(d.unmanagedVictims || 0);
+                            row.unmanagedFemaleVictims += Number(d.unmanagedFemaleVictims || 0);
+                            row.unmanagedDeaths += Number(d.unmanagedDeaths || 0);
+                            row.unmanagedSeriouslyInjured += Number(d.unmanagedSeriouslyInjured || 0);
                         }
                     });
                     return row;
@@ -349,6 +458,10 @@ export default function AccidentSummaryPage() {
                         salaryCost: 0,
                         compensationCost: 0,
                         propertyDamage: 0,
+                        unmanagedVictims: 0,
+                        unmanagedFemaleVictims: 0,
+                        unmanagedDeaths: 0,
+                        unmanagedSeriouslyInjured: 0,
                     };
                     allDetails.forEach((d: any) => {
                         if (d.accidentCause === cause) {
@@ -365,6 +478,10 @@ export default function AccidentSummaryPage() {
                             row.salaryCost += Number(d.salaryDuringTreatment || 0);
                             row.compensationCost += Number(d.compensationCost || 0);
                             row.propertyDamage += Number(d.propertyDamage || 0);
+                            row.unmanagedVictims += Number(d.unmanagedVictims || 0);
+                            row.unmanagedFemaleVictims += Number(d.unmanagedFemaleVictims || 0);
+                            row.unmanagedDeaths += Number(d.unmanagedDeaths || 0);
+                            row.unmanagedSeriouslyInjured += Number(d.unmanagedSeriouslyInjured || 0);
                         }
                     });
                     return row;
@@ -388,6 +505,10 @@ export default function AccidentSummaryPage() {
                         salaryCost: 0,
                         compensationCost: 0,
                         propertyDamage: 0,
+                        unmanagedVictims: 0,
+                        unmanagedFemaleVictims: 0,
+                        unmanagedDeaths: 0,
+                        unmanagedSeriouslyInjured: 0,
                     };
                     allDetails.forEach((d: any) => {
                         if (d.injuryFactor === factor) {
@@ -404,6 +525,10 @@ export default function AccidentSummaryPage() {
                             row.salaryCost += Number(d.salaryDuringTreatment || 0);
                             row.compensationCost += Number(d.compensationCost || 0);
                             row.propertyDamage += Number(d.propertyDamage || 0);
+                            row.unmanagedVictims += Number(d.unmanagedVictims || 0);
+                            row.unmanagedFemaleVictims += Number(d.unmanagedFemaleVictims || 0);
+                            row.unmanagedDeaths += Number(d.unmanagedDeaths || 0);
+                            row.unmanagedSeriouslyInjured += Number(d.unmanagedSeriouslyInjured || 0);
                         }
                     });
                     return row;
@@ -438,6 +563,54 @@ export default function AccidentSummaryPage() {
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleExportDocx = async () => {
+        try {
+            toast.loading("Đang tạo file Word...", { id: "export-docx" });
+
+            const occHeaderIdx = table2Rows.findIndex((r) => r.isHeader && r.name.includes("ngành nghề"));
+            const causeHeaderIdx = table2Rows.findIndex((r) => r.isHeader && r.name.includes("nguyên nhân"));
+            const factorHeaderIdx = table2Rows.findIndex((r) => r.isHeader && r.name.includes("yếu tố"));
+
+            const occupations = table2Rows.slice(occHeaderIdx + 1, causeHeaderIdx);
+            const causes = table2Rows.slice(causeHeaderIdx + 1, factorHeaderIdx);
+            const factors = table2Rows.slice(factorHeaderIdx + 1);
+
+            const payload = {
+                year: selectedYear,
+                period: period || "Cả năm",
+                province: province || "Tất cả",
+                ward: ward || "Tất cả",
+                totals: {
+                    totalEmployees: table1GrandTotal?.reportingWorkforce || 0,
+                    femaleEmployees: table1GrandTotal?.femaleWorkforce || 0,
+                    totalSalary: 0,
+                },
+                table2GrandTotal: table2Rows[0] || {},
+                laborGrandTotal: laborGrandTotal || {},
+                supportGrandTotal: supportGrandTotal || {},
+                causes,
+                factors,
+                occupations,
+            };
+
+            const blob = await ReportApi.exportDocx(payload);
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `BC_tinh_hinh_TNLD_PHU_LUC_XII_${selectedYear || ""}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success("Xuất file Word thành công!", { id: "export-docx" });
+        } catch (e) {
+            console.error("Export docx failed", e);
+            toast.error("Không thể xuất file Word. Vui lòng thử lại sau.", { id: "export-docx" });
+        }
     };
 
     if (loading) {
@@ -490,7 +663,11 @@ export default function AccidentSummaryPage() {
                                 <ArrowLeft className="size-3.5" />
                                 <span>Huỷ bỏ</span>
                             </Button>
-                            <Button variant="primary" size="sm" onClick={handlePrint} className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 flex items-center">
+                            {/* <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold px-4 py-1.5 flex items-center">
+                                <Printer className="size-3.5" />
+                                <span>In báo cáo</span>
+                            </Button> */}
+                            <Button variant="primary" size="sm" onClick={handleExportDocx} className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 flex items-center">
                                 <Printer className="size-3.5" />
                                 <span>Xuất dữ liệu</span>
                             </Button>
