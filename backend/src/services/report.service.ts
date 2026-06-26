@@ -236,22 +236,29 @@ export class ReportService {
 
   async exportSummaryDocx(data: any): Promise<Buffer> {
     const { execSync } = require('child_process');
-    
+
     const findFile = (filename: string) => {
       let p = path.resolve(process.cwd(), filename);
       if (fs.existsSync(p)) return p;
+
       p = path.resolve(process.cwd(), '..', filename);
       if (fs.existsSync(p)) return p;
+
       p = path.resolve(__dirname, '..', '..', '..', filename);
       if (fs.existsSync(p)) return p;
+
       p = path.resolve(__dirname, '..', '..', '..', '..', filename);
       if (fs.existsSync(p)) return p;
-      return path.resolve(process.cwd(), '..', filename); // default fallback
+
+      p = path.resolve('/app/tts-vna', filename);
+      if (fs.existsSync(p)) return p;
+
+      return path.resolve(process.cwd(), '..', filename);
     };
 
     const templatePath = findFile('BC tình hình TNLĐ - PHỤ LỤC XII.docx');
     const scriptPath = findFile('generate_docx.py');
-    
+
     const tempJsonPath = path.join(path.dirname(templatePath), `temp_${Date.now()}.json`);
     const tempDocxPath = path.join(path.dirname(templatePath), `temp_out_${Date.now()}.docx`);
 
@@ -265,10 +272,10 @@ export class ReportService {
       return buffer;
     } finally {
       if (fs.existsSync(tempJsonPath)) {
-        try { fs.unlinkSync(tempJsonPath); } catch (e) {}
+        try { fs.unlinkSync(tempJsonPath); } catch (e) { }
       }
       if (fs.existsSync(tempDocxPath)) {
-        try { fs.unlinkSync(tempDocxPath); } catch (e) {}
+        try { fs.unlinkSync(tempDocxPath); } catch (e) { }
       }
     }
   }

@@ -14,16 +14,18 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data
 
-    # backend:
-    #   build: ./backend
-    #   container_name: nest_backend
-    #   restart: always
-    #   env_file:
-    #     - ./backend/.env
-    #   ports:
-    #     - "3001:3001"
-    #   depends_on:
-    #     - postgres
+    backend:
+      build: ./backend
+      container_name: nest_backend
+      restart: always
+      env_file:
+        - ./backend/.env
+      ports:
+        - "3001:3001"
+      depends_on:
+        - postgres
+      volumes:
+        - ../tts-vna/BC tình hình TNLĐ - PHỤ LỤC XII.docx:/app/tts-vna/BC tình hình TNLĐ - PHỤ LỤC XII.docx
 
     # frontend:
     #   build: ./client
