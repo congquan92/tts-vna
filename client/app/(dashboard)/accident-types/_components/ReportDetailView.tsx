@@ -254,10 +254,10 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
                         <table className="w-full text-left border-collapse border border-gray-250 text-[10px]">
                             <thead>
                                 <tr className="bg-[#F4F6F8] font-bold text-gray-700">
-                                    <th rowSpan={3} className="border border-gray-250 p-2 text-left align-middle w-[30%]">
+                                    <th rowSpan={4} className="border border-gray-250 p-2 text-left align-middle w-[30%]">
                                         Tên chỉ tiêu thống kê
                                     </th>
-                                    <th rowSpan={3} className="border border-gray-250 p-2 text-center align-middle w-[6%]">
+                                    <th rowSpan={4} className="border border-gray-250 p-2 text-center align-middle w-[6%]">
                                         Mã số
                                     </th>
                                     <th colSpan={11} className="border border-gray-250 p-2 text-center align-middle">
@@ -272,18 +272,24 @@ export default function ReportDetailView({ report, onBack }: ReportDetailViewPro
                                         Số người bị nạn (Người)
                                     </th>
                                 </tr>
+                                <tr className="bg-[#F4F6F8] font-bold text-gray-700 text-[8.5px]">
+                                    <th rowSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th rowSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Số vụ có người chết</th>
+                                    <th rowSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Số vụ có từ 2 người bị nạn trở lên</th>
+                                    <th colSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th colSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Số LĐ nữ</th>
+                                    <th colSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Số người bị chết</th>
+                                    <th colSpan={2} className="border border-gray-250 p-1.5 text-center align-middle">Số người bị thương nặng</th>
+                                </tr>
                                 <tr className="bg-[#F4F6F8] font-bold text-gray-600 text-[8.5px]">
-                                    <th className="border border-gray-250 p-1.5 text-center">Tổng số</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Số vụ có người chết</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Số vụ có từ 2 người bị nạn trở lên</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Tổng số</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">NN không thuộc quyền quản lý</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Tổng số</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">NN không thuộc quyền quản lý</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Tổng số</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">NN không thuộc quyền quản lý</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">Tổng số</th>
-                                    <th className="border border-gray-250 p-1.5 text-center">NN không thuộc quyền quản lý</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">Tổng số</th>
+                                    <th className="border border-gray-250 p-1.5 text-center align-middle">NN không thuộc quyền quản lý</th>
                                 </tr>
                             </thead>
                             <tbody>
