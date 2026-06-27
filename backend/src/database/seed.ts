@@ -124,8 +124,6 @@ export class SeedService implements OnModuleInit {
 
                     // báo cáo
                     'REPORT_SO_VIEW',
-                    'REPORT_SO_APPROVE',
-                    'REPORT_SO_REJECT',
                 ],
             },
 
@@ -137,10 +135,7 @@ export class SeedService implements OnModuleInit {
                     'BUSINESS_VIEW',
                     'BUSINESS_CREATE',
                     'BUSINESS_UPDATE',
-                    'BUSINESS_DELETE',
                     'BUSINESS_UPLOAD_FILE',
-                    'BUSINESS_TOGGLE_STATUS',
-                    'BUSINESS_RESET_PASSWORD',
                     
                     // REPORT DOANH NGHIỆP
                     'REPORT_DN_VIEW',
