@@ -57,9 +57,9 @@ export class UserService {
 
     const userPayload = {
       ...userData,
-      ...(dob && {
-        dob: new Date(dob),
-      }),
+      avatarUrl: dto.avatarUrl,
+      avatarPublicId: dto.avatarPublicId,
+      ...(dob && { dob: new Date(dob) }),
       orgType: orgType,
     };
 
@@ -151,6 +151,8 @@ export class UserService {
 
     const updatePayload: Partial<User> = {
       ...userProperties,
+      avatarUrl: dto.avatarUrl,
+      avatarPublicId: dto.avatarPublicId,
       dob: dto.dob ? new Date(dto.dob) : undefined,
       orgType: dto.orgType as 'SO' | 'DOANH_NGHIEP' | undefined,
     };

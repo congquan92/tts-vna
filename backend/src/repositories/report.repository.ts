@@ -104,7 +104,12 @@ export class ReportRepository {
     return this.reportRepository.findOne({
       where: { id },
       relations: {
-        companyInfo: { business: true },
+        companyInfo: {
+          business: {
+            businessIndustry: true,
+            typeOfBusiness: true,
+          },
+        },
         laborAccidentReport: { accidentDetails: true },
         laborAccidentSupportReport: true,
         files: true,

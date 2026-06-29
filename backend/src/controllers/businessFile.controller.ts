@@ -8,12 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Body,
-  UseGuards
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { PermissionsGuard } from '../common/guards/permissions.guard';
-import { RequirePermissions } from '../common/decorators/permissions.decorator';
-import { Permission } from '../common/enums/permission.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BusinessFileService } from '../services/businessFile.service';
 import { diskStorage } from 'multer';
@@ -27,13 +22,11 @@ import {
 import { BusinessFileType } from '../entities/business-file.entity';
 
 @ApiTags('Business Files')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('business-files')
 export class BusinessFileController {
   constructor(private readonly businessFileService: BusinessFileService) {}
 
   // UPLOAD
-  @RequirePermissions(Permission.BUSINESS_UPLOAD_FILE)
   @Post(':businessId/upload')
   @ApiOperation({ summary: 'Upload file doanh nghiệp' })
   @ApiConsumes('multipart/form-data')
@@ -67,14 +60,12 @@ export class BusinessFileController {
   }
 
   // GET LIST
-  @RequirePermissions(Permission.BUSINESS_VIEW)
   @Get(':businessId')
   async getFiles(@Param('businessId', ParseIntPipe) businessId: number) {
     return this.businessFileService.getBusinessFiles(businessId);
   }
 
   // DELETE FILE
-  @RequirePermissions(Permission.BUSINESS_DELETE)
   @Delete(':fileId')
   async deleteFile(@Param('fileId', ParseIntPipe) fileId: number) {
     return this.businessFileService.deleteBusinessFile(fileId);

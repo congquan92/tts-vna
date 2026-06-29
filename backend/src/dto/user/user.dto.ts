@@ -57,6 +57,16 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(OrgType)
   orgType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatarPublicId?: string;
 }
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
