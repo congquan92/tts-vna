@@ -68,6 +68,12 @@ import {TypeOfInjury} from './entities/type-of-injury.entity';
 import {TypeOfInjuryController} from './controllers/typeOfInjury.controller';
 import {TypeOfInjuryService} from './services/typeOfInjury.service';
 import {TypeOfInjuryRepository} from './repositories/typeOfInjury.repository';
+import { PermissionController } from './controllers/permission.controller';
+import { RoleController } from './controllers/role.controller';
+import { RoleService } from './services/role.service';
+import { PermissionService } from './services/permission.service';
+import { PermissionRepository } from './repositories/permission.repository';
+import { RolePermissionRepository } from './repositories/rolePermission.repository';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
@@ -120,7 +126,7 @@ import {TypeOfInjuryRepository} from './repositories/typeOfInjury.repository';
     }),
     TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile, ReportHistory, TraumaFactor, CareerDirectory, TypeOfInjury]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController, TraumaFactorController, CareerDirectoryController, TypeOfInjuryController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository, TraumaFactorService, TraumaFactorRepository, CareerDirectoryService, CareerDirectoryRepository, TypeOfInjuryService, TypeOfInjuryRepository],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController, TraumaFactorController, CareerDirectoryController, TypeOfInjuryController, PermissionController, RoleController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleService, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository, TraumaFactorService, TraumaFactorRepository, CareerDirectoryService, CareerDirectoryRepository, TypeOfInjuryService, TypeOfInjuryRepository, PermissionService, PermissionRepository, RolePermissionRepository],
 })
 export class AppModule { }

@@ -264,7 +264,7 @@ def main():
                             r3.append(copy.deepcopy(rPr))
                         t2 = ET.Element('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
                         if period == "Cả năm":
-                            t2.text = f"Kỳ báo cáo: Cả năm"
+                            t2.text = f"Kỳ báo cáo: Cả năm {year}"
                         else:
                             t2.text = f"Kỳ báo cáo: {period} năm {year}"
                         r3.append(t2)

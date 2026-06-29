@@ -17,7 +17,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"A12345678\",\r\n  \"fullName\": \"Admin\",\r\n  \"email\": \"admin@gmail.com\",\r\n  \"roleId\": 1,\r\n  \"orgType\": \"SO\"\r\n}",
+              "raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"A12345678\",\r\n  \"fullName\": \"Admin\",\r\n  \"email\": \"admin123@gmail.com\",\r\n  \"roleId\": 1,\r\n  \"orgType\": \"SO\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -287,7 +287,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"fullName\": \"Nguyễn Văn A\",\r\n  \"roleId\": 3,\r\n  \"email\": \"admin@gmail.com\",\r\n  \"gender\": \"Nam\",\r\n  \"dob\": \"01/01/2000\",\r\n  \"position\": \"Developer\",\r\n  \"province\": \"TP.HCM\",\r\n  \"ward\": \"Phường 1\",\r\n  \"address\": \"123 Đường ABC\",\r\n  \"isActive\": true\r\n}",
+              "raw": "{\r\n  \"fullName\": \"Nguyễn Văn A\",\r\n  \"roleId\": 1,\r\n  \"email\": \"admin@gmail.com\",\r\n  \"gender\": \"Nam\",\r\n  \"dob\": \"01/01/2000\",\r\n  \"position\": \"Developer\",\r\n  \"province\": \"TP.HCM\",\r\n  \"ward\": \"Phường 1\",\r\n  \"address\": \"123 Đường ABC\",\r\n  \"isActive\": true\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -932,7 +932,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/businessIndustries/level/3",
+              "raw": "http://localhost:3001/businessIndustries/level/4",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -941,7 +941,7 @@
               "path": [
                 "businessIndustries",
                 "level",
-                "3"
+                "4"
               ]
             }
           },
@@ -1088,7 +1088,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"taxCode\": \"0312345677\",\r\n    \"businessName\": \"Công ty TNHH ABCDE\",\r\n    \"foreignName\": \"ABCDE Company Limited\",\r\n    \"typeOfBusinessId\": 1,\r\n    \"businessIndustryId\": 9,\r\n    \"businessLicenseDate\": \"2025-01-01\",\r\n    \"registeredProvince\": \"TP. Hồ Chí Minh\",\r\n    \"registeredWard\": \"Phường Hiệp Bình\",\r\n    \"registeredAddress\": \"123 Quốc lộ 13\",\r\n    \"email\": \"abcde@gmail.com\",\r\n    \"officePhone\": \"02812345678\",\r\n    \"operatingProvince\": \"TP. Hồ Chí Minh\",\r\n    \"operatingWard\": \"Phường Linh Đông\",\r\n    \"businessLocation\": \"Khu công nghiệp ABC\",\r\n    \"legalRepresentative\": \"Nguyễn Văn A\",\r\n    \"representativePhone\": \"0909123456\"\r\n}",
+              "raw": "{\r\n    \"taxCode\": \"03123456776\",\r\n    \"businessName\": \"Công ty TNHH ABC\",\r\n    \"foreignName\": \"ABC Company Limited\",\r\n    \"typeOfBusinessId\": 1,\r\n    \"businessIndustryId\": 11,\r\n    \"businessLicenseDate\": \"2025-01-01\",\r\n    \"registeredProvince\": \"TP. Hồ Chí Minh\",\r\n    \"registeredWard\": \"Phường Hiệp Bình\",\r\n    \"registeredAddress\": \"123 Quốc lộ 13\",\r\n    \"email\": \"abc@gmail.com\",\r\n    \"officePhone\": \"02812345678\",\r\n    \"operatingProvince\": \"TP. Hồ Chí Minh\",\r\n    \"operatingWard\": \"Phường Linh Đông\",\r\n    \"businessLocation\": \"Khu công nghiệp ABC\",\r\n    \"legalRepresentative\": \"Nguyễn Văn A\",\r\n    \"representativePhone\": \"0909123456\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1608,7 +1608,7 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/reports/52/approve",
+              "raw": "http://localhost:3001/reports/1/approve",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1616,7 +1616,7 @@
               "port": "3001",
               "path": [
                 "reports",
-                "52",
+                "1",
                 "approve"
               ]
             }
@@ -1638,7 +1638,7 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3001/reports/3/reject",
+              "raw": "http://localhost:3001/reports/1/reject",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -1646,7 +1646,7 @@
               "port": "3001",
               "path": [
                 "reports",
-                "3",
+                "1",
                 "reject"
               ]
             }
@@ -1798,6 +1798,217 @@
       ]
     },
     {
+      "name": "role",
+      "item": [
+        {
+          "name": "create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"MANAGER_DN\",\r\n    \"displayName\": \"Quản lý Doanh nghiệp\",\r\n    \"orgType\": \"DOANH_NGHIEP\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/roles",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-list-roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/roles",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "ADMIN",
+                  "disabled": true
+                },
+                {
+                  "key": "displayName",
+                  "value": "Chuyên viên",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-role-permissions",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "http://localhost:3001/roles/4/permissions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles",
+                "4",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-role-permissions",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"permissionIds\": [11,12,13,15]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/roles/6/permissions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles",
+                "6",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-role",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"MANAGER_DN\",\r\n    \"orgType\": \"DOANH_NGHIEP\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3001/roles/6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles",
+                "6"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "http://localhost:3001/roles/6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "roles",
+                "6"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "permission",
+      "item": [
+        {
+          "name": "get-list-permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/permissions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3001",
+              "path": [
+                "permissions"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "REPORT_DN",
+                  "disabled": true
+                },
+                {
+                  "key": "name",
+                  "value": "Xem",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "logout",
       "request": {
         "method": "POST",
@@ -1823,7 +2034,7 @@
     "bearer": [
       {
         "key": "token",
-        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE4LCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZUlkIjoxLCJvcmdUeXBlIjoiU08iLCJhY2NvdW50VHlwZSI6IlVTRVIiLCJ1c2VySWQiOjEwLCJidXNpbmVzc0lkIjpudWxsLCJkaXNwbGF5TmFtZSI6ImFkbWluIiwiaWF0IjoxNzgyMzExNDIyLCJleHAiOjE3ODIzMTUwMjJ9.CMI25UHD9uIHbKgiD8V3mjvE_1mdT2y6ltPi5aEI1Vo",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlSWQiOjEsIm9yZ1R5cGUiOiJTTyIsImFjY291bnRUeXBlIjoiVVNFUiIsInVzZXJJZCI6MSwiYnVzaW5lc3NJZCI6bnVsbCwiZGlzcGxheU5hbWUiOiJOZ3V54buFbiBWxINuIEEiLCJpYXQiOjE3ODI3MTY4OTksImV4cCI6MTc4MjcyMDQ5OX0.fd-7KwCyhffYnAFgP-zefTket1N3wC7Mio0MBcbHVBA",
         "type": "string"
       }
     ]
