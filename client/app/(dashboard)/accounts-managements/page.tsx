@@ -66,7 +66,7 @@ const AccountPage = () => {
                         ...prev,
                         page,
                         pageSize: limit,
-                        total: result.total || 0,
+                        total: result.meta?.total ?? result.total ?? 0,
                     }));
 
                     // Check if we need to show password modal for a newly created user
