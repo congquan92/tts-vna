@@ -14,6 +14,8 @@ export interface CreateUserPayload {
     address?: string;
     isActive?: boolean;
     orgType?: string;
+    avatarUrl?: string;
+    avatarPublicId?: string;
 }
 
 export interface UpdateUserPayload extends Partial<CreateUserPayload> { }

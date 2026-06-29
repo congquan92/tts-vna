@@ -11,6 +11,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/utils/display";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { AuthApi } from "@/api/auth";
 
 interface Ward {
     ward_code: string;
@@ -54,8 +55,6 @@ const roleNameToId: Record<string, string> = {
     MANAGER_SO: "2",
     CHUYENVIEN_SO: "3",
     CEO_DN: "4",
-    MANAGER_DN: "5",
-    USER_DN: "6",
 };
 
 const formatDateToYYYYMMDD = (dateVal: string | Date | null | undefined) => {
@@ -217,6 +216,20 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
 
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
+
+        try {
+            AuthApi.uploadAvatar(file).then((res) => {
+                setFormData((prev) => ({
+                    ...prev,
+                    avatarUrl: res.avatarUrl,
+                }));
+
+                setPreviewUrl(null);
+            });
+        } catch (err) {
+            toast.error("Upload ảnh thất bại");
+            console.error(err);
+        }
     };
 
     const validate = () => {
@@ -265,12 +278,11 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         try {
             // Remove avatarUrl and handle password dynamically
             const cleanData = { ...formData };
-            
+
             if (editingItem) {
                 delete (cleanData as any).username;
             }
 
-            delete (cleanData as { avatarUrl?: string }).avatarUrl;
             const password = cleanData.password;
             delete (cleanData as { password?: string }).password;
 
@@ -323,7 +335,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                         className="relative w-36 h-36 rounded-full border border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 mb-3 cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
                         onClick={() => document.getElementById("modalAvatarInput")?.click()}
                     >
-                        {previewUrl || formData.avatarUrl ? (
+                        {formData.avatarUrl || previewUrl ? (
                             <Image
                                 src={previewUrl || (formData.avatarUrl?.startsWith("http") ? formData.avatarUrl : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/${formData.avatarUrl?.replace(/^\//, "")}`)}
                                 alt="Avatar"
