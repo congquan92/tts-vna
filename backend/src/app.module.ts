@@ -56,7 +56,18 @@ import { ReportHistory } from './entities/report-history.entity';
 import { ReportHistoryController } from './controllers/reportHistory.controller';
 import { ReportHistoryService } from './services/reportHistory.service';
 import { ReportHistoryRepository } from './repositories/reportHistory.repository';
-
+import { TraumaFactor } from './entities/trauma-factor.entity';
+import { TraumaFactorController } from './controllers/trauma-factor.controller';
+import { TraumaFactorService } from './services/trauma-factor.service';
+import { TraumaFactorRepository } from './repositories/trauma-factor.repository';
+import { CareerDirectory } from './entities/career-directory.entity';
+import { CareerDirectoryController } from './controllers/CareerDirectory.controller';
+import { CareerDirectoryService } from './services/CareerDirectory.service';
+import { CareerDirectoryRepository } from './repositories/careerDirectory.repository';
+import {TypeOfInjury} from './entities/type-of-injury.entity';
+import {TypeOfInjuryController} from './controllers/typeOfInjury.controller';
+import {TypeOfInjuryService} from './services/typeOfInjury.service';
+import {TypeOfInjuryRepository} from './repositories/typeOfInjury.repository';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
@@ -107,9 +118,9 @@ import { ReportHistoryRepository } from './repositories/reportHistory.repository
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile, ReportHistory]),
+    TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile, ReportHistory, TraumaFactor, CareerDirectory, TypeOfInjury]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController, TraumaFactorController, CareerDirectoryController, TypeOfInjuryController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository, TraumaFactorService, TraumaFactorRepository, CareerDirectoryService, CareerDirectoryRepository, TypeOfInjuryService, TypeOfInjuryRepository],
 })
 export class AppModule { }
