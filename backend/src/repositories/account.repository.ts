@@ -49,4 +49,12 @@ export class AccountRepository {
     async save(account: Account) {
         return await this.accountRepository.save(account);
     }
+
+    async countAccount(roleId: number) {
+        return this.accountRepository.count({
+            where: {
+                roleId,
+            },
+        });
+    }
 }

@@ -56,6 +56,12 @@ import { ReportHistory } from './entities/report-history.entity';
 import { ReportHistoryController } from './controllers/reportHistory.controller';
 import { ReportHistoryService } from './services/reportHistory.service';
 import { ReportHistoryRepository } from './repositories/reportHistory.repository';
+import { PermissionController } from './controllers/permission.controller';
+import { RoleController } from './controllers/role.controller';
+import { PermissionService } from './services/permission.service';
+import { PermissionRepository } from './repositories/permission.repository';
+import { RolePermissionRepository } from './repositories/rolePermission.repository';
+import { RoleService } from './services/role.service';
 
 @Module({
   imports: [
@@ -109,7 +115,7 @@ import { ReportHistoryRepository } from './repositories/reportHistory.repository
     }),
     TypeOrmModule.forFeature([User, Account, Otp, TypeOfBusiness, BusinessIndustry, Business, BusinessFile, Role, RolePermission, Permission, Report, CompanyInfo, LaborAccidentReport, LaborAccidentSupportReport, AccidentDetail, ReportFile, ReportHistory]),
   ],
-  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController],
-  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository],
+  controllers: [AuthController, UserController, TypeOfBusinessController, BusinessIndustryController, BusinessController, BusinessFileController, ReportController, ReportFileController, ReportHistoryController, PermissionController, RoleController],
+  providers: [AuthService, AuthRepository, UserService, UserRepository, TypeOfBusinessService, TypeOfBusinessRepository, BusinessIndustryService, BusinessIndustryRepository, BusinessService, BusinessRepository, BusinessFileService, BusinessFileRepository, RoleService, RoleRepository, AccountRepository, JwtStrategy, SeedService, ReportService, ReportRepository, ReportFileService, ReportFileRepository, ReportHistoryService, ReportHistoryRepository, PermissionService, PermissionRepository, RolePermissionRepository],
 })
 export class AppModule { }

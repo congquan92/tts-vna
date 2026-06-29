@@ -6,7 +6,7 @@ import { Permission } from '../entities/permission.entity';
 import { RolePermission } from '../entities/role-permission.entity';
 import { TypeOfBusiness } from '../entities/typeOfBusiness.entity';
 import { BusinessIndustry, BusinessStatus } from '../entities/BusinessIndustry.entity';
-import { Permission as PermissionEnum } from '../common/enums/permission.enum';
+import { PermissionDescription, Permission as PermissionEnum } from '../common/enums/permission.enum';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
@@ -28,26 +28,47 @@ export class SeedService implements OnModuleInit {
 
     private async seedPermissions() {
         const permissions = Object.values(PermissionEnum);
+
         for (const code of permissions) {
-            const exists = await this.permRepo.findOne({ where: { code } });
-            if (!exists) {
-                await this.permRepo.save({ code });
+            const perm = await this.permRepo.findOne({ where: { code } });
+
+            if (!perm) {
+                await this.permRepo.save({
+                    code,
+                    description: PermissionDescription[code] ?? code,
+                });
+            } else if (!perm.description) {
+                await this.permRepo.update(
+                    { code },
+                    { description: PermissionDescription[code] ?? code },
+                );
             }
         }
     }
 
     private async seedRoles() {
-        const roles = [
-            { name: 'ADMIN_SO', orgType: 'SO' },
-            { name: 'MANAGER_SO', orgType: 'SO' },
-            { name: 'CHUYENVIEN_SO', orgType: 'SO' },
-            { name: 'CEO_DN', orgType: 'DOANH_NGHIEP' },
+        const roles: { name: string; displayName: string; orgType: 'SO' | 'DOANH_NGHIEP' }[] = [
+            { name: 'ADMIN_SO', displayName: 'Quản trị viên Sở', orgType: 'SO' },
+            { name: 'MANAGER_SO', displayName: 'Lãnh đạo Sở', orgType: 'SO' },
+            { name: 'CHUYENVIEN_SO', displayName: 'Chuyên viên', orgType: 'SO' },
+            { name: 'CEO_DN', displayName: 'Giám đốc Doanh nghiệp', orgType: 'DOANH_NGHIEP' },
         ];
 
         for (const roleData of roles) {
-            const exists = await this.roleRepo.findOne({ where: { name: roleData.name } });
-            if (!exists) {
-                await this.roleRepo.save(roleData as unknown as Partial<Role>);
+            const existing = await this.roleRepo.findOne({
+                where: { name: roleData.name },
+            });
+
+            if (!existing) {
+                await this.roleRepo.save(roleData);
+            } else {
+                await this.roleRepo.update(
+                    { name: roleData.name },
+                    {
+                        displayName: roleData.displayName,
+                        orgType: roleData.orgType,
+                    },
+                );
             }
         }
     }
@@ -85,6 +106,12 @@ export class SeedService implements OnModuleInit {
                     'BUSINESS_TOGGLE_STATUS',
                     'BUSINESS_RESET_PASSWORD',
 
+                    // ROLE
+                    'ROLE_VIEW',
+                    'ROLE_CREATE',
+                    'ROLE_UPDATE',
+                    'ROLE_DELETE',
+
                     // REPORT SỞ 
                     'REPORT_SO_VIEW',
                     'REPORT_SO_APPROVE',
@@ -107,6 +134,9 @@ export class SeedService implements OnModuleInit {
                     // BUSINESS
                     'BUSINESS_VIEW',
 
+                    // ROLE
+                    'ROLE_VIEW',
+
                     // REPORT SỞ
                     'REPORT_SO_VIEW',
                     'REPORT_SO_APPROVE',
@@ -121,6 +151,7 @@ export class SeedService implements OnModuleInit {
                 perms: [
                     'USER_VIEW',
                     'BUSINESS_VIEW',
+                    'ROLE_VIEW',
 
                     // báo cáo
                     'REPORT_SO_VIEW',
@@ -136,7 +167,7 @@ export class SeedService implements OnModuleInit {
                     'BUSINESS_CREATE',
                     'BUSINESS_UPDATE',
                     'BUSINESS_UPLOAD_FILE',
-                    
+
                     // REPORT DOANH NGHIỆP
                     'REPORT_DN_VIEW',
                     'REPORT_DN_CREATE',

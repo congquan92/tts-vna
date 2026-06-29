@@ -16,6 +16,9 @@ export class Role {
   name!: string;
   // ADMIN_SO, STAFF_SO, MANAGER_SO, ADMIN_DN...
 
+  @Column({ nullable: true })
+  displayName!: string;
+
   @Column({ type: 'enum', enum: ['SO', 'DOANH_NGHIEP'] })
   orgType!: 'SO' | 'DOANH_NGHIEP';
 
