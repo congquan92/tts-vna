@@ -244,11 +244,25 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
         if (!formData.roleId) nextErrors.roleId = "Vai trò là bắt buộc";
 
         if (formData.dob) {
-            const selectedDate = new Date(formData.dob);
+            const dob = new Date(formData.dob);
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (selectedDate > today) {
+
+            if (dob > today) {
                 nextErrors.dob = "Ngày sinh không được là ngày trong tương lai";
+            } else {
+                let age = today.getFullYear() - dob.getFullYear();
+                const monthDiff = today.getMonth() - dob.getMonth();
+
+                if (
+                    monthDiff < 0 ||
+                    (monthDiff === 0 && today.getDate() < dob.getDate())
+                ) {
+                    age--;
+                }
+
+                if (age < 18) {
+                    nextErrors.dob = "Người dùng phải từ đủ 18 tuổi trở lên";
+                }
             }
         }
 

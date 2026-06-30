@@ -10,10 +10,13 @@ import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import axios from "axios";
 import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, ChevronDown, Trash2, X } from "lucide-react";
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/types/permission";
 
 const GRID_COLS = "grid-cols-[40px_40px_120px_1fr_140px]";
 
 export default function BusinessTypesPage() {
+    const { hasPermission } = usePermission();
     const [data, setData] = useState<TypeOfBusiness[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +36,7 @@ export default function BusinessTypesPage() {
         setLoading(true);
         try {
             let result: TypeOfBusiness[] = [];
-            
+
             if (filterCode) {
                 result = await TypeOfBusinessApi.findByCode(filterCode);
             } else if (filterName) {
@@ -43,7 +46,7 @@ export default function BusinessTypesPage() {
             } else {
                 result = await TypeOfBusinessApi.findAll();
             }
-            
+
             setData(result);
         } catch (error) {
             console.error("Error fetching business types:", error);
@@ -137,14 +140,27 @@ export default function BusinessTypesPage() {
                     lable="Danh sách loại hình kinh doanh"
                     component={
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs font-semibold">
-                                <Upload className="size-4" />
-                                <span>Thêm từ file</span>
-                            </Button>
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
-                                <Plus className="size-4" />
-                                <span>Thêm mới</span>
-                            </Button>
+                            {hasPermission(Permission.BUSINESS_UPLOAD_FILE) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Upload className="size-4" />
+                                    <span>Thêm từ file</span>
+                                </Button>
+                            )}
+                            {hasPermission(Permission.BUSINESS_CREATE) && (
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={openNew}
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Plus className="size-4" />
+                                    <span>Thêm mới</span>
+                                </Button>
+                            )}
                         </div>
                     }
                 />
@@ -214,11 +230,23 @@ export default function BusinessTypesPage() {
                             {paginatedRows.map((item) => (
                                 <div key={item.id} className={`grid ${GRID_COLS} gap-3 border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-xs text-gray-700 items-center px-4 py-2.5`}>
                                     <div className="flex items-center justify-center">
-                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                        <input
+                                            type="checkbox"
+                                            className="w-3.5 h-3.5 rounded border-gray-300 accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                            checked={selectedIds.includes(item.id)}
+                                            disabled={!hasPermission(Permission.BUSINESS_DELETE)}
+                                            onChange={() => handleSelectOne(item.id)}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-center">
-                                        <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
+                                        <button
+                                            type="button"
+                                            disabled={!hasPermission(Permission.BUSINESS_UPDATE)}
+                                            onClick={() => openEdit(item)}
+                                            className="text-gray-400 hover:text-primary disabled:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            title="Chỉnh sửa"
+                                        >
                                             <Pencil className="size-3.5" />
                                         </button>
                                     </div>
@@ -227,7 +255,17 @@ export default function BusinessTypesPage() {
                                     <div className="truncate">{item.name}</div>
 
                                     <div className="flex items-center justify-center">
-                                        <ToggleSwitch checked={item.status === BusinessStatus.ACTIVE} onChange={() => handleToggleStatus(item.id)} />
+                                        {hasPermission(Permission.BUSINESS_TOGGLE_STATUS) ? (
+                                            <ToggleSwitch
+                                                checked={item.status === BusinessStatus.ACTIVE}
+                                                onChange={() => handleToggleStatus(item.id)}
+                                            />
+                                        ) : (
+                                            <ToggleSwitch
+                                                checked={item.status === BusinessStatus.ACTIVE}
+                                                disabled
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -288,14 +326,16 @@ export default function BusinessTypesPage() {
                         dữ liệu được chọn
                     </div>
                     <div className="pr-3 flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleDeleteSelected}
-                            className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
-                        >
-                            <Trash2 className="size-3.5" />
-                            <span>Xoá</span>
-                        </button>
+                        {hasPermission(Permission.BUSINESS_DELETE) && (
+                            <button
+                                type="button"
+                                onClick={handleDeleteSelected}
+                                className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
+                            >
+                                <Trash2 className="size-3.5" />
+                                <span>Xoá</span>
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setSelectedIds([])}
@@ -307,11 +347,11 @@ export default function BusinessTypesPage() {
                 </div>
             )}
 
-            <BusinessTypePopup 
-                isOpen={isModalOpen} 
-                editingItem={editingItem} 
-                onClose={closeModal} 
-                onSave={handleSave} 
+            <BusinessTypePopup
+                isOpen={isModalOpen}
+                editingItem={editingItem}
+                onClose={closeModal}
+                onSave={handleSave}
             />
         </main>
     );

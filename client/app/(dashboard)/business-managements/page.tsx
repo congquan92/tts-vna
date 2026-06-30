@@ -18,6 +18,9 @@ import CreatePasswordModal from "@/components/popup/create-password";
 import DeleteSelectionBanner from "@/components/DeleteSelectionBanner";
 import type { User } from "@/types/auth";
 
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/types/permission";
+
 const GRID_STYLE = { gridTemplateColumns: "40px 100px 1.5fr 140px 150px 200px 200px 110px" };
 
 interface ApiBusiness extends Business {
@@ -33,6 +36,7 @@ interface ProvinceData {
 
 export default function BusinessManagementsPage() {
     const router = useRouter();
+    const { hasPermission } = usePermission();
     const [data, setData] = useState<Business[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -251,14 +255,28 @@ export default function BusinessManagementsPage() {
                     lable="Danh sách doanh nghiệp"
                     component={
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs font-semibold">
-                                <Upload className="size-4" />
-                                <span>Thêm từ file</span>
-                            </Button>
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
-                                <Plus className="size-4" />
-                                <span>Thêm mới</span>
-                            </Button>
+                            {hasPermission(Permission.BUSINESS_UPLOAD_FILE) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Upload className="size-4" />
+                                    <span>Thêm từ file</span>
+                                </Button>
+                            )}
+
+                            {hasPermission(Permission.BUSINESS_CREATE) && (
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={openNew}
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Plus className="size-4" />
+                                    <span>Thêm mới</span>
+                                </Button>
+                            )}
                         </div>
                     }
                 />
@@ -281,7 +299,16 @@ export default function BusinessManagementsPage() {
                     {/* Filter Row */}
                     <div className="grid pb-3 px-4 bg-[#F4F6F8] gap-3 items-center" style={GRID_STYLE}>
                         <div className="flex items-center justify-center">
-                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={allSelected} onChange={(e) => handleSelectAll(e.target.checked)} />
+                            <input
+                                type="checkbox"
+                                disabled={!hasPermission(Permission.BUSINESS_DELETE)}
+                                className={`w-3.5 h-3.5 rounded border-gray-300 accent-primary ${hasPermission(Permission.BUSINESS_DELETE)
+                                    ? "cursor-pointer"
+                                    : "opacity-40 cursor-not-allowed"
+                                    }`}
+                                checked={allSelected}
+                                onChange={(e) => handleSelectAll(e.target.checked)}
+                            />
                         </div>
                         <div />
                         <div className="px-3">
@@ -332,9 +359,8 @@ export default function BusinessManagementsPage() {
                         </div>
                         <div className="px-3 relative" ref={wardDropdownRef}>
                             <div
-                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${
-                                    isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
-                                }`}
+                                className={`w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs outline-none transition-colors cursor-pointer flex items-center min-h-7.5 ${isWardOpen ? "border-primary ring-1 ring-primary/10" : ""
+                                    }`}
                                 onClick={() => {
                                     if (isWardOpen) setWardSearch("");
                                     setIsWardOpen(!isWardOpen);
@@ -407,17 +433,44 @@ export default function BusinessManagementsPage() {
                             {data.map((item) => (
                                 <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/40 transition-colors text-sm text-gray-700 items-center px-4 py-2.5" style={GRID_STYLE}>
                                     <div className="flex items-center justify-center">
-                                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                        <input
+                                            type="checkbox"
+                                            disabled={!hasPermission(Permission.BUSINESS_DELETE)}
+                                            checked={selectedIds.includes(item.id)}
+                                            onChange={() => handleSelectOne(item.id)}
+                                            className={`w-3.5 h-3.5 rounded border-gray-300 accent-primary ${hasPermission(Permission.BUSINESS_DELETE)
+                                                    ? "cursor-pointer"
+                                                    : "opacity-40 cursor-not-allowed"
+                                                }`}
+                                        />
                                     </div>
 
                                     <div className="flex items-center gap-2 px-2">
                                         <button type="button" onClick={() => handleView(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Xem chi tiết">
                                             <Eye size={16} />
                                         </button>
-                                        <button type="button" onClick={() => handleEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
+                                        <button
+                                            type="button"
+                                            disabled={!hasPermission(Permission.BUSINESS_UPDATE)}
+                                            onClick={() => handleEdit(item)}
+                                            className={`transition-colors ${hasPermission(Permission.BUSINESS_UPDATE)
+                                                ? "text-gray-400 hover:text-primary cursor-pointer"
+                                                : "text-gray-300 opacity-40 cursor-not-allowed"
+                                                }`}
+                                            title="Chỉnh sửa"
+                                        >
                                             <Pencil size={16} />
                                         </button>
-                                        <button type="button" onClick={() => handleOpenPasswordReset(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Đặt lại mật khẩu">
+                                        <button
+                                            type="button"
+                                            disabled={!hasPermission(Permission.BUSINESS_RESET_PASSWORD)}
+                                            onClick={() => handleOpenPasswordReset(item)}
+                                            className={`transition-colors ${hasPermission(Permission.BUSINESS_RESET_PASSWORD)
+                                                ? "text-gray-400 hover:text-primary cursor-pointer"
+                                                : "text-gray-300 opacity-40 cursor-not-allowed"
+                                                }`}
+                                            title="Đặt lại mật khẩu"
+                                        >
                                             <Key size={16} />
                                         </button>
                                     </div>
@@ -429,7 +482,11 @@ export default function BusinessManagementsPage() {
                                     <div className="flex items-center px-3 truncate">{item.registeredWard}</div>
 
                                     <div className="flex items-center justify-center">
-                                        <ToggleSwitch checked={item.status} onChange={() => handleToggleStatus(item.id)} />
+                                        <ToggleSwitch
+                                            checked={item.status}
+                                            onChange={() => handleToggleStatus(item.id)}
+                                            disabled={!hasPermission(Permission.BUSINESS_TOGGLE_STATUS)}
+                                        />
                                     </div>
                                 </div>
                             ))}

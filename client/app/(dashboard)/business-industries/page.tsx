@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import axios from "axios";
 import { Upload, Plus, Pencil, ChevronLeft, ChevronRight, ChevronDown, Trash2, X } from "lucide-react";
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/types/permission";
+import { useRouter } from "next/navigation";
 
 interface TreeNode extends BusinessIndustry {
     children: TreeNode[];
@@ -31,7 +34,18 @@ export default function BusinessIndustriesPage() {
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
+    const router = useRouter();
+    const { hasPermission } = usePermission();
+
+    useEffect(() => {
+        if (!hasPermission(Permission.BUSINESS_VIEW)) {
+            toast.error("Bạn không có quyền truy cập");
+            router.replace("/");
+        }
+    }, [hasPermission, router]);
+
     const fetchData = async () => {
+        if (!hasPermission(Permission.BUSINESS_VIEW)) return;
         setLoading(true);
         try {
             const res = await BusinessIndustryApi.findAll();
@@ -284,14 +298,27 @@ export default function BusinessIndustriesPage() {
                     lable="Danh sách ngành nghề kinh doanh"
                     component={
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs font-semibold">
-                                <Upload className="size-4" />
-                                <span>Thêm từ file</span>
-                            </Button>
-                            <Button variant="primary" size="sm" onClick={openNew} className="flex items-center gap-2 text-xs font-semibold">
-                                <Plus className="size-4" />
-                                <span>Thêm mới</span>
-                            </Button>
+                            {hasPermission(Permission.BUSINESS_UPLOAD_FILE) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Upload className="size-4" />
+                                    <span>Thêm từ file</span>
+                                </Button>
+                            )}
+                            {hasPermission(Permission.BUSINESS_CREATE) && (
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={openNew}
+                                    className="flex items-center gap-2 text-xs font-semibold"
+                                >
+                                    <Plus className="size-4" />
+                                    <span>Thêm mới</span>
+                                </Button>
+                            )}
                         </div>
                     }
                 />
@@ -313,9 +340,13 @@ export default function BusinessIndustriesPage() {
                         <div className="flex items-center justify-center">
                             <input
                                 type="checkbox"
-                                className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300"
-                                checked={displayData.length > 0 && displayData.every((item) => selectedIds.includes(item.id))}
+                                disabled={!hasPermission(Permission.BUSINESS_DELETE)}
+                                checked={
+                                    displayData.length > 0 &&
+                                    displayData.every((item) => selectedIds.includes(item.id))
+                                }
                                 onChange={handleSelectAll}
+                                className="w-3.5 h-3.5 accent-primary rounded border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
                             />
                         </div>
                         <div />
@@ -371,23 +402,43 @@ export default function BusinessIndustriesPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`grid gap-3 border-b border-gray-100 transition-colors text-xs items-stretch px-4 ${
-                                            isLevel1
-                                                ? "bg-gray-50/60 hover:bg-gray-100/80 text-gray-900 font-semibold"
-                                                : "bg-white hover:bg-blue-50/30 text-gray-700 font-normal"
-                                        }`}
+                                        className={`grid gap-3 border-b border-gray-100 transition-colors text-xs items-stretch px-4 ${isLevel1
+                                            ? "bg-gray-50/60 hover:bg-gray-100/80 text-gray-900 font-semibold"
+                                            : "bg-white hover:bg-blue-50/30 text-gray-700 font-normal"
+                                            }`}
                                         style={{ gridTemplateColumns: "40px 40px 120px 1fr 140px" }}
                                     >
                                         <div className="flex items-center justify-center py-2.5">
-                                            <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => handleSelectOne(item.id)} />
+                                            <input
+                                                type="checkbox"
+                                                disabled={!hasPermission(Permission.BUSINESS_DELETE)}
+                                                checked={selectedIds.includes(item.id)}
+                                                onChange={() => handleSelectOne(item.id)}
+                                                className="w-3.5 h-3.5 accent-primary rounded border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            />
                                         </div>
 
                                         <div className="flex items-center justify-center py-2.5">
-                                            <button type="button" onClick={() => openEdit(item)} className="text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Chỉnh sửa">
-                                                <Pencil className="size-3.5" />
-                                            </button>
+                                            {hasPermission(Permission.BUSINESS_UPDATE) ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openEdit(item)}
+                                                    className="text-gray-400 hover:text-primary transition-colors"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <Pencil className="size-3.5" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    className="text-gray-200 cursor-not-allowed"
+                                                    title="Không có quyền chỉnh sửa"
+                                                >
+                                                    <Pencil className="size-3.5" />
+                                                </button>
+                                            )}
                                         </div>
-
                                         <div className="truncate font-medium flex items-center py-2.5">{item.code}</div>
                                         <div className="relative flex items-center gap-1.5 py-2.5 min-w-0" style={{ paddingLeft: `${((item.level || 1) - 1) * 24}px` }}>
                                             {hasChildren ? (
@@ -457,21 +508,23 @@ export default function BusinessIndustriesPage() {
             </div>
 
             {/* Selection Banner */}
-            {selectedIds.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
-                    <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-10">{selectedIds.length}</div>
-                    <div className="px-4 text-xs font-semibold text-gray-700 select-none">dữ liệu được chọn</div>
-                    <div className="pr-3 flex items-center gap-3">
-                        <button type="button" onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors">
-                            <Trash2 className="size-3.5" />
-                            <span>Xoá</span>
-                        </button>
-                        <button type="button" onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer">
-                            <X className="size-4" />
-                        </button>
+            {selectedIds.length > 0 &&
+                hasPermission(Permission.BUSINESS_DELETE) && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl border border-gray-100 flex items-center h-12 overflow-hidden z-50 transition-all duration-300">
+                        <div className="bg-blue-600 text-white font-bold px-4 h-full flex items-center justify-center min-w-10">{selectedIds.length}</div>
+                        <div className="px-4 text-xs font-semibold text-gray-700 select-none">dữ liệu được chọn</div>
+                        <div className="pr-3 flex items-center gap-3">
+                            <button type="button" onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1.5 flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors">
+                                <Trash2 className="size-3.5" />
+                                <span>Xoá</span>
+                            </button>
+                            <button type="button" onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer">
+                                <X className="size-4" />
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <BusinessIndustryPopup isOpen={isModalOpen} editingItem={editingItem} onClose={closeModal} onSave={handleSave} />
         </main>

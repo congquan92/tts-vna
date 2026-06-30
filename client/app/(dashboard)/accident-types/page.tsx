@@ -15,9 +15,13 @@ import BulkSelectionBanner from "@/components/popup/bulk-selection-banner";
 import RejectReasonPopup from "@/components/popup/reject-reason-popup";
 import ProcessingHistoryPopup from "@/components/popup/processing-history-popup";
 
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/types/permission";
+
 export default function AccidentTypesPage() {
     const router = useRouter();
 
+    const { hasPermission } = usePermission();
     // List state
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(false);
@@ -277,7 +281,12 @@ export default function AccidentTypesPage() {
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none size-3.5" />
                             </div>
 
-                            <Button variant="outline" size="sm" onClick={handleViewSummaryReport} className="flex items-center gap-2 text-xs font-semibold">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleViewSummaryReport}
+                                className="flex items-center gap-2 text-xs font-semibold"
+                            >
                                 <span>Báo cáo tổng hợp</span>
                             </Button>
                         </div>
@@ -292,6 +301,7 @@ export default function AccidentTypesPage() {
             <ReportListTable
                 reports={reports}
                 loading={loading}
+                canApprove={hasPermission(Permission.REPORT_SO_APPROVE)}
                 searchBusinessName={searchBusinessName}
                 setSearchBusinessName={handleSearchBusinessNameChange}
                 searchTaxCode={searchTaxCode}
@@ -317,6 +327,8 @@ export default function AccidentTypesPage() {
             <BulkSelectionBanner
                 selectedCount={selectedIds.length}
                 processing={processing}
+                canApprove={hasPermission(Permission.REPORT_SO_APPROVE)}
+                canReject={hasPermission(Permission.REPORT_SO_REJECT)}
                 onReject={() => {
                     const pendingSelected = reports.filter((r) => selectedIds.includes(r.id) && r.status === "chờ tiếp nhận");
                     if (pendingSelected.length === 0) {

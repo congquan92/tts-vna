@@ -8,6 +8,7 @@ import type { Report } from "@/types/report";
 interface ReportListTableProps {
     reports: Report[];
     loading: boolean;
+    canApprove?: boolean;
     searchBusinessName: string;
     setSearchBusinessName: (val: string) => void;
     searchTaxCode: string;
@@ -34,6 +35,7 @@ const GRID_STYLE = { gridTemplateColumns: "40px 80px 2.2fr 0.9fr 0.8fr 1.7fr" };
 export default function ReportListTable({
     reports,
     loading,
+    canApprove = true,
     searchBusinessName,
     setSearchBusinessName,
     searchTaxCode,
@@ -71,7 +73,17 @@ export default function ReportListTable({
                 {/* Inline search header filters */}
                 <div className="grid pb-3 px-4 bg-[#F4F6F8] gap-3 items-center" style={GRID_STYLE}>
                     <div className="flex items-center justify-center">
-                        <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
+                        <input
+                            type="checkbox"
+                            className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300
+            disabled:opacity-40 disabled:cursor-not-allowed"
+                            checked={allSelected}
+                            disabled={!canApprove}
+                            onChange={(e) => {
+                                if (!canApprove) return;
+                                onSelectAll(e.target.checked);
+                            }}
+                        />
                     </div>
                     <div />
                     <div>
@@ -142,7 +154,17 @@ export default function ReportListTable({
                             <div key={item.id} className="grid gap-3 border-b border-gray-100 hover:bg-blue-50/20 transition-colors text-xs text-gray-700 items-center px-4 py-2.5" style={GRID_STYLE}>
                                 {/* Checkbox */}
                                 <div className="flex justify-center items-center">
-                                    <input type="checkbox" className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300" checked={selectedIds.includes(item.id)} onChange={() => onSelectOne(item.id)} />
+                                    <input
+                                        type="checkbox"
+                                        className="w-3.5 h-3.5 accent-primary rounded border-gray-300
+            cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                        checked={selectedIds.includes(item.id)}
+                                        disabled={!canApprove}
+                                        onChange={() => {
+                                            if (!canApprove) return;
+                                            onSelectOne(item.id);
+                                        }}
+                                    />
                                 </div>
 
                                 {/* Action View & History button */}

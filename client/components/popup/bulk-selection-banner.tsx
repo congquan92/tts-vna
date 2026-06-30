@@ -6,12 +6,14 @@ import { X, RotateCcw, Check, CheckCheck } from "lucide-react";
 interface BulkSelectionBannerProps {
     selectedCount: number;
     processing: boolean;
+    canApprove?: boolean;
+    canReject?: boolean;
     onReject: () => void;
     onApprove: () => void;
     onClear: () => void;
 }
 
-export default function BulkSelectionBanner({ selectedCount, processing, onReject, onApprove, onClear }: BulkSelectionBannerProps) {
+export default function BulkSelectionBanner({ selectedCount, processing, canApprove = true, canReject = true, onReject, onApprove, onClear }: BulkSelectionBannerProps) {
     if (selectedCount === 0) return null;
 
     return (
@@ -27,20 +29,26 @@ export default function BulkSelectionBanner({ selectedCount, processing, onRejec
                 <Button
                     type="button"
                     variant="outline"
-                    disabled={processing}
+                    disabled={processing || !canReject}
                     onClick={onReject}
-                    className="h-8 border border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg px-3 flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer transition-all duration-200"
+                    className="h-8 border rounded-lg px-3 flex items-center gap-1.5 text-xs font-bold transition-all duration-200
+        border-blue-600 text-blue-600 hover:bg-blue-50
+        disabled:border-gray-300 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    <RotateCcw className="size-4" /> Từ chối
+                    <RotateCcw className="size-4" />
+                    Từ chối
                 </Button>
 
                 <Button
                     type="button"
-                    disabled={processing}
+                    disabled={processing || !canApprove}
                     onClick={onApprove}
-                    className="h-8 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 disabled:cursor-not-allowed rounded-lg px-3 flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer transition-all duration-200"
+                    className="h-8 rounded-lg px-3 flex items-center gap-1.5 text-xs font-bold transition-all duration-200
+        bg-blue-600 hover:bg-blue-700 text-white
+        disabled:bg-gray-300 disabled:text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    <CheckCheck className="size-4" /> Tiếp nhận
+                    <CheckCheck className="size-4" />
+                    Tiếp nhận
                 </Button>
 
                 <Button type="button" variant="outline" onClick={onClear} className="text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer border-none">
