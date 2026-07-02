@@ -67,17 +67,10 @@ export class ReportFileService {
 
     const allowedMimeTypes = [
       'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Chỉ cho phép PDF, Word, Excel, hình ảnh');
+      throw new BadRequestException('Chỉ cho phép PDF. Vui lòng chọn file hợp lệ');
     }
 
     const uploadDir = path.join(

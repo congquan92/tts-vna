@@ -101,7 +101,7 @@ export class ReportRepository {
   }
 
   async findById(id: number): Promise<Report | null> {
-    return this.reportRepository.findOne({
+    const report = await this.reportRepository.findOne({
       where: { id },
       relations: {
         companyInfo: {
@@ -115,6 +115,12 @@ export class ReportRepository {
         files: true,
       },
     });
+
+    if (report?.files) {
+      report.files.sort((a, b) => b.id - a.id);
+    }
+
+    return report;
   }
 
   async save(report: DeepPartial<Report>): Promise<Report> {

@@ -345,14 +345,33 @@ def main():
                     # Table 2: Business Type Info
                     if len(tables) >= 2:
                         t2_cells = tables[1].findall('.//w:tc', namespaces)
-                        if t2_cells:
-                            set_cell_text(t2_cells[0], f"Thuộc loại hình cơ sở (doanh nghiệp): {type_of_business or '...'}    Mã loại hình cơ sở: {type_of_business_code or '...'}")
+                        # tên loại hình
+                        set_cell_text(
+                            t2_cells[0],
+                            f"""Thuộc loại hình cơ sở (doanh nghiệp): {type_of_business or '...'}
+
+                        Mã loại hình cơ sở:"""
+                        )
+                        # mã loại hình
+                        code = str(type_of_business_code or "")
+                        for i, ch in enumerate(code):
+                            if i + 1 < len(t2_cells):
+                                set_cell_text(t2_cells[i + 1], ch, align="center")
                             
                     # Table 3: Industry Sector Info
                     if len(tables) >= 3:
                         t3_cells = tables[2].findall('.//w:tc', namespaces)
                         if t3_cells:
-                            set_cell_text(t3_cells[0], f"Lĩnh vực sản xuất chính của cơ sở: {business_industry or '...'}    Mã lĩnh vực: {business_industry_code or '...'}")
+                            set_cell_text(
+                                t3_cells[0],
+                                f"""Lĩnh vực sản xuất chính của cơ sở: {business_industry or '...'}
+
+                            Mã lĩnh vực:"""
+                            )
+                            code = str(business_industry_code or "")
+                            for i, ch in enumerate(code):
+                                if i + 1 < len(t3_cells):
+                                    set_cell_text(t3_cells[i + 1], ch, align="center")
 
                 # Populate Table 4 & Table 5
                 if len(tables) >= 5:
