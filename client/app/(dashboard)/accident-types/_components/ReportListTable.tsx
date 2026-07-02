@@ -55,7 +55,13 @@ export default function ReportListTable({
     onViewHistory,
 }: ReportListTableProps) {
     const totalPages = Math.max(1, Math.ceil(totalReports / pageSize));
-    const allSelected = reports.length > 0 && reports.every((r) => selectedIds.includes(r.id));
+    const selectableReports = reports.filter(
+        (r) => r.status === "chờ tiếp nhận"
+    );
+
+    const allSelected =
+        selectableReports.length > 0 &&
+        selectableReports.every((r) => selectedIds.includes(r.id));
 
     return (
         <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden mt-3">
@@ -78,7 +84,7 @@ export default function ReportListTable({
                             className="w-3.5 h-3.5 accent-primary cursor-pointer rounded border-gray-300
             disabled:opacity-40 disabled:cursor-not-allowed"
                             checked={allSelected}
-                            disabled={!canApprove}
+                            disabled={!canApprove || selectableReports.length === 0}
                             onChange={(e) => {
                                 if (!canApprove) return;
                                 onSelectAll(e.target.checked);
@@ -157,11 +163,11 @@ export default function ReportListTable({
                                     <input
                                         type="checkbox"
                                         className="w-3.5 h-3.5 accent-primary rounded border-gray-300
-            cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                         checked={selectedIds.includes(item.id)}
-                                        disabled={!canApprove}
+                                        disabled={!canApprove || item.status !== "chờ tiếp nhận"}
                                         onChange={() => {
-                                            if (!canApprove) return;
+                                            if (!canApprove || item.status !== "chờ tiếp nhận") return;
                                             onSelectOne(item.id);
                                         }}
                                     />

@@ -98,6 +98,7 @@ export default function AccidentSummaryPage() {
     const searchParams = useSearchParams();
 
     const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     // Aggregated tables data state
     const [table1Rows, setTable1Rows] = useState<any[]>([]);
@@ -105,6 +106,14 @@ export default function AccidentSummaryPage() {
     const [table2Rows, setTable2Rows] = useState<Table2Row[]>([]);
     const [laborGrandTotal, setLaborGrandTotal] = useState<Table2Row | null>(null);
     const [supportGrandTotal, setSupportGrandTotal] = useState<Table2Row | null>(null);
+    const [reports, setReports] = useState<any[]>([]);
+
+    const [provinces, setProvinces] = useState<any[]>([]);
+    const [wards, setWards] = useState<any[]>([]);
+
+    const [provinceFilter, setProvinceFilter] = useState("");
+    const [wardFilter, setWardFilter] = useState("");
+    const [periodFilter, setPeriodFilter] = useState("");
 
     // Get search filters from URL parameters
     const yearStr = searchParams?.get("year");
@@ -115,14 +124,51 @@ export default function AccidentSummaryPage() {
     const selectedYear = yearStr ? Number(yearStr) : undefined;
 
     useEffect(() => {
-        const fetchAndAggregate = async () => {
-            setLoading(true);
+        const loadAddress = async () => {
             try {
-                const provParam = province && province !== "Tất cả" ? province : undefined;
-                const wardParam = ward && ward !== "Tất cả" ? ward : undefined;
+                const res = await fetch("/address.json");
+                const data = await res.json();
+                setProvinces(data);
+            } catch (err) {
+                console.error("Load address failed", err);
+            }
+        };
+
+        loadAddress();
+    }, []);
+
+    useEffect(() => {
+        if (!provinceFilter) {
+            setWards([]);
+            setWardFilter("");
+            return;
+        }
+
+        const selected = provinces.find(
+            (p) => p.name === provinceFilter
+        );
+
+        setWards(selected?.wards || []);
+        setWardFilter("");
+    }, [provinceFilter, provinces]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+
+        setProvinceFilter(params.get("province") || "");
+        setWardFilter(params.get("ward") || "");
+        setPeriodFilter(params.get("period") || "");
+    }, []);
+
+    useEffect(() => {
+        const fetchAndAggregate = async () => {
+            try {
+                const provParam = provinceFilter && provinceFilter !== "Tất cả" ? provinceFilter : undefined;
+                const wardParam = wardFilter && wardFilter !== "Tất cả" ? wardFilter : undefined;
 
                 // Load all reports matching geographical and status filters
                 const [reportsRes, businessesRes] = await Promise.all([ReportApi.getAll(1, 99999, selectedYear, "đã tiếp nhận", undefined, undefined, provParam, wardParam), BusinessApi.search({ limit: 99999 })]);
+                setReports(reportsRes.data || []);
 
                 // Filter businesses locally by location to get exact total count matching URL filters
                 let filteredBusinesses = businessesRes.data || [];
@@ -135,8 +181,8 @@ export default function AccidentSummaryPage() {
 
                 // Filter reports locally by period if set
                 let filteredReports = reportsRes.data || [];
-                if (period) {
-                    filteredReports = filteredReports.filter((r) => r.reportPeriod === period);
+                if (periodFilter) {
+                    filteredReports = filteredReports.filter((r) => r.reportPeriod === periodFilter);
                 }
 
                 // --- 1. AGGREGATE TABLE I: OVERVIEW INFO ---
@@ -551,11 +597,12 @@ export default function AccidentSummaryPage() {
                 toast.error("Không thể tải dữ liệu để tổng hợp báo cáo.");
             } finally {
                 setLoading(false);
+                setInitialLoading(false);
             }
         };
 
         fetchAndAggregate();
-    }, [selectedYear, province, ward, period]);
+    }, [selectedYear, provinceFilter, wardFilter, periodFilter,]);
 
     const handleBack = () => {
         router.push("/accident-types");
@@ -577,6 +624,11 @@ export default function AccidentSummaryPage() {
             const causes = table2Rows.slice(causeHeaderIdx + 1, factorHeaderIdx);
             const factors = table2Rows.slice(factorHeaderIdx + 1);
 
+            const totalSalary = reports.reduce(
+                (sum, r) => sum + Number(r.companyInfo?.totalSalary || 0),
+                0
+            );
+
             const payload = {
                 year: selectedYear,
                 period: period || "Cả năm",
@@ -585,7 +637,7 @@ export default function AccidentSummaryPage() {
                 totals: {
                     totalEmployees: table1GrandTotal?.reportingWorkforce || 0,
                     femaleEmployees: table1GrandTotal?.femaleWorkforce || 0,
-                    totalSalary: 0,
+                    totalSalary,
                 },
                 table2GrandTotal: table2Rows[0] || {},
                 laborGrandTotal: laborGrandTotal || {},
@@ -613,7 +665,7 @@ export default function AccidentSummaryPage() {
         }
     };
 
-    if (loading) {
+    if (initialLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-[#F4F6F8]">
                 <div className="text-center">
@@ -676,6 +728,80 @@ export default function AccidentSummaryPage() {
                 />
             </div>
 
+            <div className="print:hidden px-4 md:px-6 mt-2 flex gap-3 items-center">
+
+                {/* Province */}
+                <div className="w-100">
+                    <fieldset className="border border-gray-300 rounded-md px-3 pb-2 pt-1 bg-white">
+                        <legend className="text-xs text-gray-500 px-1">
+                            Tỉnh/ thành phố
+                        </legend>
+
+                        <select
+                            value={provinceFilter}
+                            onChange={(e) => {
+                                setProvinceFilter(e.target.value);
+                            }}
+                            className="w-full outline-none bg-transparent text-sm cursor-pointer"
+                        >
+                            <option value="">Tất cả</option>
+                            {provinces.map((p) => (
+                                <option key={p.province_code} value={p.name}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </fieldset>
+                </div>
+
+                {/* Ward */}
+                <div className="w-100">
+                    <fieldset className="border border-gray-300 rounded-md px-3 pb-2 pt-1 bg-white">
+                        <legend className="text-xs text-gray-500 px-1">
+                            Phường/ Xã
+                        </legend>
+
+                        <select
+                            value={wardFilter}
+                            onChange={(e) => {
+                                setWardFilter(e.target.value);
+                            }}
+                            disabled={!provinceFilter}
+                            className="w-full outline-none bg-white cursor-pointer text-sm disabled:cursor-not-allowed disabled:text-gray-400"
+                        >
+                            <option value="">Tất cả</option>
+                            {wards.map((w) => (
+                                <option key={w.ward_code} value={w.name}>
+                                    {w.name}
+                                </option>
+                            ))}
+                        </select>
+                    </fieldset>
+                </div>
+
+                {/* Period */}
+                <div className="w-40">
+                    <fieldset className="border border-gray-300 rounded-md px-3 pb-2 pt-1 bg-white">
+                        <legend className="text-xs text-gray-500 px-1">
+                            Kỳ báo cáo
+                        </legend>
+
+                        <select
+                            value={periodFilter}
+                            onChange={(e) => {
+                                setPeriodFilter(e.target.value);
+                            }}
+                            className="w-full outline-none bg-transparent text-sm cursor-pointer"
+                        >
+                            <option value="">Tất cả</option>
+                            <option value="6 tháng">6 tháng</option>
+                            <option value="Cả năm">Cả năm</option>
+                        </select>
+                    </fieldset>
+                </div>
+
+            </div>
+
             {/* Content view container */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
                 <div id="print-section" className="bg-white p-6 border border-gray-200 max-w-[95%] mx-auto space-y-8 text-gray-900 rounded-md shadow-sm">
@@ -684,13 +810,14 @@ export default function AccidentSummaryPage() {
                         <h2 className="text-sm font-bold text-gray-900 uppercase">Báo cáo tổng hợp tình hình tai nạn lao động</h2>
                         {selectedYear && (
                             <p className="text-xs font-semibold text-gray-500">
-                                Năm {selectedYear} {period ? ` - Kỳ báo cáo: ${period}` : ""}
+                                Năm {selectedYear}
+                                {periodFilter && ` - Kỳ báo cáo: ${periodFilter}`}
                             </p>
                         )}
-                        {(province || ward) && (
+                        {(provinceFilter || wardFilter) && (
                             <p className="text-xs font-semibold text-gray-600 no-print">
-                                Khu vực: {ward ? `${ward}, ` : ""}
-                                {province || "Toàn quốc"}
+                                Khu vực: {wardFilter ? `${wardFilter}, ` : ""}
+                                {provinceFilter || "Toàn quốc"}
                             </p>
                         )}
                     </div>
@@ -892,6 +1019,6 @@ export default function AccidentSummaryPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -164,11 +164,30 @@ export default function AccidentTypesPage() {
     };
 
     const handleSelectAll = (checked: boolean) => {
-        setSelectedIds(checked ? reports.map((r) => r.id) : []);
+        if (!checked) {
+            setSelectedIds([]);
+            return;
+        }
+
+        setSelectedIds(
+            reports
+                .filter((r) => r.status === "chờ tiếp nhận")
+                .map((r) => r.id)
+        );
     };
 
     const handleSelectOne = (id: number) => {
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+        const report = reports.find((r) => r.id === id);
+
+        if (!report || report.status !== "chờ tiếp nhận") {
+            return;
+        }
+
+        setSelectedIds((prev) =>
+            prev.includes(id)
+                ? prev.filter((x) => x !== id)
+                : [...prev, id]
+        );
     };
 
     const handleApproveSelected = async () => {
@@ -247,6 +266,10 @@ export default function AccidentTypesPage() {
     };
 
     const handleViewSummaryReport = () => {
+        if (!selectedYear) {
+            toast.warning("Vui lòng chọn năm trước khi xem báo cáo tổng hợp.");
+            return;
+        }
         const params = new URLSearchParams();
         if (selectedYear) params.append("year", selectedYear.toString());
         if (selectedProvince && selectedProvince !== "Tất cả") params.append("province", selectedProvince);
