@@ -631,9 +631,9 @@ export default function AccidentSummaryPage() {
 
             const payload = {
                 year: selectedYear,
-                period: period || "Cả năm",
-                province: province || "Tất cả",
-                ward: ward || "Tất cả",
+                period: periodFilter || "Cả năm",
+                province: provinceFilter || "Tất cả",
+                ward: wardFilter || "Tất cả",
                 totals: {
                     totalEmployees: table1GrandTotal?.reportingWorkforce || 0,
                     femaleEmployees: table1GrandTotal?.femaleWorkforce || 0,

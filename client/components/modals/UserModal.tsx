@@ -266,15 +266,17 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
             }
         }
 
+        const passwordRegex = /^(?=.*[A-Z]).{8,}$/;
+
         if (!editingItem) {
-            if (!formData.password || !formData.password.trim()) {
+            if (!formData.password?.trim()) {
                 nextErrors.password = "Mật khẩu là bắt buộc";
-            } else if (formData.password.length < 6) {
-                nextErrors.password = "Mật khẩu phải từ 6 ký tự trở lên";
-            }
-        } else {
-            if (formData.password && formData.password !== "************" && formData.password.trim().length < 6) {
-                nextErrors.password = "Mật khẩu phải từ 6 ký tự trở lên";
+            } else if (
+                formData.password !== "12345678" &&
+                !passwordRegex.test(formData.password)
+            ) {
+                nextErrors.password =
+                    "Mật khẩu phải có ít nhất 8 ký tự và chứa ít nhất một chữ cái viết hoa";
             }
         }
 
@@ -305,8 +307,14 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                 roleId: Number(formData.roleId),
             };
 
-            if (password && password !== "************") {
-                payload.password = password;
+            if (!editingItem) {
+                if (password && password !== "12345678") {
+                    payload.password = password;
+                }
+            } else {
+                if (password && password !== "************") {
+                    payload.password = password;
+                }
             }
 
             // Loại bỏ các trường rỗng để tránh lỗi validation ở backend (ví dụ: dob: "")
@@ -316,6 +324,7 @@ export default function UserForm({ editingItem, onClose, onSave }: UserFormProps
                 }
             });
 
+            console.log(payload);
             await onSave(payload as unknown as CreateUserPayload);
         } catch (error) {
             console.error("Lỗi khi lưu người dùng:", error);

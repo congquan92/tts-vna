@@ -15,11 +15,13 @@ export class CreateUserDto {
   })
   username!: string;
 
-  @ApiPropertyOptional({ description: 'Mật khẩu' })
+  @ApiPropertyOptional({
+    description: 'Mật khẩu mới (ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa)',
+  })
   @IsOptional()
-  @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' })
+  @IsString()
   password?: string;
-
+  
   @ApiProperty({ description: 'Họ và tên' })
   @IsString()
   @IsNotEmpty({ message: 'Vui lòng nhập họ và tên' })

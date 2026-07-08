@@ -49,7 +49,17 @@ export class UserService {
 
     const orgType = role.orgType;
 
-    const password = dto.password || '12345678';
+    const password = dto.password || "12345678";
+
+    if (
+      dto.password &&
+      dto.password !== "12345678" &&
+      !/^(?=.*[A-Z]).{8,}$/.test(dto.password)
+    ) {
+      throw new BadRequestException(
+        "Mật khẩu phải có ít nhất 8 ký tự và chứa ít nhất một chữ cái viết hoa",
+      );
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
